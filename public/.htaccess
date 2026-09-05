@@ -1,0 +1,22 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 1. JIKA REQUEST DIAWALI DENGAN /api, JANGAN REWRITE KE INDEX.HTML REACT
+  # Baris ini memastikan rute API tidak direbut oleh React Router
+  RewriteCond %{REQUEST_URI} ^/api [NC]
+  RewriteRule ^ - [L]
+
+  # 2. ATURAN JALUR UTAMA UNTUK REACT ROUTER SPA (Mencegah 404 /login)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  RewriteRule ^ index.html [L]
+
+  # Paksa Apache untuk meneruskan HTTP Authorization Header ke PHP
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+  # Google OAuth
+    RewriteRule ^auth/google$ auth/google.php [L]
+</IfModule>
