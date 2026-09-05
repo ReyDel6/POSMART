@@ -1,8 +1,23 @@
-# POSMart — Point of Sale
+# 🛒 POSMart — Point of Sale
 
-Aplikasi kasir (POS) dengan **frontend React (Vite + Tailwind)** dan **backend Laravel 11**.
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38BDF8?logo=tailwindcss&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.3-777BB4?logo=php&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)
 
-## Arsitektur
+**POSMart** adalah aplikasi kasir (Point of Sale) web dengan **frontend React (Vite + Tailwind CSS)** dan **backend API Laravel**. Mendukung katalog produk, keranjang, checkout, login Google OAuth, dashboard admin, hingga cetak struk/laporan PDF.
+
+## ✨ Fitur
+
+- 🛍️ Katalog produk + filter kategori + pagination
+- 🧾 Keranjang & checkout (transaksi stok real-time)
+- 🔐 Login email/password & **Google OAuth** (Laravel Sanctum token)
+- 👑 Dashboard admin: CRUD produk, kelola order, statistik, upload gambar
+- 📄 Generate laporan / struk PDF (jsPDF)
+
+## 📁 Arsitektur
 
 ```
 C:\POS
@@ -19,12 +34,12 @@ Backend awalnya PHP native, dan telah dimigrasikan ke **Laravel**. Endpoint teta
 menggunakan path PHP lama (mis. `/get.product.php`, `/user/login.php`) sehingga
 frontend React **tidak perlu diubah**.
 
-## Teknologi
+## 🧰 Teknologi
 
 - **Frontend:** React 19, Vite 8, Tailwind CSS 4, React Router, Axios
 - **Backend:** Laravel 13 (Framework), PHP 8.3, MySQL, Laravel Sanctum (auth token)
 
-## Database
+## 🗄️ Database
 
 Menggunakan database MySQL `db_posmart` yang sudah ada. Tabel:
 `users`, `products`, `orders`, `order_items`, `personal_access_tokens`.
@@ -33,7 +48,7 @@ Menggunakan database MySQL `db_posmart` yang sudah ada. Tabel:
 > tabel jika belum ada), sehingga aman dijalankan terhadap database existing.
 > **Jangan** jalankan `php artisan migrate:fresh` jika ingin mempertahankan data.
 
-## Menjalankan (Development)
+## 🚀 Menjalankan (Development)
 
 ### 1. Backend (Laravel)
 
@@ -57,14 +72,14 @@ npm run dev             # default localhost:5173
 
 Vite memproxy semua request `/api` ke `http://localhost:8000` (lihat `vite.config.js`).
 
-## Akun Default (dari seeder DB lama)
+## 👤 Akun Default (dari seeder DB lama)
 
-| Role    | Email            | Password    |
-|---------|------------------|-------------|
-| Admin   | admin@posmart.com| posmart2026 |
-| Cashier | cashier@posmart.com | password123 |
+| Role    | Email                | Password    |
+|---------|----------------------|-------------|
+| Admin   | admin@posmart.com    | posmart2026 |
+| Cashier | cashier@posmart.com  | password123 |
 
-## Endpoint API
+## 🔌 Endpoint API
 
 Semua endpoint dipanggil via `/api` (diawali di frontend, di-strip proxy):
 
