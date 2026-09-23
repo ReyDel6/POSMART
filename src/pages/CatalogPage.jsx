@@ -244,6 +244,7 @@ export default function CatalogPage() {
     const [bannerIndex, setBannerIndex] = useState(0);
     const bannerTimer = useRef(null);
     useEffect(() => {
+        setBannerIndex(i => (banners.length > 0 ? Math.min(i, banners.length - 1) : 0));
         bannerTimer.current = setInterval(() => {
             setBannerIndex(i => (i + 1) % banners.length);
         }, 5000);
@@ -253,7 +254,7 @@ export default function CatalogPage() {
     const goBanner = (i) => setBannerIndex(((i % banners.length) + banners.length) % banners.length);
 
     const bannerIsProduct = !!banners[0]?.id;
-    const activeBanner = banners[bannerIndex];
+    const activeBanner = banners[bannerIndex] || banners[0];
     const promoPrice = activeBanner?.is_promo ? Math.round(activeBanner.price - activeBanner.price * (activeBanner.promo / 100)) : 0;
 
     // ===== Countdown flash sale =====
