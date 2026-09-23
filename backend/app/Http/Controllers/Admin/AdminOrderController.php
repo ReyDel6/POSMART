@@ -22,6 +22,11 @@ class AdminOrderController extends Controller
                     'courier'       => $o->courier,
                     'total_price'   => $o->total_price,
                     'status'        => $o->status,
+                    'payment_status' => $o->payment_status,
+                    'payment_mode'   => $o->payment_mode,
+                    'payment_method' => $o->payment_method,
+                    'payment_type'   => $o->payment_type,
+                    'paid_at'       => $o->paid_at,
                     'created_at'    => $o->created_at,
                     'cashier_name'  => $o->user?->name,
                 ];
@@ -35,15 +40,56 @@ class AdminOrderController extends Controller
 
     public function update(Request $request)
     {
-        $data = $request->all();
+        $data   = $request->all();
+        $id     = (int) ($data['id'] ?? 0);
+        $status = trim($data['status'] ?? '');
 
-        Order::where('id', $data['id'])->update([
-            'status' => $data['status'],
-        ]);
+        $allowed = ['pending', 'paid', 'processing', 'completed', 'cancelled'];
+        if (!in_array($status, $allowed, true)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Status transaksi tidak valid.',
+            ], 422);
+        }
+
+        $order = Order::find($id);
+        if (!$order) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Transaksi tidak ditemukan.',
+            ], 404);
+        }
+
+        $order->update(['status' => $status]);
+
+        // Umumkan lunas manual (mis. pembayaran tunai walk-in atau konfirmasi via WA).
+        if ($status === 'paid' && $order->payment_status !== 'paid') {
+            $order->update([
+                'payment_status' => 'paid',
+                'payment_mode'   => $order->payment_mode ?: 'cash',
+                'payment_method' => $order->payment_method ?: 'manual',
+                'payment_type'   => $order->payment_type ?: 'manual',
+                'paid_at'        => now(),
+            ]);
+        }
+
+        // Saat transaksi dibatalkan manual, stok yang sempat dikunci dikembalikan.
+        if ($status === 'cancelled' && $order->payment_status !== 'paid') {
+            $order->update(['payment_status' => 'cancelled']);
+            $order->releaseItemsStock();
+        }
 
         return response()->json([
             'status'  => 'success',
-            'message' => 'Status transaksi berhasil diperbarui',
+            'message' => 'Status transaksi berhasil diperbarui.',
+            'order'   => [
+                'id'             => $order->id,
+                'status'         => $order->status,
+                'payment_status' => $order->payment_status,
+                'payment_mode'   => $order->payment_mode,
+                'payment_method' => $order->payment_method,
+                'paid_at'        => $order->paid_at,
+            ],
         ]);
     }
 }

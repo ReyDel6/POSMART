@@ -15,7 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'admin'   => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'manager' => \App\Http\Middleware\EnsureUserIsManager::class,
         ]);
 
         \Illuminate\Auth\Middleware\Authenticate::redirectUsing(fn ($request) => null);

@@ -10,41 +10,46 @@ export default function AdminProtectedRoute({ children }) {
         return <Navigate to="/login" replace />;
     }
 
+    let role = null;
+    let profileOk = true;
+
+    // 1. Coba dekode role dari JWT Token payload
     try {
-        let role = null;
-
-        // 1. Coba dekode role dari JWT Token payload
-        try {
-            const base64Url = token.split('.')[1];
-            if (base64Url) {
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                const payload = JSON.parse(jsonPayload);
-                if (payload && payload.role) {
-                    role = payload.role;
-                }
+        const base64Url = token.split('.')[1];
+        if (base64Url) {
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            const payload = JSON.parse(jsonPayload);
+            if (payload && payload.role) {
+                role = payload.role;
             }
-        } catch (jwtErr) {
-            // ignore JWT decode error, fallback to user_profile
         }
+    } catch {
+        // ignore JWT decode error, fallback ke user_profile
+    }
 
-        // 2. Fallback ke user_profile jika token lama belum menyertakan claim role
-        if (!role && userProfileRaw) {
+    // 2. Fallback ke user_profile jika token lama belum menyertakan claim role
+    if (!role && userProfileRaw) {
+        try {
             const user = JSON.parse(userProfileRaw);
             role = user?.role;
+        } catch {
+            profileOk = false;
         }
+    }
 
-        // Cek apakah role adalah admin
-        if (role !== 'admin') {
-            // Jika bukan admin (misal cashier/user), tendang ke katalog utama
-            return <Navigate to="/" replace />;
-        }
-    } catch (e) {
-        // Jika token/profile rusak, bersihkan dan arahkan ke login
+    // 3. Jika token/profile rusak, bersihkan dan arahkan ke login
+    if (!profileOk) {
         localStorage.clear();
         return <Navigate to="/login" replace />;
+    }
+
+    // 4. Cek apakah role adalah admin atau owner
+    if (role !== 'admin' && role !== 'owner') {
+        // Jika bukan admin/owner (misal cashier/user), tendang ke katalog utama
+        return <Navigate to="/" replace />;
     }
 
     return children;

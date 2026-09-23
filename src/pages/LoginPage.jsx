@@ -1,11 +1,12 @@
 //File: pages/LoginPage.jsx
-import { useNavigate} from 'react-router-dom' ;
+import { useNavigate, Link } from 'react-router-dom';
 import LoginForm from '../components/LoginForm';
 import { useGoogleLogin } from "@react-oauth/google";
-import { Store, ArrowLeft } from "lucide-react";
-import api from '../utils/api'
+import api from '../utils/api';
+import AuthLayout from '../components/AuthLayout';
+import GoogleIcon from '../components/GoogleIcon';
 
-export default function LoginPage(){
+export default function LoginPage() {
     const navigate = useNavigate();
 
     const handleGoogleLoginSuccess = async (tokenResponse) => {
@@ -13,24 +14,30 @@ export default function LoginPage(){
             const authorizationCode = tokenResponse.code;
             const response = await api.post('/user/googleauth.php', {
                 code: authorizationCode
-            })
+            });
             if (response.data && response.data.status === 'success') {
-                localStorage.setItem('token', response.data.token)
+                localStorage.setItem('token', response.data.token);
                 localStorage.setItem('user_profile', JSON.stringify(response.data.user));
 
-                navigate('/');
+                if (response.data.user.role === 'admin' || response.data.user.role === 'owner') {
+                    navigate('/admin');
+                } else {
+                    navigate('/');
+                }
             }
         } catch (err) {
-            console.error("Google auth")
+            console.error("Google auth", err);
             alert(err.response?.data?.message || "gagal login menggunakan google");
         }
-    }
+    };
+
     const loginWithGoogle = useGoogleLogin({
         onSuccess: handleGoogleLoginSuccess,
         flow: 'auth-code'
     });
+
     const handleLoginSuccess = (user) => {
-        if (user.role === 'admin') {
+        if (user.role === 'admin' || user.role === 'owner') {
             navigate('/admin');
         } else {
             navigate('/');
@@ -38,34 +45,34 @@ export default function LoginPage(){
     };
 
     return (
-        <div className="min-h-screen flex  flex-col items-center justify-center bg-slate-50 p-4">
-            <div className="absolute top-4 left-4">
-                <a href="/" className="p-2 bg-white rounded-full shadow-sm hover:bg-slate-100 transition-colors flex items-center justify-center">
-                    <ArrowLeft className="w-6 h-6 text-slate-700" />
-                </a>
-            </div>
-            <div className="mb-6 flex items-center gap-2">
-                <div className="p-2 bg-red-600 rounded-xl text-white">
-                    <Store className="w-6 h-6"/>
+        <AuthLayout>
+            <div className="w-full max-w-md bg-white rounded-3xl border border-slate-100 shadow-xl p-7 sm:p-10">
+                <div className="mb-8">
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Selamat datang kembali</h2>
+                    <p className="text-sm text-slate-500 mt-1.5">Masuk untuk lanjut belanja kebutuhan harian.</p>
                 </div>
-                <span className="text-xl font-black text-slate-900 tracking-tight">
-                    POS <span className="text-red-600">Mart</span>
-                </span>
-            </div>
 
-            {/* login form  */}
-            <div className='w-full max-w-sm'>
-                <LoginForm onLoginSuccess= {handleLoginSuccess}/>
-            </div>
+                <LoginForm onLoginSuccess={handleLoginSuccess} />
 
-            <div className="w-full max-w-sm mt-4">
-                <button 
+                <div className="flex items-center gap-3 my-6">
+                    <span className="h-px flex-1 bg-slate-200" />
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">atau</span>
+                    <span className="h-px flex-1 bg-slate-200" />
+                </div>
+
+                <button
                     onClick={() => loginWithGoogle()}
-                    className='w-full bg-white border border-slate-300 text-slate-700 font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer text-sm'>
-                    <img src="/avatars/images.png" className='w-5 h-5' alt="google logo"/>
+                    className="w-full bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2.5 transition-colors shadow-sm cursor-pointer text-sm"
+                >
+                    <GoogleIcon className="w-5 h-5" />
                     Masuk dengan Google
                 </button>
+
+                <p className="mt-7 text-center text-sm text-slate-500">
+                    Belum punya akun?{' '}
+                    <Link to="/register" className="text-green-600 font-bold hover:underline">Daftar di sini</Link>
+                </p>
             </div>
-        </div>
-    )
+        </AuthLayout>
+    );
 }

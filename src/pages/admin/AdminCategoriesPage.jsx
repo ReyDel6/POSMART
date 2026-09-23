@@ -10,26 +10,24 @@ export default function AdminCategoriesPage() {
     const [error, setError] = useState('');
     const [fetchLoading, setFetchLoading] = useState(true);
 
-    // Fetch categories dari backend
-    const fetchCategories = async () => {
-        setFetchLoading(true);
-        try {
-            const response = await api.get('/admin/categories.php');
-            if (response.data && response.data.status === 'success') {
-                setCategories(response.data.data);
-            } else {
-                setError(response.data?.message || 'Gagal memuat kategori');
-            }
-        } catch (err) {
-            console.error('Error fetching categories:', err);
-            setError('Gagal terhubung ke server');
-        } finally {
-            setFetchLoading(false);
-        }
-    };
-
     useEffect(() => {
-        fetchCategories();
+        let ignore = false;
+        api.get('/admin/categories.php')
+            .then(response => {
+                if (ignore) return;
+                if (response.data && response.data.status === 'success') {
+                    setCategories(response.data.data);
+                } else {
+                    setError(response.data?.message || 'Gagal memuat kategori');
+                }
+            })
+            .catch(err => {
+                if (ignore) return;
+                console.error('Error fetching categories:', err);
+                setError('Gagal terhubung ke server');
+            })
+            .finally(() => { if (!ignore) setFetchLoading(false); });
+        return () => { ignore = true; };
     }, []);
 
     return (
@@ -37,14 +35,14 @@ export default function AdminCategoriesPage() {
             <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <div>
                             <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <Tags className="w-6 h-6 text-red-600" /> Kategori Produk
+                        <Tags className="w-6 h-6 text-emerald-600" /> Kategori Produk
                     </h2>
                             <p className="text-xs text-slate-500 mt-1">Ringkasan kategori berdasarkan produk yang terdaftar</p>
                 </div>
             </div>
 
             {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-2xl text-sm font-semibold">
+                <div className="bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl text-sm font-semibold">
                     ⚠️ {error}
                 </div>
             )}
@@ -52,10 +50,10 @@ export default function AdminCategoriesPage() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-fit">
                     <h3 className="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <Package className="w-5 h-5 text-red-600" /> Ringkasan
+                        <Package className="w-5 h-5 text-emerald-600" /> Ringkasan
                     </h3>
                     <p className="text-sm text-slate-500">Total kategori aktif</p>
-                    <p className="text-4xl font-black text-red-600 mt-2">{categories.length}</p>
+                    <p className="text-4xl font-black text-emerald-600 mt-2">{categories.length}</p>
                     <p className="text-xs text-slate-400 mt-3">Kategori baru dibuat saat menambahkan produk.</p>
                 </div>
 
@@ -65,7 +63,7 @@ export default function AdminCategoriesPage() {
                     <p className="text-xs text-slate-500 mb-4">Klik nama kategori untuk melihat produknya.</p>
                     {fetchLoading ? (
                         <div className="text-center py-8 text-slate-400">
-                            <div className="inline-block w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                            <div className="inline-block w-6 h-6 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
                             <p className="text-sm mt-2">Memuat kategori...</p>
                         </div>
                     ) : (
@@ -90,15 +88,15 @@ export default function AdminCategoriesPage() {
                                             <tr
                                                 key={c.id}
                                                 onClick={() => navigate(`/admin/products?category=${encodeURIComponent(c.name)}`)}
-                                                className="hover:bg-red-50/40 transition-colors cursor-pointer"
+                                                className="hover:bg-emerald-50/40 transition-colors cursor-pointer"
                                                 title={`Lihat produk kategori ${c.name}`}
                                             >
                                                 <td className="p-4 font-bold text-slate-900">
-                                                    <span className="inline-flex items-center gap-2">{c.name}<ArrowRight className="w-4 h-4 text-red-500" /></span>
+                                                    <span className="inline-flex items-center gap-2">{c.name}<ArrowRight className="w-4 h-4 text-emerald-500" /></span>
                                                 </td>
                                                 <td className="p-4 text-xs text-slate-500">Dari data produk</td>
                                                 <td className="p-4">
-                                                    <span className="px-2.5 py-1 bg-red-50 text-red-700 rounded-lg text-xs font-bold">
+                                                    <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-xs font-bold">
                                                         {c.count} Produk
                                                     </span>
                                                 </td>

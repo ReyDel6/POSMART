@@ -1,24 +1,42 @@
+import { lazy, Suspense } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import CatalogPage from './pages/CatalogPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
-import OrderSuccess from './pages/OrderSuccess';
-import { CartProvider } from "./context/CartProvider"
+import NotFoundPage from './pages/NotFoundPage';
 import AdminLayout from './components/admin/AdminLayout';
-import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
-import AdminProductsPage from './pages/admin/AdminProductsPage';
-import AdminOrdersPage from './pages/admin/AdminOrdersPage';
-import AdminCategoriesPage from './pages/admin/AdminCategoriesPage';
-import AdminReportsPage from './pages/admin/AdminReportsPage';
-import AdminUsersPage from './pages/admin/AdminUsersPage';
-import AdminSettingsPage from './pages/admin/AdminSettingsPage';
+
+const OrderSuccess = lazy(() => import('./pages/OrderSuccess'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const OrdersPage = lazy(() => import('./pages/OrdersPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
+const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage'));
+const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage'));
+const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage'));
+const AdminReportsPage = lazy(() => import('./pages/admin/AdminReportsPage'));
+const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
+const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'));
+
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="w-8 h-8 border-red-800 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  );
+}
 
 const router = createBrowserRouter([
   { path: '/', element: <CatalogPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   { path: '/OrderSuccess', element: <OrderSuccess /> },
+  { path: '/profile', element: <ProfilePage /> },
+  { path: '/orders', element: <OrdersPage /> },
+  { path: '/forgot-password', element: <ForgotPasswordPage /> },
+  { path: '/reset-password', element: <ResetPasswordPage /> },
   {
     path: '/admin',
     element: <AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>,
@@ -32,13 +50,14 @@ const router = createBrowserRouter([
       { path: 'settings', element: <AdminSettingsPage /> }
     ]
   },
+  { path: '*', element: <NotFoundPage /> },
 ]);
 
 
 export default function App() {
   return (
-    <CartProvider>
-    <RouterProvider router={router} />
-    </CartProvider>
+    <Suspense fallback={<PageLoader />}>
+      <RouterProvider router={router} />
+    </Suspense>
   )
 }

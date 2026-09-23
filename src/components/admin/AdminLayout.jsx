@@ -18,9 +18,11 @@ export default function AdminLayout() {
     try {
         const stored = localStorage.getItem('user_profile');
         if (stored) user = JSON.parse(stored);
-    } catch (e) {
+    } catch {
         // ignore
     }
+
+    const isOwner = user.role === 'owner';
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -32,6 +34,18 @@ export default function AdminLayout() {
         setOpenDropdowns(prev => ({ ...prev, [id]: !prev[id] }));
     };
 
+    const routeTitles = {
+        '/admin': { title: 'Ringkasan Dashboard', parent: 'Utama' },
+        '/admin/products': { title: 'Kelola Produk', parent: 'Manajemen Produk' },
+        '/admin/categories': { title: 'Kategori Produk', parent: 'Manajemen Produk' },
+        '/admin/orders': { title: 'Daftar Transaksi', parent: 'Transaksi & Laporan' },
+        '/admin/reports': { title: 'Laporan Penjualan', parent: 'Transaksi & Laporan' },
+        '/admin/users': { title: 'Kelola Staf & Kasir', parent: 'Pengaturan & Staf' },
+        '/admin/settings': { title: 'Pengaturan Toko', parent: 'Pengaturan & Staf' },
+    };
+
+    const currentRouteInfo = routeTitles[location.pathname] || { title: 'Admin Panel', parent: 'POS' };
+
     const navItems = [
         {
             type: 'link',
@@ -39,7 +53,7 @@ export default function AdminLayout() {
             label: 'Ringkasan Dashboard',
             icon: LayoutDashboard
         },
-        {
+        ...(!isOwner ? [{
             type: 'dropdown',
             id: 'manajemen-produk',
             label: 'Manajemen Produk',
@@ -48,7 +62,7 @@ export default function AdminLayout() {
                 { path: '/admin/products', label: 'Kelola Produk', icon: Package },
                 { path: '/admin/categories', label: 'Kategori Produk', icon: Tags },
             ]
-        },
+        }] : []),
         {
             type: 'dropdown',
             id: 'transaksi-laporan',
@@ -59,7 +73,7 @@ export default function AdminLayout() {
                 { path: '/admin/reports', label: 'Laporan Penjualan', icon: BarChart3 },
             ]
         },
-        {
+        ...(!isOwner ? [{
             type: 'dropdown',
             id: 'pengaturan-sistem',
             label: 'Pengaturan & Staf',
@@ -68,7 +82,7 @@ export default function AdminLayout() {
                 { path: '/admin/users', label: 'Kelola Kasir & User', icon: Users },
                 { path: '/admin/settings', label: 'Pengaturan Toko', icon: Settings },
             ]
-        }
+        }] : []),
     ];
 
     return (
@@ -77,20 +91,20 @@ export default function AdminLayout() {
             <aside className={`${isSidebarOpen ? 'w-64' : 'w-0'} bg-slate-900 text-slate-300 flex flex-col shadow-xl transition-all duration-300 overflow-hidden`}>
                 {/* Brand / Logo */}
                 <div className="p-6 border-b border-slate-800 flex items-center gap-3 w-64">
-                    <div className="p-2.5 bg-red-600 rounded-xl text-white shadow-md">
+                    <div className="p-2.5 bg-emerald-600 rounded-xl text-white shadow-md">
                         <Store className="w-6 h-6" />
                     </div>
                     <div>
                         <h1 className="font-black text-white text-lg tracking-tight">
-                            POS <span className="text-red-500">Mart</span>
+                            POS <span className="text-emerald-400">Mart</span>
                         </h1>
-                        <span className="text-xs text-slate-400 font-medium">Panel Admin</span>
+                        <span className="text-xs text-slate-400 font-medium">{isOwner ? 'Panel Owner' : 'Panel Admin'}</span>
                     </div>
                 </div>
 
                 {/* Navigation Links with Dropdowns */}
                 <nav className="flex-1 p-4 space-y-2 w-64 overflow-y-auto">
-                    {navItems.map((item, idx) => {
+                    {navItems.map((item) => {
                         if (item.type === 'link') {
                             const Icon = item.icon;
                             const isActive = location.pathname === item.path;
@@ -100,7 +114,7 @@ export default function AdminLayout() {
                                     to={item.path}
                                     className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                                         isActive
-                                            ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+                                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
                                             : 'hover:bg-slate-800 text-slate-400 hover:text-white'
                                     }`}
                                 >
@@ -121,7 +135,7 @@ export default function AdminLayout() {
                                         onClick={() => toggleDropdown(item.id)}
                                         className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                                             isChildActive 
-                                                ? 'bg-slate-800 text-white font-bold border-l-4 border-red-500 pl-2.5' 
+                                                ? 'bg-slate-800 text-white font-bold border-l-4 border-emerald-500 pl-2.5' 
                                                 : 'hover:bg-slate-800/80 text-slate-400 hover:text-white'
                                         }`}
                                     >
@@ -144,7 +158,7 @@ export default function AdminLayout() {
                                                         to={child.path}
                                                         className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
                                                             isActive
-                                                                ? 'bg-red-600 text-white shadow-md'
+                                                                ? 'bg-emerald-600 text-white shadow-md'
                                                                 : 'hover:bg-slate-800 text-slate-400 hover:text-white'
                                                         }`}
                                                     >
@@ -182,20 +196,29 @@ export default function AdminLayout() {
                     <div className="flex items-center gap-3">
                         <button 
                             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-600"
+                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 cursor-pointer"
                         >
                             {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
-                        <h2 className="text-xl font-black text-slate-800 tracking-tight">Dashboard Utama</h2>
+                        <div>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-0.5">
+                                <span>Admin</span>
+                                <span>/</span>
+                                <span>{currentRouteInfo.parent}</span>
+                                <span>/</span>
+                                <span className="text-slate-600 font-semibold">{currentRouteInfo.title}</span>
+                            </div>
+                            <h2 className="text-xl font-bold text-slate-900 tracking-tight">{currentRouteInfo.title}</h2>
+                        </div>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-                            <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 font-bold flex items-center justify-center text-sm shadow-inner">
+                            <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-sm shadow-inner">
                                 {user.name ? user.name.charAt(0).toUpperCase() : 'A'}
                             </div>
                             <div className="text-left">
                                 <h4 className="text-sm font-bold text-slate-800">{user.name}</h4>
-                                <span className="text-xs text-red-600 font-semibold capitalize flex items-center gap-1">
+                                <span className="text-xs text-emerald-600 font-semibold capitalize flex items-center gap-1">
                                     <UserCheck className="w-3 h-3" /> {user.role || 'Admin'}
                                 </span>
                             </div>
@@ -204,7 +227,7 @@ export default function AdminLayout() {
                         <button
                             onClick={handleLogout}
                             title="Keluar Akun"
-                            className="p-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center"
+                            className="p-2.5 bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-600 rounded-xl transition-colors cursor-pointer flex items-center justify-center"
                         >
                             <LogOut className="w-5 h-5" />
                         </button>

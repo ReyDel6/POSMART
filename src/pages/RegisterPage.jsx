@@ -1,7 +1,9 @@
+// File: src/pages/RegisterPage.jsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Store, User, Mail, Lock, Phone, MapPin, CheckCircle } from "lucide-react";
+import { User, Mail, Lock, Eye, EyeOff, Phone, MapPin, CheckCircle } from "lucide-react";
 import api from '../utils/api';
+import AuthLayout from '../components/AuthLayout';
 
 export default function RegisterPage() {
     const navigate = useNavigate();
@@ -13,6 +15,8 @@ export default function RegisterPage() {
         phone: '',
         address: ''
     });
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
@@ -72,158 +76,164 @@ export default function RegisterPage() {
         }
     };
 
+    const inputClass = "w-full text-sm pl-11 pr-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all bg-slate-50/50";
+    const passwordInputClass = "w-full text-sm pl-11 pr-11 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all bg-slate-50/50";
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4 py-8">
-            <div className='w-full max-w-4xl bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-8'>
-                {/* Bagian Kiri: Branding atau Ilustrasi */}
-                <div className="hidden md:flex md:w-1/2 bg-red-50 rounded-xl items-center justify-center p-8">
-                    <div className="text-center">
-                        <Store className="w-20 h-20 text-red-600 mx-auto mb-4"/>
-                        <h2 className="text-3xl font-black text-slate-900 tracking-tight">POS Mart</h2>
-                        <p className="text-slate-600 mt-2">Daftarkan akun Anda dan mulailah mengelola penjualan dengan lebih mudah.</p>
-                    </div>
+        <AuthLayout panelSide="right">
+            <div className="w-full max-w-md bg-white rounded-3xl border border-slate-100 shadow-xl p-7 sm:p-10">
+                <div className="mb-7">
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Daftar Akun Baru</h2>
+                    <p className="text-sm text-slate-500 mt-1.5">Mulai belanja cepat & nikmati keuntungan member.</p>
                 </div>
 
-                {/* Bagian Kanan: Form Register */}
-                <div className="w-full md:w-1/2">
-                    <div className="mb-6 flex items-center gap-2 md:hidden">
-                        <div className="p-2 bg-red-600 rounded-xl text-white">
-                            <Store className="w-6 h-6"/>
-                        </div>
-                        <span className="text-xl font-black text-slate-900 tracking-tight">
-                            POS <span className="text-red-600">Mart</span>
-                        </span>
+                {error && <div className="text-sm text-red-600 bg-red-50 border border-red-100 p-3 rounded-xl mb-4 animate-shake">{error}</div>}
+                {success && (
+                    <div className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-100 p-3 rounded-xl mb-4 flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 shrink-0" />
+                        {success}
                     </div>
-                    <h3 className="text-xl font-bold text-slate-800 mb-5">Daftar Akun Baru</h3>
+                )}
 
-                    {error && <div className="text-sm text-red-500 bg-red-50 p-3 rounded-lg mb-4 border border-red-100">{error}</div>}
-                    {success && (
-                        <div className="text-sm text-emerald-600 bg-emerald-50 p-3 rounded-lg mb-4 border border-emerald-100 flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4 shrink-0" />
-                            {success}
+                <form onSubmit={handleFormSubmit} className="space-y-4">
+                    <div className="space-y-1">
+                        <label htmlFor="name" className="text-xs font-bold text-slate-600">Nama Lengkap</label>
+                        <div className="relative">
+                            <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                            <input
+                                id="name"
+                                type="text"
+                                name="name"
+                                value={formData.name}
+                                onChange={handleInputChange}
+                                required
+                                autoComplete="name"
+                                placeholder="Budi Santoso"
+                                className={inputClass}
+                            />
                         </div>
-                    )}
+                    </div>
 
-                    <form onSubmit={handleFormSubmit} className="space-y-4">
-                        {/* Nama Lengkap */}
+                    <div className="space-y-1">
+                        <label htmlFor="email" className="text-xs font-bold text-slate-600">e-Mail</label>
+                        <div className="relative">
+                            <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                            <input
+                                id="email"
+                                type="email"
+                                name="email"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                required
+                                autoComplete="email"
+                                placeholder="budi@example.com"
+                                className={inputClass}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-slate-500">Nama Lengkap</label>
+                            <label htmlFor="password" className="text-xs font-bold text-slate-600">Password</label>
                             <div className="relative">
-                                <User className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                                <input 
-                                    type="text"
-                                    name="name"
-                                    value={formData.name}
+                                <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                                <input
+                                    id="password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    name="password"
+                                    value={formData.password}
                                     onChange={handleInputChange}
                                     required
-                                    className="w-full text-sm pl-10 pr-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:border-red-500"
-                                    placeholder="Budi Santoso"
+                                    autoComplete="new-password"
+                                    placeholder="••••••••"
+                                    className={passwordInputClass}
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(v => !v)}
+                                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer transition-colors"
+                                >
+                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
                             </div>
                         </div>
 
-                        {/* Email */}
                         <div className="space-y-1">
-                            <label className="text-xs font-bold text-slate-500">e-Mail</label>
+                            <label htmlFor="confirmPassword" className="text-xs font-bold text-slate-600">Konfirmasi Password</label>
                             <div className="relative">
-                                <Mail className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                                <input 
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
+                                <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                                <input
+                                    id="confirmPassword"
+                                    type={showConfirm ? 'text' : 'password'}
+                                    name="confirmPassword"
+                                    value={formData.confirmPassword}
                                     onChange={handleInputChange}
                                     required
-                                    className="w-full text-sm pl-10 pr-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:border-red-500"
-                                    placeholder="budi@example.com"
+                                    autoComplete="new-password"
+                                    placeholder="••••••••"
+                                    className={passwordInputClass}
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirm(v => !v)}
+                                    aria-label={showConfirm ? "Sembunyikan konfirmasi password" : "Tampilkan konfirmasi password"}
+                                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer transition-colors"
+                                >
+                                    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
                             </div>
                         </div>
-
-                        {/* No Telepon & Alamat (Grid sampingan jika ingin hemat tempat) */}
-                        <div className="grid grid-cols-1 gap-4">
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500">No. Telepon (Opsional)</label>
-                                <div className="relative">
-                                    <Phone className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                                    <input 
-                                        type="text"
-                                        name="phone"
-                                        value={formData.phone}
-                                        onChange={handleInputChange}
-                                        className="w-full text-sm pl-10 pr-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:border-red-500"
-                                        placeholder="081234567890"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div className="space-y-1">
-                            <label className="text-xs font-bold text-slate-500">Alamat (Opsional)</label>
-                            <div className="relative">
-                                <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                                <textarea 
-                                    name="address"
-                                    value={formData.address}
-                                    onChange={handleInputChange}
-                                    rows="2"
-                                    className="w-full text-sm pl-10 pr-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-red-500 resize-none"
-                                    placeholder="Jl. Anggrek No. 12"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Password Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500">Password</label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                                    <input 
-                                        type="password"
-                                        name="password"
-                                        value={formData.password}
-                                        onChange={handleInputChange}
-                                        required
-                                        className="w-full text-sm pl-10 pr-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:border-red-500"
-                                        placeholder="••••••••"
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500">Konfirmasi Password</label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                                    <input 
-                                        type="password"
-                                        name="confirmPassword"
-                                        value={formData.confirmPassword}
-                                        onChange={handleInputChange}
-                                        required
-                                        className="w-full text-sm pl-10 pr-3 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:border-red-500"
-                                        placeholder="••••••••"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Submit */}
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:bg-slate-400 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 mt-2 shadow-sm"
-                        >
-                            {loading ? "Mendaftarkan ...." : "Daftar Sekarang"}
-                        </button>
-                    </form>
-
-                    <div className="mt-5 text-center text-sm text-slate-500">
-                        Sudah punya akun?{" "}
-                        <Link to="/login" className="text-red-600 font-bold hover:underline">
-                            Masuk di sini
-                        </Link>
                     </div>
-                </div>
+
+                    <div className="space-y-1">
+                        <label htmlFor="phone" className="text-xs font-bold text-slate-600">No. Telepon <span className="text-slate-400 font-medium">(Opsional)</span></label>
+                        <div className="relative">
+                            <Phone className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                            <input
+                                id="phone"
+                                type="text"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleInputChange}
+                                autoComplete="tel"
+                                placeholder="081234567890"
+                                className={inputClass}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-1">
+                        <label htmlFor="address" className="text-xs font-bold text-slate-600">Alamat <span className="text-slate-400 font-medium">(Opsional)</span></label>
+                        <div className="relative">
+                            <MapPin className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                            <textarea
+                                id="address"
+                                name="address"
+                                value={formData.address}
+                                onChange={handleInputChange}
+                                rows="2"
+                                autoComplete="street-address"
+                                placeholder="Jl. Anggrek No. 12"
+                                className="w-full text-sm pl-11 pr-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all bg-slate-50/50 resize-none"
+                            />
+                        </div>
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 mt-2 shadow-sm shadow-green-600/20"
+                    >
+                        {loading ? "Mendaftarkan..." : "Daftar Sekarang"}
+                    </button>
+                </form>
+
+                <p className="mt-6 text-center text-sm text-slate-500">
+                    Sudah punya akun?{" "}
+                    <Link to="/login" className="text-green-600 font-bold hover:underline">Masuk di sini</Link>
+                </p>
             </div>
-        </div>
+        </AuthLayout>
     );
 }

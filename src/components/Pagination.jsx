@@ -31,7 +31,7 @@ export default function Pagination({
                             key={pageNumber}
                             onClick={() => onPageChange(pageNumber)}
                             className={`w-8 h-8 text-xs font-bold rounded-lg transition-colors cursor-pointer ${currentPage === pageNumber
-                                ? 'bg-red-600 text-white shadow-xs'
+                                ? 'bg-emerald-600 text-white shadow-sm'
                                 : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
                                 }`}
                         >

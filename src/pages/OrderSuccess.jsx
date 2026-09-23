@@ -5,42 +5,56 @@ import { CheckCircle, Download, Printer } from 'lucide-react';
 import api from '../utils/api';
 import QRCode from 'qrcode';
 import { generateInvoicePdf } from '../utils/pdfGenerator';
+import { useCartContext } from '../context/CartContext';
 
 export default function OrderSuccess() {
+    const { handleClearCart } = useCartContext();
     const [searchParams] = useSearchParams();
     const orderId = searchParams.get('order_id');
-    const [statusOrder, setStatusOrder] = useState('pending');
-    const [loadingSimulasi, setLoadingSimulasi] = useState(false);
-    const [orderSummary, setOrderSummary] = useState(null);
+    const [orderSummary] = useState(() => {
+        const savedSummary = localStorage.getItem('last_order_summary');
+        if (!savedSummary) return null;
+        try {
+            return JSON.parse(savedSummary);
+        } catch {
+            return null;
+        }
+    });
     const [downloadLoading, setDownloadLoading] = useState(false);
     const [qrCodeUrl, setQrCodeUrl] = useState('');
+    const [storeName, setStoreName] = useState('POSMart');
 
-    // Simulasi fungsi menembak API update_order_status.php
-    const handleSimulasiPembayaran = async () => {
-        setLoadingSimulasi(true);
-        try {
-            const response = await api.post('/cart/update_order_status.php', {
-                order_id: orderId,
-                status: 'paid' // Ubah status menjadi lunas
-            });
+    useEffect(() => {
+        // Pastikan keranjang belanja selalu dibersihkan saat masuk ke halaman OrderSuccess
+        if (handleClearCart) handleClearCart();
+        localStorage.removeItem('posmart');
+    }, [handleClearCart]);
 
-            if (response.data && response.data.status === 'success') {
-                setStatusOrder('paid');
-                alert(response.data.message);
-            }
-        } catch (error) {
-            console.error(error);
-            alert('Gagal mensimulasikan pembayaran.');
-        } finally {
-            setLoadingSimulasi(false);
-        }
-    };
+    useEffect(() => {
+        let active = true;
+        api.get('/public/settings.php')
+            .then(res => {
+                if (active && res.data && res.data.status === 'success' && res.data.data?.store_name) {
+                    setStoreName(res.data.data.store_name);
+                }
+            })
+            .catch(() => {});
+        return () => { active = false; };
+    }, []);
+
+    useEffect(() => {
+        if (!orderSummary) return;
+        const qrData = `Order:${orderSummary.order_id}|Customer:${orderSummary.customer_id ?? 'N/A'}|Total:${orderSummary.total_price}`;
+        QRCode.toDataURL(qrData, { errorCorrectionLevel: 'H', margin: 1, width: 150 })
+            .then((url) => setQrCodeUrl(url))
+            .catch((err) => console.error('Gagal membuat QR code:', err));
+    }, [orderSummary]);
 
     const handleDownloadInvoice = async () => {
         if (!orderSummary) return;
         setDownloadLoading(true);
         try {
-            const doc = await generateInvoicePdf(orderSummary);
+            const doc = await generateInvoicePdf(orderSummary, storeName);
             doc.save(`invoice_order_${orderSummary.order_id}.pdf`);
         } catch (error) {
             console.error('Gagal membuat PDF invoice:', error);
@@ -54,24 +68,12 @@ export default function OrderSuccess() {
         window.print();
     };
 
-    useEffect(() => {
-        const savedSummary = localStorage.getItem('last_order_summary');
-        if (savedSummary) {
-            const parsed = JSON.parse(savedSummary);
-            setOrderSummary(parsed);
-            const qrData = `Order:${parsed.order_id}|Customer:${parsed.customer_id ?? 'N/A'}|Total:${parsed.total_price}`;
-            QRCode.toDataURL(qrData, { errorCorrectionLevel: 'H', margin: 1, width: 150 })
-                .then((url) => setQrCodeUrl(url))
-                .catch((err) => console.error('Gagal membuat QR code:', err));
-        }
-    }, []);
-
     return (
         <>
         {/* ===== STRUK PRINT (hanya tampil saat print =====) */}
         {orderSummary && (
             <div className="receipt-print">
-                <div className="receipt-store">POSMart</div>
+                <div className="receipt-store">{storeName}</div>
                 <div className="receipt-title">STRUK PEMBAYARAN</div>
                 <div className="receipt-line">------------------------------------</div>
                 <div className="receipt-row"><span>No. Order</span><span>#{orderSummary.order_id}</span></div>
@@ -95,7 +97,7 @@ export default function OrderSuccess() {
                         <img src={qrCodeUrl} alt="QR" className="receipt-qr" />
                     </div>
                 )}
-                <div className="receipt-thanks">Terima kasih telah berbelanja di POSMart!</div>
+                <div className="receipt-thanks">Terima kasih telah berbelanja di {storeName}!</div>
             </div>
         )}
 
@@ -104,19 +106,12 @@ export default function OrderSuccess() {
             <h2 className="text-xl font-black text-slate-800">Pesanan Berhasil Dibuat!</h2>
             <p className="text-sm text-slate-500 mt-1">ID Transaksi Anda: <span className="font-mono font-bold text-slate-700">#{orderId}</span></p>
 
-            {/* BADGE STATUS DINAMIS */}
+            {/* BADGE STATUS */}
             <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold shadow-xs">
-                {statusOrder === 'pending' ? (
-                    <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                        Menunggu Pembayaran
-                    </span>
-                ) : (
-                    <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                        Lunas (Paid)
-                    </span>
-                )}
+                <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    Menunggu Pembayaran
+                </span>
             </div>
 
             <hr className="my-6 border-slate-100" />

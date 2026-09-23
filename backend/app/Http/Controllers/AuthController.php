@@ -7,6 +7,7 @@ use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -186,7 +187,7 @@ class AuthController extends Controller
                     'google_id' => $googleId,
                     'name'      => $name,
                     'email'     => $email,
-                    'password'  => Hash::make(bin2hex('123456')),
+                    'password'  => Hash::make(Str::random(32)),
                     'role'      => 'cashier',
                 ]);
             }

@@ -18,19 +18,30 @@ class AdminUploadController extends Controller
         }
 
         $file = $request->file('image');
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp', 'image/gif'];
+        $allowedTypes = [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/webp' => 'webp',
+            'image/gif'  => 'gif',
+        ];
         $maxSize = 5 * 1024 * 1024; // 5MB
 
-        $mime = strtolower($file->getMimeType());
-        $ext = strtolower($file->getClientOriginalExtension());
+        // MIME diambil dari isi file yang sebenarnya (bukan Content-Type dari client)
+        $mime = strtolower((string) $file->getMimeType());
+        $clientExt = strtolower($file->getClientOriginalExtension());
 
-        if (!in_array($mime, $allowedTypes)) {
-            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
-                return response()->json([
-                    'status'  => 'error',
-                    'message' => 'Format file tidak didukung. Harap upload file gambar (JPG, PNG, WEBP, GIF).',
-                ], 400);
-            }
+        if (!isset($allowedTypes[$mime])) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Format file tidak didukung. Harap upload file gambar (JPG, PNG, WEBP, GIF).',
+            ], 400);
+        }
+
+        if (!in_array($clientExt, ['jpg', 'jpeg', 'png', 'webp', 'gif'], true)) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Ekstensi file tidak didukung. Harap upload file gambar (JPG, PNG, WEBP, GIF).',
+            ], 400);
         }
 
         if ($file->getSize() > $maxSize) {
@@ -40,7 +51,8 @@ class AdminUploadController extends Controller
             ], 400);
         }
 
-        $newFileName = 'product_' . time() . '_' . uniqid() . '.' . $ext;
+        // Ekstensi final SELALU diambil dari tabel whitelist MIME, bukan dari nama file client
+        $newFileName = 'product_' . time() . '_' . uniqid() . '.' . $allowedTypes[$mime];
 
         // Path penyimpanan di public/product frontend (folder induk dari backend Laravel)
         // Karena gambar disajikan oleh Vite dari C:\POS\public\product

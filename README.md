@@ -76,7 +76,7 @@ Vite memproxy semua request `/api` ke `http://localhost:8000` (lihat `vite.confi
 
 | Role    | Email                | Password    |
 |---------|----------------------|-------------|
-| Admin   | admin@posmart.com    | posmart2026 |
+| Admin   | admin@posmart.com    | admin2026   |
 | Cashier | cashier@posmart.com  | password123 |
 
 ## 🔌 Endpoint API
@@ -91,6 +91,9 @@ Semua endpoint dipanggil via `/api` (diawali di frontend, di-strip proxy):
 | POST | `/user/login.php` | Publik | Login (Sanctum token) |
 | POST | `/user/googleauth.php` | Publik | Login Google OAuth |
 | POST | `/cart/create_order.php` | Sanctum | Checkout (transaksi stok) |
+| POST | `/cart/midtrans_snap.php` | Sanctum | Buat transaksi pembayaran Snap |
+| POST | `/cart/midtrans_check_status.php` | Sanctum | Cek & sinkron status pembayaran |
+| POST | `/midtrans/webhook.php` | Publik | Webhook notifikasi pembayaran |
 | GET/POST/PUT/DELETE | `/admin/products.php` | Admin | CRUD produk |
 | GET/PUT | `/admin/orders.php` | Admin | List & status order |
 | GET | `/admin/stats.php` | Admin | Statistik dashboard |
@@ -98,3 +101,31 @@ Semua endpoint dipanggil via `/api` (diawali di frontend, di-strip proxy):
 
 Format respons mengikuti PHP native: `{ "status": "success", "data": ... }`
 dengan token autentikasi `Authorization: Bearer <token>`.
+
+## 💳 Midtrans (Pembayaran Online)
+
+Satu akun Midtrans bisa melayani beberapa aplikasi (mis. UMKM Connect + POSMart).
+
+**Setup di `backend/.env`:**
+
+```env
+MIDTRANS_SERVER_KEY=<server key dari dashboard>
+MIDTRANS_CLIENT_KEY=<client key dari dashboard>
+MIDTRANS_IS_PRODUCTION=false
+MIDTRANS_ORDER_PREFIX=POS
+```
+
+> ⚠️ `MIDTRANS_ORDER_PREFIX` **wajib unik per aplikasi dalam 1 akun** (order_id
+> Midtrans harus unik). Kalau UMKM Connect sudah memakai prefix lain, biarkan
+> POSMart memakai `POS-...`. Saat go-live ganti `MIDTRANS_IS_PRODUCTION=true`
+> dan pakai key production (beda dengan key sandbox).
+
+**Alur:** checkout → order dibuat (`pending`) → `midtrans_snap` membuat transaksi
+Snap → popup pembayaran muncul → setelah bayar, status dicek ke Midtrans dan
+order ditandai `paid` (status order jadi `Lunas`). Webhook `/midtrans/webhook.php`
+menjaga sinkronisasi otomatis di produksi; pastikan `APP_URL` mengarah ke URL
+publik yang bisa diakses server Midtrans.
+
+> Untuk uji coba lokal tanpa internet publik (webhook tidak bisa menjangkau
+> localhost), pakai `midtrans_check_status` dari frontend — sudah otomatis jalan.
+> Kolom pembayaran terlihat di halaman admin (Daftar Transaksi).

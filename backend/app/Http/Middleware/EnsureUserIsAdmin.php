@@ -12,10 +12,10 @@ class EnsureUserIsAdmin
     {
         $user = $request->user();
 
-        if (!$user || $user->role !== 'admin') {
+        if (!$user || !in_array($user->role, ['admin', 'owner'], true)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Akses ditolak. Hanya untuk Admin.',
+                'message' => 'Akses ditolak. Hanya untuk Admin/Owner.',
             ], 403);
         }
 

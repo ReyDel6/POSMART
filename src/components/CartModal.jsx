@@ -3,20 +3,17 @@ import { useState, useMemo } from "react";
 import { useCartContext } from "../context/CartContext";
 import { ArrowLeft, ShoppingBag, X } from "lucide-react";
 import CheckoutForm from "./CheckoutForm";
+import useDialog from "../hooks/useDialog";
 
 export default function CartModal() {
     const { cartWithDetails: cart,
         isCartOpen,
         setIsCartOpen,
-        handleAddToCart,
         handleRemoveItem,
-        handleUpdateQty,
-        totalCartItemsCount } = useCartContext();
-
-    if (!isCartOpen) return null;
+        handleUpdateQty } = useCartContext();
 
     const [isCheckout, setIsCheckout] = useState(false);
-    
+
     const cartDetail = useMemo(() => {
         const items = cart.map(
             cartItem => {
@@ -40,13 +37,17 @@ export default function CartModal() {
         setIsCheckout(false);
     };
 
+    useDialog(isCartOpen, handleCloseModal);
+
+    if (!isCartOpen) return null;
+
     return (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs">
             {/* Backdrop area  */}
             <div className="absolute inset-0" onClick={handleCloseModal}/>
 
             {/* Modal Area */}
-            <div className="relative w-full max-w-md h-full bg-white shadow-2xl flex flex-col z-10 animate-fade-in-left">
+            <div role="dialog" aria-modal="true" className="relative w-full max-w-md h-full bg-white shadow-2xl flex flex-col z-10 animate-fade-in-left">
 
                 {/* Header */}
                 <div className="p-4 border-b border-slate100 flex items-center justify-between">
@@ -94,7 +95,7 @@ export default function CartModal() {
                                         />
                                         <div className="flex-1 min-w-0">
                                             <h4 className="text-xs font-bold text-slate-900 truncate">{item.name}</h4>
-                                            <p className="text-xs font-mono font-bold text-red-600 mt-0.5"
+                                            <p className="text-xs font-mono font-bold text-emerald-700 mt-0.5"
                                             >
                                                 Rp {(item.price || 0).toLocaleString('id-ID')}
                                             </p>
@@ -104,14 +105,14 @@ export default function CartModal() {
                                                 <div className="flex items-center gap-2">
                                                     <button
                                                         onClick={() => handleUpdateQty(item.id, item.qty - 1)}
-                                                        className="w-6 h-6 bg-white border border-slate-300 text-slate-700 font-bold rounded-md text-xs hover:border-red-500 cursor-pointer flex items-center justify-center select-none"
+                                                        className="w-6 h-6 bg-white border border-slate-300 text-slate-700 font-bold rounded-md text-xs hover:border-emerald-500 cursor-pointer flex items-center justify-center select-none"
                                                     >
                                                         -
                                                     </button>
                                                     <span className="text-xs font-mono font-bold text-slate-800 w-4 text-center">{item.qty}</span>
                                                     <button
                                                         onClick={() => handleUpdateQty(item.id, item.qty + 1)}
-                                                        className="w-6 h-6 bg-white border border-slate-300 text-slate-700 font-bold rounded-md text-xs hover:border-red-500 cursor-pointer flex items-center justify-center select-none"
+                                                        className="w-6 h-6 bg-white border border-slate-300 text-slate-700 font-bold rounded-md text-xs hover:border-emerald-500 cursor-pointer flex items-center justify-center select-none"
                                                     >
                                                         +
                                                     </button>
@@ -126,7 +127,7 @@ export default function CartModal() {
                                         </div>
                                         <button
                                             onClick={() => handleRemoveItem(item.id)}
-                                            className="text-[11px] font-bold text-red-700 px-2 py-1 rounded-md"
+                                            className="text-[11px] font-bold text-red-600 hover:text-red-700 px-2 py-1 rounded-md cursor-pointer"
                                         >
                                             Hapus
                                         </button>
@@ -142,11 +143,11 @@ export default function CartModal() {
                     <div className="p-4 border-t border-slate-200 bg-slate-50 space-y-3 shadow-inner">
                         <div className="flex justify-between items-center text-sm">
                             <span className="font-bold text-slate-500 ">Total Belanja</span>
-                            <span className="text-lg font-mono font-black text-red-600">Rp {cartDetail.grandTotal.toLocaleString('id-ID')}</span>
+                            <span className="text-lg font-mono font-black text-emerald-700">Rp {cartDetail.grandTotal.toLocaleString('id-ID')}</span>
                         </div>
                         <button
                             onClick={() => setIsCheckout(true)}
-                            className="w-full bg-green-600 hover:bg-green-800 text-white font-bold py-3 rounde-xl text-sm transition-colors shadow-xs cursor-pointer text-center"
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm transition-colors shadow-sm cursor-pointer text-center"
                         >
                             Checkout Sekarang
                         </button>

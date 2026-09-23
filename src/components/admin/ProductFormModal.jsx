@@ -1,51 +1,41 @@
-// File: src/components/admin/ProductFormModal.jsx
+﻿// File: src/components/admin/ProductFormModal.jsx
 import { useState, useEffect, useRef } from 'react';
 import { X, Save, ScanBarcode, Upload, Loader2, RefreshCw } from 'lucide-react';
 import api from '../../utils/api';
+import useDialog from '../../hooks/useDialog';
 
 export default function ProductFormModal({ isOpen, onClose, onSave, productToEdit }) {
-    const [formData, setFormData] = useState({
-        barcode: '',
-        name: '',
-        price: '',
-        category: '',
-        stock: '',
-        image: ''
-    });
+    const generateBarcode = () => `POS${Date.now().toString().slice(-10)}${Math.floor(100 + Math.random() * 900)}`;
+
+    const [formData, setFormData] = useState(() => productToEdit
+        ? {
+            barcode: productToEdit.barcode || '',
+            name: productToEdit.name || '',
+            price: productToEdit.price || '',
+            category: productToEdit.category || '',
+            stock: productToEdit.stock || '',
+            image: productToEdit.image || '',
+        }
+        : {
+            barcode: generateBarcode(),
+            name: '',
+            price: '',
+            category: '',
+            stock: '',
+            image: '',
+        });
     const [uploading, setUploading] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [previewUrl, setPreviewUrl] = useState('');
-    const [categoryOptions, setCategoryOptions] = useState([]);
+    const [previewUrl, setPreviewUrl] = useState(() => {
+        const img = productToEdit?.image || '';
+        return img ? (img.startsWith('http') ? img : `/product/${img}`) : '';
+    });
+    const [categoryOptions, setCategoryOptions] = useState(() => productToEdit?.category ? [productToEdit.category] : []);
     const [isCustomCategory, setIsCustomCategory] = useState(false);
     const fileInputRef = useRef(null);
 
-    const generateBarcode = () => `POS${Date.now().toString().slice(-10)}${Math.floor(100 + Math.random() * 900)}`;
-
-    useEffect(() => {
-        if (isOpen && productToEdit) {
-            const img = productToEdit.image || '';
-            setFormData({
-                barcode: productToEdit.barcode || '',
-                name: productToEdit.name || '',
-                price: productToEdit.price || '',
-                category: productToEdit.category || '',
-                stock: productToEdit.stock || '',
-                image: img,
-            });
-            setPreviewUrl(img ? (img.startsWith('http') ? img : `/product/${img}`) : '');
-        } else if (isOpen) {
-            setFormData({
-                barcode: generateBarcode(),
-                name: '',
-                price: '',
-                category: '',
-                stock: '',
-                image: '',
-            });
-            setPreviewUrl('');
-        }
-    }, [isOpen, productToEdit]);
+    useDialog(isOpen, onClose);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -144,7 +134,7 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg relative p-6 border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div role="dialog" aria-modal="true" className="bg-white rounded-3xl shadow-2xl w-full max-w-lg relative p-6 border border-slate-100 max-h-[90vh] overflow-y-auto">
                 <button
                     onClick={onClose}
                     className="absolute top-5 right-5 p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
@@ -157,7 +147,7 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
                     {productToEdit ? 'Edit Produk' : 'Tambah Produk Baru'}
                 </h2>
 
-                {error && <div className="bg-red-50 border border-red-200 text-red-700 p-3.5 rounded-2xl mb-4 text-sm font-medium">{error}</div>}
+                {error && <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3.5 rounded-2xl mb-4 text-sm font-medium">{error}</div>}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
@@ -170,14 +160,14 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
                                 name="barcode"
                                 value={formData.barcode}
                                 onChange={handleInputChange}
-                                className="w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                                className="w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                 placeholder="Masukkan barcode produk"
                                 required
                             />
                             <button
                                 type="button"
                                 onClick={handleGenerateBarcode}
-                                className="absolute right-2 top-1.5 p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
+                                className="absolute right-2 top-1.5 p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg"
                                 title="Buat barcode otomatis"
                             >
                                 <RefreshCw className="w-4 h-4" />
@@ -194,7 +184,7 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
                             name="name"
                             value={formData.name}
                             onChange={handleInputChange}
-                            className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                            className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                             placeholder="Contoh: Indomie Goreng"
                             required
                         />
@@ -209,7 +199,7 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
                                 name="price"
                                 value={formData.price}
                                 onChange={handleInputChange}
-                                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                 placeholder="Contoh: 3500"
                                 required
                                 min="0"
@@ -223,7 +213,7 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
                                 name="stock"
                                 value={formData.stock}
                                 onChange={handleInputChange}
-                                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                 placeholder="Contoh: 100"
                                 required
                                 min="0"
@@ -243,7 +233,7 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
                                 if (!isNew) handleInputChange(e);
                                 else setFormData(prev => ({ ...prev, category: '' }));
                             }}
-                            className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                            className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                             required
                         >
                             <option value="" disabled>Pilih kategori</option>
@@ -258,7 +248,7 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
                                 name="category"
                                 value={formData.category}
                                 onChange={handleInputChange}
-                                className="w-full mt-2 px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-sm"
+                                className="w-full mt-2 px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                                 placeholder="Masukkan nama kategori baru"
                                 required
                                 autoFocus
@@ -274,10 +264,10 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
 
                         <div>
                             <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
-                            <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-slate-300 hover:border-red-500 bg-slate-50 hover:bg-red-50/30 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors group text-center">
+                            <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-slate-300 hover:border-emerald-500 bg-slate-50 hover:bg-emerald-50/30 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-colors group text-center">
                                     {uploading ? (
                                         <div className="flex flex-col items-center gap-2 py-2">
-                                            <Loader2 className="w-8 h-8 text-red-600 animate-spin" />
+                                            <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
                                             <p className="text-xs font-semibold text-slate-600">Mengunggah gambar ke server...</p>
                                         </div>
                                     ) : previewUrl ? (
@@ -288,12 +278,12 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
                                                 className="w-24 h-24 object-cover rounded-xl border border-slate-200 shadow-sm"
                                                 onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/150x150?text=Gambar+Rusak'; }}
                                             />
-                                            <p className="text-xs text-red-600 font-bold group-hover:underline">Klik untuk mengganti gambar file manager</p>
+                                            <p className="text-xs text-emerald-600 font-bold group-hover:underline">Klik untuk mengganti gambar file manager</p>
                                         </div>
                                     ) : (
                                         <div className="flex flex-col items-center gap-1.5 py-3">
                                             <div className="p-3 bg-white rounded-full shadow-sm group-hover:scale-110 transition-transform">
-                                                <Upload className="w-6 h-6 text-red-600" />
+                                                <Upload className="w-6 h-6 text-emerald-600" />
                                             </div>
                                             <p className="text-sm font-bold text-slate-700 mt-1">Pilih File dari File Manager Komputer</p>
                                             <p className="text-xs text-slate-400">PNG, JPG, WEBP atau GIF (Maks. 5MB)</p>
@@ -314,7 +304,7 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
                         </button>
                         <button
                             type="submit"
-                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                             disabled={loading || uploading}
                         >
                             <Save className="w-4 h-4" />

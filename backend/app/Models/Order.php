@@ -16,13 +16,51 @@ class Order extends Model
         'courier',
         'total_price',
         'status',
+        'midtrans_order_id',
+        'snap_token',
+        'snap_redirect_url',
+        'payment_status',
+        'payment_mode',
+        'payment_method',
+        'payment_type',
+        'paid_at',
+        'stock_released_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'total_price' => 'float',
+            'total_price'       => 'float',
+            'paid_at'           => 'datetime',
+            'stock_released_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Kembalikan stok yang sempat dikunci, aman dipanggil berulang kali.
+     * Stok hanya dilepas satu kali (ditandai kolom stock_released_at).
+     */
+    public function releaseItemsStock(): bool
+    {
+        if ($this->stock_released_at !== null) {
+            return false;
+        }
+
+        if ($this->payment_status === 'paid') {
+            return false;
+        }
+
+        $this->loadMissing('items');
+
+        foreach ($this->items as $item) {
+            if ($item->product_id > 0 && $item->qty > 0) {
+                Product::where('id', $item->product_id)->increment('stock', $item->qty);
+            }
+        }
+
+        $this->update(['stock_released_at' => now()]);
+
+        return true;
     }
 
     public function user()

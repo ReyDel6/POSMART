@@ -42,22 +42,24 @@ class ProductController extends Controller
         $total = (clone $query)->count();
 
         $products = (clone $query)
+            ->withCount('reviews')
             ->orderBy('created_at', 'desc')
             ->skip($offset)
             ->take($limit)
             ->get()
             ->map(function ($p) {
                 return [
-                    'id'       => (int) $p->id,
-                    'barcode'  => $p->barcode,
-                    'name'     => $p->name,
-                    'price'    => (int) $p->price,
-                    'category' => $p->category,
-                    'rating'   => (float) $p->rating,
-                    'stock'    => (int) $p->stock,
-                    'is_promo' => (bool) $p->is_promo,
-                    'promo'    => (int) $p->promo,
-                    'image'    => '/product/' . $p->image,
+                    'id'            => (int) $p->id,
+                    'barcode'       => $p->barcode,
+                    'name'          => $p->name,
+                    'price'         => (int) $p->price,
+                    'category'      => $p->category,
+                    'rating'        => (float) $p->rating,
+                    'stock'         => (int) $p->stock,
+                    'is_promo'      => (bool) $p->is_promo,
+                    'promo'         => (int) $p->promo,
+                    'image'         => '/product/' . $p->image,
+                    'reviews_count' => (int) $p->reviews_count,
                 ];
             });
 

@@ -45,16 +45,28 @@ export const setAuthTokenHeader = (token) => {
 
 // Interceptor Response 
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        // validateStatus menerima semua status < 600 sebagai "response",
+        // jadi 401 yang lolos di sini memang perlu ditangani sebagai token tidak valid.
+        if (response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user_profile');
+
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+        }
+        return response;
+    },
     (error) => {
+        // Jalur ini hanya untuk kegagalan jaringan/timeout (bukan status HTTP).
         if (error.response && error.response.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user_profile');
 
-            // if (window.location.pathname !== '/login') {
-            //     window.history.pushState({}, '', '/login');
-            //     window.dispatchEvent(new PopStateEvent('popstate'));
-            // }
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
         }
         return Promise.reject(error);
     }

@@ -1,12 +1,12 @@
 // File: src/components/CheckoutForm.jsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useCartContext } from '../context/CartContext';
 import { User, Phone, MapPin, Truck, ShoppingBag } from 'lucide-react';
 import api from '../utils/api';
 
 export default function CheckoutForm() {
     // 1. Ambil data keranjang belanja dan daftar produk asli dari Global Context
-    const { cart, handleClearCart } = useCartContext();
+    const { cart, handleClearCart, setIsCartOpen } = useCartContext();
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
 
@@ -41,8 +41,28 @@ export default function CheckoutForm() {
         };
     });
 
+    // Pilih metode bayar: 'online' (Midtrans/WA) atau 'cash' (tunai di kasir/walk-in)
+    const [paymentMode, setPaymentMode] = useState('online');
+
     // State untuk menampung pesan kesalahan validasi
     const [errors, setErrors] = useState({});
+
+    // Informasi toko publik (nama + WA toko) untuk notifikasi pesanan
+    const [storeSettings, setStoreSettings] = useState({});
+
+    useEffect(() => {
+        let active = true;
+        api.get('/public/settings.php')
+            .then(res => {
+                if (active && res.data && res.data.status === 'success') {
+                    setStoreSettings(res.data.data || {});
+                }
+            })
+            .catch(() => {});
+        return () => { active = false; };
+    }, []);
+
+    const storeName = storeSettings.store_name || 'POSMart';
 
     const cartDetails = useMemo(() => {
         // A. Map data langsung dari item keranjang
@@ -62,12 +82,12 @@ export default function CheckoutForm() {
         // B. Hitung subtotal menggunakan .reduce()
         const subtotal = itemsReport.reduce((acc, item) => acc + item.total, 0);
 
-        // C. Hitung ongkir berdasarkan kurir
-        const shippingFee = formData.courier === 'express' ? 20000 : 10000;
+        // C. Hitung ongkir berdasarkan kurir (0 bila bayar tunai di kasir / walk-in)
+        const shippingFee = paymentMode === 'cash' ? 0 : (formData.courier === 'express' ? 20000 : 10000);
         const grandTotal = subtotal + shippingFee;
 
         return { itemsReport, subtotal, shippingFee, grandTotal };
-    }, [cart, formData.courier]);
+    }, [cart, formData.courier, paymentMode]);
 
     // 4. Handler universal untuk mendeteksi setiap ketikan user pada input form
     const handleInputChange = (e) => {
@@ -115,15 +135,13 @@ export default function CheckoutForm() {
             newErrors.phone = 'Nomor WhatsApp minimal 10 digit';
         }
 
-        if (!formData.address.trim()) newErrors.address = 'Alamat pengiriman wajib diisi';
+        if (!formData.address.trim() && paymentMode !== 'cash') newErrors.address = 'Alamat pengiriman wajib diisi';
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0; // Return true jika tidak ada eror
     };
 
-    const totalPrice = cart.reduce((total, item) => total + (item.price * item.qty), 0);
-
-    // 6. Handler saat tombol "Kirim Pesanan via WhatsApp" diklik
+    // 6. Handler saat tombol "Bayar Sekarang" diklik
     const handleSubmitOrder = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -147,11 +165,14 @@ export default function CheckoutForm() {
 
         const whatsappFormattedPhone = `62${formData.phone}`;
 
+        const effectiveCourier = paymentMode === 'cash' ? 'walkin' : formData.courier;
+
         const payload = {
             customer_name: formData.fullName,
             phone: whatsappFormattedPhone,
             address: formData.address,
-            courier: formData.courier,
+            courier: effectiveCourier,
+            payment_mode: paymentMode,
             items: cartDetails.itemsReport,
             total_price: cartDetails.grandTotal,
             cart: formattedCart,
@@ -171,41 +192,16 @@ export default function CheckoutForm() {
                     // PERBAIKAN: Deklarasikan whatsAppUrl
                     // =================================================================
 
-                    // Nomor WA Toko (kode negara tanpa tanda '+')
-                    const PHONE_NUMBER = whatsappFormattedPhone;
+                    const orderId = response.data.order_id;
 
-                    // Laporan pesanan belanjaan
-                    let textMessage = `*PESANAN BARU - POSMART*\n\n`;
-                    textMessage += `*Data Pengiriman:*\n`;
-                    textMessage += `Nama: ${formData.fullName}\n`;
-                    textMessage += `WA: ${whatsappFormattedPhone}\n`;
-                    textMessage += `Alamat: ${formData.address}\n`;
-                    textMessage += `Kurir: ${formData.courier.toUpperCase()}\n\n`;
-
-                    textMessage += `*Daftar Belanjaan:*\n`;
-                    cartDetails.itemsReport.forEach((item, index) => {
-                        textMessage += `${index + 1}. ${item.name} (${item.qty}x) - Rp ${item.total.toLocaleString('id-ID')}\n`;
-                    });
-
-                    textMessage += `\n---------------------------\n`;
-                    textMessage += `*Subtotal:* Rp ${cartDetails.subtotal.toLocaleString('id-ID')}\n`;
-                    textMessage += `*Ongkos Kirim:* Rp ${cartDetails.shippingFee.toLocaleString('id-ID')}\n`;
-                    textMessage += `*Total Bayar:* Rp ${cartDetails.grandTotal.toLocaleString('id-ID')}\n`;
-                    textMessage += `---------------------------\n\n`;
-                    textMessage += `Mohon segera diproses, terima kasih.`;
-
-                    // encoding string URL agar teks spasi dan enter aman terbaca di browser
-                    const encodedText = encodeURIComponent(textMessage);
-                    const whatsAppUrl = `https://api.whatsapp.com/send?phone=${PHONE_NUMBER}&text=${encodedText}`;
-                    window.open(whatsAppUrl, '_blank');
-
+                    // Simpan ringkasan order segera agar halaman OrderSuccess selalu memiliki data lengkap
                     const summary = {
-                        order_id: response.data.order_id,
+                        order_id: orderId,
                         customer_id: formData.customerId || `CUST-${Date.now().toString().slice(-4)}`,
                         customer_name: formData.fullName,
                         phone: whatsappFormattedPhone,
                         address: formData.address,
-                        courier: formData.courier,
+                        courier: effectiveCourier,
                         subtotal: cartDetails.subtotal,
                         shipping_fee: cartDetails.shippingFee,
                         total_price: cartDetails.grandTotal,
@@ -214,10 +210,115 @@ export default function CheckoutForm() {
                     };
                     localStorage.setItem('last_order_summary', JSON.stringify(summary));
 
-                    // Bersihkan keranjang belanja setelah sukses
+                    // Kosongkan keranjang belanja segera karena pesanan sudah tersimpan di database
                     handleClearCart();
-                    window.location.href = `/OrderSuccess?order_id=${response.data.order_id}`;
-                    // window.location.href = '/'; 
+                    localStorage.removeItem('posmart');
+
+                    // Buka pembayaran Snap Midtrans, lalu setelah sukses lanjut alur lama.
+                    const proceedLegacy = () => {
+                        const PHONE_NUMBER = storeSettings.whatsapp || whatsappFormattedPhone;
+                        let textMessage = `*PESANAN BARU - ${storeName.toUpperCase()}*\n\n`;
+                        textMessage += `*Data Pengiriman:*\n`;
+                        textMessage += `Nama: ${formData.fullName}\n`;
+                        textMessage += `WA: ${whatsappFormattedPhone}\n`;
+                        textMessage += `Alamat: ${formData.address}\n`;
+                        textMessage += `Kurir: ${formData.courier.toUpperCase()}\n\n`;
+
+                        textMessage += `*Daftar Belanjaan:*\n`;
+                        cartDetails.itemsReport.forEach((item, index) => {
+                            textMessage += `${index + 1}. ${item.name} (${item.qty}x) - Rp ${item.total.toLocaleString('id-ID')}\n`;
+                        });
+
+                        textMessage += `\n---------------------------\n`;
+                        textMessage += `*Subtotal:* Rp ${cartDetails.subtotal.toLocaleString('id-ID')}\n`;
+                        textMessage += `*Ongkos Kirim:* Rp ${cartDetails.shippingFee.toLocaleString('id-ID')}\n`;
+                        textMessage += `*Total Bayar:* Rp ${cartDetails.grandTotal.toLocaleString('id-ID')}\n`;
+                        textMessage += `---------------------------\n\n`;
+                        textMessage += `Mohon segera diproses, terima kasih.`;
+
+                        const encodedText = encodeURIComponent(textMessage);
+                        const whatsAppUrl = `https://api.whatsapp.com/send?phone=${PHONE_NUMBER}&text=${encodedText}`;
+
+                        if (storeSettings.whatsapp) {
+                            window.open(whatsAppUrl, '_blank');
+                        }
+                    };
+
+                    const finishCheckout = () => {
+                        if (setIsCartOpen) setIsCartOpen(false);
+                        window.location.href = `/OrderSuccess?order_id=${orderId}`;
+                    };
+
+                    // Pembayaran tunai/walk-in: langsung selesai tanpa Snap Midtrans.
+                    if (paymentMode === 'cash' || response.data.payment_mode === 'cash') {
+                        proceedLegacy();
+                        finishCheckout();
+                        setLoading(false);
+                        return;
+                    }
+
+                    try {
+                        const snapRes = await api.post('/cart/midtrans_snap.php', { order_id: orderId });
+
+                        // Pembayaran online nonaktif (key belum diisi) -> alur lama.
+                        if (!snapRes.data || snapRes.data.status !== 'success') {
+                            console.warn('[Midtrans]', snapRes.data?.message || 'Midtrans response not successful');
+                            proceedLegacy();
+                            finishCheckout();
+                            return;
+                        }
+
+                        // Muat skrip snap.js dengan client key dari backend.
+                        const snapScript = new Promise((resolve, reject) => {
+                            if (window.snap) { resolve(); return; }
+                            const script = document.createElement('script');
+                            script.src = snapRes.data.snap_js_url;
+                            script.setAttribute('data-client-key', snapRes.data.client_key);
+                            script.onload = () => resolve();
+                            script.onerror = () => reject(new Error('Gagal memuat pembayaran Snap'));
+                            document.body.appendChild(script);
+                        });
+
+                        await snapScript;
+
+                        // Tutup modal keranjang sebelum popup Snap muncul
+                        if (setIsCartOpen) setIsCartOpen(false);
+
+                        window.snap.pay(snapRes.data.snap_token, {
+                            onSuccess: async (result) => {
+                                try {
+                                    await api.post('/cart/midtrans_check_status.php', { order_id: orderId });
+                                } catch { /* tetap lanjut, webhook akan sinkron */ }
+                                proceedLegacy();
+                                finishCheckout();
+                            },
+                            onPending: async () => {
+                                // Tunggu konfirmasi pembayaran (maks ±30 detik).
+                                let paid = false;
+                                for (let i = 0; i < 8; i++) {
+                                    await new Promise(r => setTimeout(r, 4000));
+                                    try {
+                                        const check = await api.post('/cart/midtrans_check_status.php', { order_id: orderId });
+                                        if (check.data && check.data.paid) { paid = true; break; }
+                                    } catch { /* lanjut polling */ }
+                                }
+                                if (paid) proceedLegacy();
+                                finishCheckout();
+                            },
+                            onError: (err) => {
+                                console.error('[Midtrans Payment Error]', err);
+                                finishCheckout();
+                            },
+                            onClose: () => {
+                                finishCheckout();
+                            },
+                        });
+                    } catch (snapErr) {
+                        // Snap gagal dimuat/dijalankan -> alur lama agar pesanan tetap tertangani.
+                        console.error('[Midtrans Snap Load/Run Error]', snapErr);
+                        proceedLegacy();
+                        finishCheckout();
+                    } 
                 } else {
                     alert(response.data?.message || 'Gagal memproses pesanan.');
                 }
@@ -264,6 +365,35 @@ export default function CheckoutForm() {
                 </div>
             )}
 
+            {/* METODE PEMBAYARAN */}
+            <div className="space-y-1">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Metode Pembayaran</label>
+                <div className="grid grid-cols-2 gap-2">
+                    <button
+                        type="button"
+                        onClick={() => setPaymentMode('online')}
+                        className={`rounded-xl border px-3 py-2.5 text-left text-xs font-bold transition-all cursor-pointer ${paymentMode === 'online'
+                            ? 'border-emerald-600 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-500/20'
+                            : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-300'
+                        }`}
+                    >
+                        Bayar Online
+                        <span className="block font-medium text-[10px] text-slate-400 mt-0.5">Midtrans / Transfer</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setPaymentMode('cash')}
+                        className={`rounded-xl border px-3 py-2.5 text-left text-xs font-bold transition-all cursor-pointer ${paymentMode === 'cash'
+                            ? 'border-emerald-600 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-500/20'
+                            : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-300'
+                        }`}
+                    >
+                        Tunai di Kasir
+                        <span className="block font-medium text-[10px] text-slate-400 mt-0.5">Walk-in / ambil di toko</span>
+                    </button>
+                </div>
+            </div>
+
             {/* INPUT NAMA LENGKAP */}
             <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Nama Lengkap</label>
@@ -306,6 +436,7 @@ export default function CheckoutForm() {
             </div>
 
             {/* INPUT ALAMAT LENGKAP */}
+            {paymentMode !== 'cash' && (
             <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Alamat Rumah Lengkap</label>
                 <div className="relative">
@@ -322,8 +453,10 @@ export default function CheckoutForm() {
                 </div>
                 {errors.address && <p className="text-[11px] text-red-600 font-medium">{errors.address}</p>}
             </div>
+            )}
 
             {/* OPSI ONDOS KIRIM / METODE PENGIRIMAN */}
+            {paymentMode !== 'cash' && (
             <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Layanan Pengiriman</label>
                 <div className="relative">
@@ -339,6 +472,14 @@ export default function CheckoutForm() {
                     </select>
                 </div>
             </div>
+            )}
+
+            {paymentMode === 'cash' && (
+                <div className="flex items-start gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-xs text-emerald-700">
+                    <ShoppingBag className="w-4 h-4 shrink-0 mt-0.5" />
+                    <p className="leading-relaxed">Pesanan walk-in: bayar tunai langsung di kasir toko, bebas ongkir. Cukup isi nama & nomor WhatsApp agar transaksi tercatat baik.</p>
+                </div>
+            )}
 
             {/* RINGKASAN STRUK BELANJA TOTAL */}
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-2 mt-2">
@@ -347,7 +488,7 @@ export default function CheckoutForm() {
                     <span className="font-mono font-medium">Rp {cartDetails.subtotal.toLocaleString('id-ID')}</span>
                 </div>
                 <div className="flex justify-between text-xs text-slate-500">
-                    <span>Ongkos Kirim ({formData.courier === 'express' ? 'Kilat' : 'Reguler'}):</span>
+                    <span>{paymentMode === 'cash' ? 'Tunai di Kasir (Walk-in):' : `Ongkos Kirim (${formData.courier === 'express' ? 'Kilat' : 'Reguler'}):`}</span>
                     <span className="font-mono font-medium">Rp {cartDetails.shippingFee.toLocaleString('id-ID')}</span>
                 </div>
                 <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-dashed border-slate-200">
@@ -362,7 +503,7 @@ export default function CheckoutForm() {
                 disabled={loading || cart.length === 0}
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
             >
-                {loading ? 'Mengunci Stok & Memproses...' : `Bayar Sekarang (Rp ${totalPrice.toLocaleString('id-ID')})`}
+                {loading ? 'Mengunci Stok & Memproses...' : `Bayar Sekarang (Rp ${cartDetails.grandTotal.toLocaleString('id-ID')})`}
             </button>
         </form>
     );

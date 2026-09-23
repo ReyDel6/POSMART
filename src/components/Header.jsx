@@ -10,6 +10,7 @@ export default function Header() {
     const { totalCartItemsCount, setIsOpenCart } = useCartContext();
     const [searchParams, setSearchParams] = useSearchParams();
     const [shopDropdown, setShowDropDown] = useState(false);
+    const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
     const [localSearch, setLocalSearch] = useState(searchParams.get('search') || '');
 
     // DEBOUNCE EFFECT (NUNGGU USER BERENTI)
@@ -37,6 +38,10 @@ export default function Header() {
         }, 500);
 
         return () => clearTimeout(delayDebounceFn);
+        // searchParams sengaja tidak dimasukkan ke deps: objeknya baru setiap render,
+        // memasukkannya akan memicu loop debounce tak terbatas. Nilai yang dibutuhkan
+        // (currentSearchUrl, currentCategory) sudah ditangkap sebelum timeout.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [localSearch, setSearchParams]);
 
 
@@ -77,7 +82,7 @@ export default function Header() {
     return (
         <header className="bg-white border-b border-slate-100 sticky top-0 z-50 p-4 shadow-xs">
             <div className="max-w-7xl mx-auto flex justify-between items-center">
-                <h1 className="text-xl font-black tracking-tight text-red-600 cursor-pointer" onClick={() => window.location.href = '/'}>
+                <h1 className="text-xl font-black tracking-tight text-emerald-600 cursor-pointer" onClick={() => window.location.href = '/'}>
                     POS<span className="text-green-600">MART</span>
                 </h1>
 
@@ -88,18 +93,19 @@ export default function Header() {
                         value={localSearch}
                         onChange={(e) => setLocalSearch(e.target.value)}
                         placeholder="cari kebutuhan harian anda..."
-                        className="w-full bg-slate-50 border-slate-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-hidden focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all"
+                        className="w-full bg-slate-50 border-slate-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-hidden focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
                     />
                 </div>
                 {/*action & authentication interface*/}
                 <div className="flex items-center gap-4 relative">
                     {/* keranjang belanja */}
                     <button onClick={() => setIsOpenCart(true)}
-                        className="relative p-2 text-slate-500 hover:text-red-500 transition-colors cursor-pointer"
+                        aria-label="Buka keranjang belanja"
+                        className="relative p-2 text-slate-500 hover:text-emerald-600 transition-colors cursor-pointer"
                     >
                         <ShoppingCart className="w-6 h-6" />
                         {totalCartItemsCount > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-red-600 text-white font-mono text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-pulse">
+                            <span className="absolute -top-1 -right-1 bg-emerald-600 text-white font-mono text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-pulse">
                                 {totalCartItemsCount}
                             </span>
                         )}
@@ -110,7 +116,7 @@ export default function Header() {
                         //belum login redirect ke login page
                         <button
                             onClick={() => window.location.href = '/login'}
-                            className="bg-red-600 hover:bg-red-600 text-white font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
                         >
                             <LogIn className="w-4 h-4" />
                             LOG IN
@@ -120,6 +126,7 @@ export default function Header() {
                         <div className="relative">
                             <button
                                 onClick={() => setShowDropDown(!shopDropdown)}
+                                aria-label="Buka menu akun"
                                 className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded-lg transition-colors cursor-pointer focus:outline-hidden"
                             >
                                 <img
@@ -144,13 +151,25 @@ export default function Header() {
                                         {/* profil page */}
                                         <button
                                             onClick={() => {
-                                                alert("membuka profil page...");
                                                 setShowDropDown(false);
+                                                window.location.href = '/profile';
                                             }}
                                             className="w-full text-left px-4 py-2.5 text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
                                         >
                                             <User className="w-4 h-4 text-slate-400" />
                                             lihat profil
+                                        </button>
+
+                                        {/* pesanan saya */}
+                                        <button
+                                            onClick={() => {
+                                                setShowDropDown(false);
+                                                window.location.href = '/orders';
+                                            }}
+                                            className="w-full text-left px-4 py-2.5 text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                        >
+                                            <ShoppingCart className="w-4 h-4 text-slate-400" />
+                                            pesanan saya
                                         </button>
 
                                         {/* logout */}
@@ -169,9 +188,22 @@ export default function Header() {
                     )}
 
                     {/* mobile menu */}
-                    <button><Menu /></button>
+                    <button onClick={() => setMobileSearchOpen(prev => !prev)} aria-label="Buka pencarian" className="sm:hidden p-2 text-slate-500 hover:text-emerald-600 transition-colors cursor-pointer"><Menu /></button>
                 </div>
             </div>
+
+            {/* search mobile (dropdown menu) */}
+            {mobileSearchOpen && (
+                <div className="sm:hidden max-w-7xl mx-auto mt-3 relative">
+                    <Search className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
+                    <input type="text"
+                        value={localSearch}
+                        onChange={(e) => setLocalSearch(e.target.value)}
+                        placeholder="cari kebutuhan harian anda..."
+                        className="w-full bg-slate-50 border-slate-200 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-hidden focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                    />
+                </div>
+            )}
         </header>
     )
 }

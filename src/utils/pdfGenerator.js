@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import QRCode from 'qrcode';
 
-export async function generateInvoicePdf(order) {
+export async function generateInvoicePdf(order, storeName = 'POSMart') {
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const left = 40;
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -11,7 +11,7 @@ export async function generateInvoicePdf(order) {
 
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
-  doc.text('Invoice POSMart', left, currentY);
+  doc.text(`Invoice ${storeName}`, left, currentY);
 
   currentY += 30;
   doc.setFontSize(10);
