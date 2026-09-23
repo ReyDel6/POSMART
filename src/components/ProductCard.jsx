@@ -104,13 +104,13 @@ export default function ProductCard({ product, storeSettings }) {
   const ratingDisplay = Number(item.rating) || reviewMeta.rating || 0;
 
   return (
-    <div className="group bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full">
+    <div className="group bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-gray-200 transition-all duration-300 flex flex-col h-full">
       {/* Product Image */}
-      <div className="relative aspect-square overflow-hidden bg-slate-100">
+      <div className="relative aspect-square overflow-hidden bg-gray-100">
         <Link
           to={`/product/${item.id}`}
           aria-label={`Lihat detail ${item.name}`}
-          className="block w-full h-full group/img focus:outline-hidden focus-visible:ring-2 focus-visible:ring-green-600"
+          className="block w-full h-full group/img focus:outline-hidden focus-visible:ring-2 focus-visible:ring-emerald-600"
         >
           <img
             src={item.image ? (item.image.startsWith('http') || item.image.startsWith('/') ? item.image : `/product/${item.image}`) : 'https://placehold.co/300x300?text=No+Image'}
@@ -119,14 +119,19 @@ export default function ProductCard({ product, storeSettings }) {
             onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/300x300?text=No+Image'; }}
           />
         </Link>
-        {item.is_promo && (
-          <div className="absolute top-2 left-2 bg-linear-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
+        {!isOutOfStock && item.is_promo && (
+          <div className="absolute top-2 left-2 bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-sm">
             -{item.promo}%
           </div>
         )}
-        {!item.is_promo && item.deal && (
-          <div className="absolute top-2 left-2 bg-linear-to-r from-red-500 to-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
+        {!isOutOfStock && !item.is_promo && item.deal && (
+          <div className="absolute top-2 left-2 bg-amber-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-sm">
             {item.deal.label}
+          </div>
+        )}
+        {isOutOfStock && (
+          <div className="absolute top-2 left-2 bg-gray-600/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-sm">
+            Stok habis
           </div>
         )}
         <button
@@ -286,13 +291,13 @@ export default function ProductCard({ product, storeSettings }) {
 
       {/* Product Info */}
       <div className="p-4 flex flex-col flex-grow">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+        <span className="self-start inline-block bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider mb-2">
           {item.category}
         </span>
 
         <Link
           to={`/product/${item.id}`}
-          className="text-sm font-medium text-slate-800 line-clamp-2 mb-2 group-hover:text-green-600 transition-colors hover:underline"
+          className="text-sm font-medium text-slate-800 line-clamp-2 mb-2 group-hover:text-emerald-600 transition-colors hover:underline"
         >
           {item.name}
         </Link>
@@ -304,7 +309,8 @@ export default function ProductCard({ product, storeSettings }) {
           className="flex items-center gap-1 mb-2 text-amber-500 hover:text-amber-600 transition-colors cursor-pointer self-start"
         >
           <Star className="w-3.5 h-3.5 fill-amber-500" />
-          <span className="text-xs font-bold">{ratingDisplay > 0 ? Number(ratingDisplay).toFixed(1) : 'Baru'}</span>
+          <span className="text-xs font-bold">{ratingDisplay > 0 ? Number(ratingDisplay).toFixed(1) : ''}</span>
+          {ratingDisplay <= 0 && <span className="inline-block bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md text-[10px] font-bold">Baru</span>}
           {item.reviews_count > 0 && <span className="text-[10px] text-slate-400 font-medium">({item.reviews_count})</span>}
         </button>
 
@@ -315,7 +321,7 @@ export default function ProductCard({ product, storeSettings }) {
             </span>
           )}
           <div className="mt-1 mb-3">
-            <span className="text-base font-bold text-green-600">
+            <span className="text-base font-bold text-emerald-600">
               {formatIDR(currentPrice)}
             </span>
           </div>
@@ -326,8 +332,8 @@ export default function ProductCard({ product, storeSettings }) {
               disabled={isOutOfStock}
               className={`w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
                 isOutOfStock
-                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                  : "bg-green-50 text-green-600 hover:bg-green-600 hover:text-white border border-green-100"
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow-md"
               }`}
             >
               <ShoppingBag className="w-4 h-4" />
@@ -341,7 +347,7 @@ export default function ProductCard({ product, storeSettings }) {
                 )}`}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border border-green-200 text-green-800 bg-green-50 hover:bg-green-100 transition-all"
+                className="w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all"
               >
                 <MessageCircle className="w-3.5 h-3.5" />
                 Pesan via WA

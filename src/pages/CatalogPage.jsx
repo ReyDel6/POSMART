@@ -435,15 +435,16 @@ export default function CatalogPage() {
                         <div className="grid grid-cols-4 lg:grid-cols-[repeat(auto-fit,minmax(90px,1fr))] gap-3">
                             {categories.filter(c => c !== 'All').map((cat) => {
                                 const meta = categoryLookup(cat);
-                                const Icon = () => <span className={`w-12 h-12 rounded-2xl ${meta.color} flex items-center justify-center text-2xl`}>{meta.icon}</span>;
                                 return (
                                     <button
                                         key={cat}
                                         onClick={() => handleCategoryChange(cat)}
-                                        className="flex flex-col items-center gap-1.5 px-1 py-2 rounded-xl hover:bg-emerald-50/60 transition-colors cursor-pointer group"
+                                        className="flex flex-col items-center gap-2 px-1 py-2 group cursor-pointer"
                                     >
-                                        <Icon />
-                                        <span className="text-[11px] font-semibold text-slate-600 text-center leading-tight group-hover:text-emerald-700">
+                                        <span className={`w-20 h-20 rounded-2xl ${meta.color} flex items-center justify-center text-3xl ring-1 ring-inset ring-black/5 shadow-sm transition-all duration-200 group-hover:scale-105 group-hover:shadow-md group-hover:ring-emerald-200`}>
+                                            {meta.icon}
+                                        </span>
+                                        <span className="text-[11px] font-semibold text-slate-600 text-center leading-tight group-hover:text-emerald-700 transition-colors">
                                             {cat}
                                         </span>
                                     </button>

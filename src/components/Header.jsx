@@ -274,7 +274,7 @@ function SearchBox({ value, onChange, suggestions, sugLoading, searchFocused, se
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="cari kebutuhan harian anda..."
                 aria-label="Cari produk"
-                className="w-full bg-slate-50 border-slate-200 rounded-lg pl-9 pr-9 py-2 text-sm focus:outline-hidden focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all"
+                className="w-full bg-gray-100/70 border border-gray-300 rounded-lg pl-9 pr-9 py-2 text-sm shadow-sm focus:outline-hidden focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-white transition-all"
             />
             {hasValue && (
                 <button
