@@ -23,6 +23,7 @@ import {
     Star,
     X,
     History,
+    Zap,
 } from "lucide-react";
 import { useProduct } from "../hooks/useProduct";
 import { usePromotions } from "../hooks/usePromotions";
@@ -50,6 +51,9 @@ const categoryLookup = (name) => CATEGORY_ICONS[name] || FALLBACK_ICON;
 
 const formatIDR = (value) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
+
+// Foto cadangan untuk banner carousel agar tetap tampil premium walau tanpa gambar produk
+const BANNER_IMG_FALLBACK = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80';
 
 export default function CatalogPage() {
 
@@ -235,9 +239,9 @@ export default function CatalogPage() {
     const banners = useMemo(() => {
         if (promoProducts.length > 0) return promoProducts.slice(0, 5);
         return [
-            { name: 'Belanja Sembako Segar', subtitle: 'Harga grosir langsung dari toko terdekat', color: 'from-emerald-700 via-emerald-600 to-teal-700' },
-            { name: 'Produk Fresh Setiap Hari', subtitle: 'Dicek kualitasnya setiap pagi', color: 'from-amber-600 via-orange-600 to-red-500' },
-            { name: 'Antar Cepat Sampai Tujuan', subtitle: 'Pengiriman sesuai zona ongkir', color: 'from-sky-700 via-blue-600 to-indigo-700' },
+            { name: 'Belanja Sembako Segar', subtitle: 'Harga grosir langsung dari toko terdekat', color: 'from-emerald-700 via-emerald-600 to-teal-700', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80' },
+            { name: 'Produk Fresh Setiap Hari', subtitle: 'Dicek kualitasnya setiap pagi', color: 'from-amber-600 via-orange-600 to-red-500', image: 'https://images.unsplash.com/photo-1540331547168-8b63109225b7?auto=format&fit=crop&w=600&q=80' },
+            { name: 'Antar Cepat Sampai Tujuan', subtitle: 'Pengiriman sesuai zona ongkir', color: 'from-sky-700 via-blue-600 to-indigo-700', image: 'https://images.unsplash.com/photo-1583845112203-29329902332e?auto=format&fit=crop&w=600&q=80' },
         ];
     }, [promoProducts]);
 
@@ -357,41 +361,58 @@ export default function CatalogPage() {
                 <div className="relative rounded-3xl overflow-hidden shadow-lg">
                     <Link
                         to={bannerIsProduct && activeBanner?.id ? `/product/${activeBanner.id}` : '#katalog-produk'}
-                        className={`block bg-linear-to-br ${activeBanner?.color || 'from-emerald-700 via-emerald-600 to-teal-700'} text-white p-6 sm:p-10 h-52 sm:h-56 flex items-center`}
+                        className={`relative block bg-linear-to-br ${activeBanner?.color || 'from-emerald-700 via-emerald-600 to-teal-700'} text-white px-6 sm:px-10 py-6 sm:py-8 h-60 sm:h-64 overflow-hidden`}
                     >
+                        {/* Dekorasi background */}
+                        <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
+                        <div className="absolute -left-10 -bottom-28 w-72 h-72 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+
                         {bannerIsProduct ? (
-                            <div className="flex items-center justify-between gap-5 w-full">
-                                <div className="min-w-0">
+                            <div className="relative z-10 flex items-center justify-between gap-5 w-full h-full">
+                                <div className="min-w-0 flex-1">
                                     <span className="inline-flex items-center gap-1 bg-amber-400 text-emerald-950 text-[10px] font-black px-2.5 py-1 rounded-md mb-3">
                                         <Percent className="w-3 h-3" /> HEMAT {activeBanner.promo}%
                                     </span>
-                                    <h2 className="text-xl sm:text-2xl font-black leading-tight">{activeBanner.name}</h2>
-                                    <p className="text-emerald-100 text-xs sm:text-sm mt-2 max-w-xs">
+                                    <h2 className="text-xl sm:text-2xl font-black leading-tight line-clamp-2">{activeBanner.name}</h2>
+                                    <p className="text-emerald-100 text-xs sm:text-sm mt-2">
                                         {formatIDR(promoPrice)}
                                         <span className="line-through text-emerald-200/70 ml-2">{formatIDR(activeBanner.price)}</span>
                                     </p>
-                                    <span className="inline-flex items-center gap-1 mt-3 text-xs font-bold bg-white/15 px-3 py-1.5 rounded-full">
+                                    <span className="inline-flex items-center gap-1 mt-3 text-xs font-bold bg-amber-400 text-emerald-950 px-4 py-2 rounded-full shadow-md">
                                         Belanja Sekarang <ArrowRight className="w-3.5 h-3.5" />
                                     </span>
                                 </div>
-                                <img
-                                    src={activeBanner.image || 'https://placehold.co/300x300?text=No+Image'}
-                                    alt={activeBanner.name}
-                                    onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/300x300?text=No+Image'; }}
-                                    className="w-32 h-32 sm:w-40 sm:h-40 object-cover rounded-2xl shadow-2xl ring-4 ring-white/20"
-                                />
+                                <div className="relative shrink-0">
+                                    <img
+                                        src={activeBanner.image || BANNER_IMG_FALLBACK}
+                                        alt={activeBanner.name}
+                                        onError={(e) => { e.target.onerror = null; e.target.src = BANNER_IMG_FALLBACK; }}
+                                        className="w-32 h-32 sm:w-44 sm:h-44 object-cover rounded-3xl shadow-2xl ring-4 ring-white/30"
+                                    />
+                                    <div className="absolute -left-3 sm:-left-4 -bottom-4 bg-white text-slate-800 px-3 py-1.5 rounded-xl shadow-xl border border-slate-100 flex items-center gap-1.5 animate-bounce">
+                                        <Zap className="w-3.5 h-3.5 text-amber-500" /> <span className="text-[10px] font-bold">Harga Promo</span>
+                                    </div>
+                                </div>
                             </div>
                         ) : (
-                            <div className="flex items-center justify-between gap-6 w-full">
-                                <div>
+                            <div className="relative z-10 flex items-center justify-between gap-6 w-full h-full">
+                                <div className="min-w-0 flex-1">
                                     <span className="inline-flex items-center gap-1 bg-white/20 text-[10px] font-black px-2.5 py-1 rounded-md mb-3">
                                         <Star className="w-3 h-3 fill-amber-300 text-amber-300" /> POSMart
                                     </span>
                                     <h2 className="text-xl sm:text-3xl font-black leading-tight">{activeBanner.name}</h2>
                                     <p className="text-emerald-100/90 text-xs sm:text-sm mt-2 max-w-sm">{activeBanner.subtitle}</p>
                                 </div>
-                                <div className="hidden sm:block w-40 h-40 rounded-3xl bg-white/10 border border-white/20 backdrop-blur flex items-center justify-center">
-                                    <ArrowRight className="w-12 h-12 text-white/60" />
+                                <div className="relative shrink-0">
+                                    <img
+                                        src={activeBanner.image || BANNER_IMG_FALLBACK}
+                                        alt={activeBanner.name}
+                                        onError={(e) => { e.target.onerror = null; e.target.src = BANNER_IMG_FALLBACK; }}
+                                        className="w-32 h-32 sm:w-44 sm:h-44 object-cover rounded-3xl shadow-2xl ring-4 ring-white/30"
+                                    />
+                                    <div className="absolute -left-3 sm:-left-4 -bottom-4 bg-white text-slate-800 px-3 py-1.5 rounded-xl shadow-xl border border-slate-100 flex items-center gap-1.5 animate-bounce">
+                                        <Zap className="w-3.5 h-3.5 text-amber-500" /> <span className="text-[10px] font-bold">Antar Cepat</span>
+                                    </div>
                                 </div>
                             </div>
                         )}
