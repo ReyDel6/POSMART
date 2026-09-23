@@ -1,8 +1,20 @@
 // File: src/components/CheckoutForm.jsx
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useCartContext } from '../context/CartContext';
-import { User, Phone, MapPin, Truck, ShoppingBag } from 'lucide-react';
+import { User, Phone, MapPin, Truck, ShoppingBag, Coins, QrCode, Wallet, Landmark, Loader2, CheckCircle2, X } from 'lucide-react';
 import api from '../utils/api';
+import QRCode from 'qrcode';
+import { usePromotions } from '../hooks/usePromotions';
+import { linePrice, bundleLinePrice } from '../utils/pricing';
+
+const EWALLET_CODES = ['gopay', 'shopeepay', 'ovo', 'dana'];
+const TRANSFER_CODES = ['bank_transfer', 'echannel', 'bca_va', 'bni_va', 'bri_va', 'permata_va', 'other_va'];
+
+const GROUP_OPTIONS = [
+    { key: 'qris', label: 'QRIS', desc: 'Scan sekali jadi', icon: QrCode },
+    { key: 'ewallet', label: 'E-Wallet', desc: 'GoPay/ShopeePay/OVO', icon: Wallet },
+    { key: 'transfer', label: 'Transfer', desc: 'VA / Bank', icon: Landmark },
+];
 
 export default function CheckoutForm() {
     // 1. Ambil data keranjang belanja dan daftar produk asli dari Global Context
@@ -45,6 +57,16 @@ export default function CheckoutForm() {
     // Pilih metode bayar: 'online' (Midtrans/WA) atau 'cash' (tunai di kasir/walk-in)
     const [paymentMode, setPaymentMode] = useState('online');
 
+    // Grup metode online (M3): qris / ewallet / transfer
+    const [paymentGroup, setPaymentGroup] = useState('qris');
+
+    // Data QRIS aktif (modal pembayaran) + status sudah bayar
+    const [qrisData, setQrisData] = useState(null);
+    const [qrisBusy, setQrisBusy] = useState(false);
+    const [qrImage, setQrImage] = useState(null);
+    const pollingRef = useRef(null);
+    const qrisPendingRef = useRef(0);
+
     // State untuk menampung pesan kesalahan validasi
     const [errors, setErrors] = useState({});
 
@@ -53,6 +75,11 @@ export default function CheckoutForm() {
 
     // Zona pengiriman aktif (dari backend)
     const [shippingZones, setShippingZones] = useState([]);
+
+    // Poin member (M2): saldo & riwayat dari /user/points.php
+    const [pointsInfo, setPointsInfo] = useState(null);
+    const [usePoints, setUsePoints] = useState(false);
+    const [pointsToUse, setPointsToUse] = useState(0);
 
     useEffect(() => {
         let active = true;
@@ -73,10 +100,22 @@ export default function CheckoutForm() {
                 }
             })
             .catch(() => {});
+        if (localStorage.getItem('token')) {
+            api.get('/user/points.php')
+                .then(res => {
+                    if (active && res.data && res.data.status === 'success') {
+                        setPointsInfo(res.data.data);
+                        setPointsToUse(Number(res.data.data?.points) || 0);
+                    }
+                })
+                .catch(() => {});
+        }
         return () => { active = false; };
     }, []);
 
     const storeName = storeSettings.store_name || 'POSMart';
+
+    const promotions = usePromotions();
 
     const selectedZone = useMemo(() => {
         if (!formData.shippingZoneId || !shippingZones.length) return null;
@@ -84,22 +123,46 @@ export default function CheckoutForm() {
     }, [formData.shippingZoneId, shippingZones]);
 
     const cartDetails = useMemo(() => {
-        // A. Map data langsung dari item keranjang
-        const itemsReport = cart.map(cartItem => {
-            const price = Number(cartItem.price) || 0;
-            const qty = Number(cartItem.qty) || 0;
+        const { byProduct: dealMap, byBundleId: bundleMap } = promotions ?? { byProduct: {}, byBundleId: {} };
 
+        const itemsReport = cart.map(cartItem => {
+            const qty = Number(cartItem.qty) || 1;
+
+            // Baris paket/bundle
+            if (cartItem.bundle_id) {
+                const b = bundleMap[String(cartItem.bundle_id)];
+                const lp = bundleLinePrice(b || { bundle_price: cartItem.price, list_total: cartItem.price }, qty);
+                return {
+                    id: null,
+                    bundle_id: Number(cartItem.bundle_id),
+                    name: cartItem.name || 'Paket',
+                    qty: qty,
+                    price: lp.unit,
+                    unit_price: lp.unit,
+                    total: lp.total,
+                    discount: lp.discount,
+                    label: lp.label,
+                };
+            }
+
+            const deal = dealMap[cartItem.id];
+            const lp = linePrice(cartItem, qty, deal);
             return {
                 id: cartItem.id,
                 name: cartItem.name,
                 qty: qty,
-                price: price,
-                total: price * qty
+                price: lp.unit,
+                unit_price: lp.unit,
+                total: lp.total,
+                discount: lp.discount,
+                label: lp.label,
+                promo_id: deal?.id || 0,
             };
         });
 
-        // B. Hitung subtotal menggunakan .reduce()
+        // B. Hitung subtotal & total potongan promo menggunakan .reduce()
         const subtotal = itemsReport.reduce((acc, item) => acc + item.total, 0);
+        const promoDiscount = itemsReport.reduce((acc, item) => acc + item.discount, 0);
 
         // C. Hitung ongkir berdasarkan zona pengiriman (0 bila bayar tunai di kasir / walk-in)
         const shippingFee = paymentMode === 'cash'
@@ -107,8 +170,142 @@ export default function CheckoutForm() {
             : (selectedZone ? (Number(selectedZone.fee) || 0) : (formData.courier === 'express' ? 20000 : 10000));
         const grandTotal = subtotal + shippingFee;
 
-        return { itemsReport, subtotal, shippingFee, grandTotal };
-    }, [cart, paymentMode, selectedZone, formData.courier]);
+        return { itemsReport, subtotal, shippingFee, grandTotal, promoDiscount };
+    }, [cart, paymentMode, selectedZone, formData.courier, promotions]);
+
+    // Poin member: hitung potongan & total akhir setelah tukar poin.
+    const redeemRate = Number(storeSettings.point_redeem_rate) || 0;
+    const earningRate = Number(storeSettings.point_earning_rate) || 1;
+    const availablePoints = pointsInfo?.points || 0;
+
+    const pointsUsed = useMemo(() => {
+        if (!usePoints || availablePoints <= 0) return 0;
+        return Math.max(0, Math.min(Number(pointsToUse) || 0, availablePoints));
+    }, [usePoints, pointsToUse, availablePoints]);
+
+    const pointsDiscount = useMemo(() => {
+        if (pointsUsed <= 0 || redeemRate <= 0) return 0;
+        return Math.min(pointsUsed * redeemRate, cartDetails.subtotal + cartDetails.shippingFee);
+    }, [pointsUsed, redeemRate, cartDetails.subtotal, cartDetails.shippingFee]);
+
+    const finalTotal = Math.max(0, cartDetails.grandTotal - pointsDiscount);
+
+    const toggleUsePoints = () => {
+        setUsePoints(prev => {
+            const next = !prev;
+            if (next) setPointsToUse(availablePoints);
+            return next;
+        });
+    };
+
+    // Filter grup metode online sesuai setting toko (payment_methods).
+    const groupAvailable = useMemo(() => {
+        const raw = (storeSettings.payment_methods || '')
+            .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+        if (raw.length === 0 || raw.includes('snap')) {
+            return { qris: true, ewallet: true, transfer: true };
+        }
+        return {
+            qris: raw.includes('qris'),
+            ewallet: EWALLET_CODES.some(c => raw.includes(c)),
+            transfer: TRANSFER_CODES.some(c => raw.includes(c)),
+        };
+    }, [storeSettings.payment_methods]);
+
+    const visibleGroups = GROUP_OPTIONS.filter(g => groupAvailable[g.key]);
+
+    // =============================================================
+    // Alur pasca-checkout (dipakai mode online & cash)
+    // =============================================================
+    const proceedLegacyFor = (orderId) => {
+        const PHONE_NUMBER = storeSettings.whatsapp || whatsappPhone();
+        let textMessage = `*PESANAN BARU - ${storeName.toUpperCase()}*\n\n`;
+        textMessage += `*Data Pengiriman:*\n`;
+        textMessage += `Nama: ${formData.fullName}\n`;
+        textMessage += `WA: ${whatsappPhone()}\n`;
+        textMessage += `Alamat: ${formData.address}\n`;
+        textMessage += `Kurir/Zona: ${(paymentMode === 'cash' ? 'Walk-in' : (selectedZone ? selectedZone.name : 'Reguler')).toUpperCase()}\n\n`;
+
+        textMessage += `*Daftar Belanjaan:*\n`;
+        cartDetails.itemsReport.forEach((item, index) => {
+            textMessage += `${index + 1}. ${item.name} (${item.qty}x) - Rp ${item.total.toLocaleString('id-ID')}\n`;
+        });
+
+        textMessage += `\n---------------------------\n`;
+        textMessage += `*Subtotal:* Rp ${cartDetails.subtotal.toLocaleString('id-ID')}\n`;
+        textMessage += `*Ongkos Kirim:* Rp ${cartDetails.shippingFee.toLocaleString('id-ID')}\n`;
+        if (pointsDiscount > 0) {
+            textMessage += `*Potongan Poin (${pointsUsed}):* -Rp ${pointsDiscount.toLocaleString('id-ID')}\n`;
+        }
+        textMessage += `*Total Bayar:* Rp ${finalTotal.toLocaleString('id-ID')}\n`;
+        textMessage += `---------------------------\n\n`;
+        textMessage += `Mohon segera diproses, terima kasih.`;
+
+        const encodedText = encodeURIComponent(textMessage);
+        const whatsAppUrl = `https://api.whatsapp.com/send?phone=${PHONE_NUMBER}&text=${encodedText}`;
+
+        if (storeSettings.whatsapp) {
+            window.open(whatsAppUrl, '_blank');
+        }
+    };
+
+    const finishCheckoutFor = (orderId) => {
+        if (setIsCartOpen) setIsCartOpen(false);
+        window.location.href = `/OrderSuccess?order_id=${orderId}`;
+    };
+
+    const whatsappPhone = () => `62${formData.phone}`;
+
+    // =============================================================
+    // QRIS: polling status pembayaran
+    // =============================================================
+    useEffect(() => {
+        return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
+    }, []);
+
+    useEffect(() => {
+        if (!qrisData?.qr_string) { setQrImage(null); return; }
+        let active = true;
+        QRCode.toDataURL(qrisData.qr_string, { errorCorrectionLevel: 'M', margin: 1, width: 280 })
+            .then(url => { if (active) setQrImage(url); })
+            .catch(() => { if (active) setQrImage(null); });
+        return () => { active = false; };
+    }, [qrisData]);
+
+    const stopPolling = () => {
+        if (pollingRef.current) {
+            clearInterval(pollingRef.current);
+            pollingRef.current = null;
+        }
+    };
+
+    const checkQrisPaid = async (orderId) => {
+        try {
+            const check = await api.post('/cart/midtrans_check_status.php', { order_id: orderId });
+            if (check.data && check.data.paid) {
+                stopPolling();
+                proceedLegacyFor(orderId);
+                finishCheckoutFor(orderId);
+                return true;
+            }
+        } catch (err) {
+            if (err.response?.status !== 401) { /* lanjut polling */ }
+        }
+        return false;
+    };
+
+    const startQrisPolling = (orderId) => {
+        stopPolling();
+        qrisPendingRef.current = 0;
+        pollingRef.current = setInterval(async () => {
+            qrisPendingRef.current += 4;
+            const done = await checkQrisPaid(orderId);
+            if (done || qrisPendingRef.current >= 90) {
+                stopPolling();
+                setQrisBusy(false);
+            }
+        }, 4000);
+    };
 
     // 4. Handler universal untuk mendeteksi setiap ketikan user pada input form
     const handleInputChange = (e) => {
@@ -199,8 +396,11 @@ export default function CheckoutForm() {
             courier: effectiveCourier,
             shipping_zone_id: paymentMode === 'cash' ? null : (selectedZone ? selectedZone.id : null),
             payment_mode: paymentMode,
-            items: cartDetails.itemsReport,
-            total_price: cartDetails.grandTotal,
+            points_used: pointsUsed,
+            items: cartDetails.itemsReport.map(it => it.bundle_id
+                ? { bundle_id: it.bundle_id, qty: it.qty }
+                : { id: it.id, qty: it.qty, promo_id: it.promo_id }),
+            total_price: finalTotal,
             cart: formattedCart,
             access_token: tokenJWT,
             customer_id: formData.customerId
@@ -230,7 +430,10 @@ export default function CheckoutForm() {
                         courier: effectiveCourier,
                         subtotal: cartDetails.subtotal,
                         shipping_fee: cartDetails.shippingFee,
-                        total_price: cartDetails.grandTotal,
+                        discount: cartDetails.promoDiscount,
+                        points_used: Number(response.data.points_used ?? pointsUsed),
+                        points_discount: Number(response.data.points_discount ?? pointsDiscount),
+                        total_price: Number(response.data.total_price ?? finalTotal),
                         items: cartDetails.itemsReport,
                         created_at: new Date().toISOString(),
                     };
@@ -240,57 +443,48 @@ export default function CheckoutForm() {
                     handleClearCart();
                     localStorage.removeItem('posmart');
 
-                    // Buka pembayaran Snap Midtrans, lalu setelah sukses lanjut alur lama.
-                    const proceedLegacy = () => {
-                        const PHONE_NUMBER = storeSettings.whatsapp || whatsappFormattedPhone;
-                        let textMessage = `*PESANAN BARU - ${storeName.toUpperCase()}*\n\n`;
-                        textMessage += `*Data Pengiriman:*\n`;
-                        textMessage += `Nama: ${formData.fullName}\n`;
-                        textMessage += `WA: ${whatsappFormattedPhone}\n`;
-                        textMessage += `Alamat: ${formData.address}\n`;
-                        textMessage += `Kurir/Zona: ${effectiveCourier.toUpperCase()}\n\n`;
-
-                        textMessage += `*Daftar Belanjaan:*\n`;
-                        cartDetails.itemsReport.forEach((item, index) => {
-                            textMessage += `${index + 1}. ${item.name} (${item.qty}x) - Rp ${item.total.toLocaleString('id-ID')}\n`;
-                        });
-
-                        textMessage += `\n---------------------------\n`;
-                        textMessage += `*Subtotal:* Rp ${cartDetails.subtotal.toLocaleString('id-ID')}\n`;
-                        textMessage += `*Ongkos Kirim:* Rp ${cartDetails.shippingFee.toLocaleString('id-ID')}\n`;
-                        textMessage += `*Total Bayar:* Rp ${cartDetails.grandTotal.toLocaleString('id-ID')}\n`;
-                        textMessage += `---------------------------\n\n`;
-                        textMessage += `Mohon segera diproses, terima kasih.`;
-
-                        const encodedText = encodeURIComponent(textMessage);
-                        const whatsAppUrl = `https://api.whatsapp.com/send?phone=${PHONE_NUMBER}&text=${encodedText}`;
-
-                        if (storeSettings.whatsapp) {
-                            window.open(whatsAppUrl, '_blank');
-                        }
-                    };
-
-                    const finishCheckout = () => {
-                        if (setIsCartOpen) setIsCartOpen(false);
-                        window.location.href = `/OrderSuccess?order_id=${orderId}`;
-                    };
-
                     // Pembayaran tunai/walk-in: langsung selesai tanpa Snap Midtrans.
                     if (paymentMode === 'cash' || response.data.payment_mode === 'cash') {
-                        proceedLegacy();
-                        finishCheckout();
+                        proceedLegacyFor(orderId);
+                        finishCheckoutFor(orderId);
                         setLoading(false);
                         return;
                     }
 
+                    // =============================================================
+                    // M3: QRIS -> charge Core API, QR tampil di aplikasi + polling.
+                    // =============================================================
+                    if (paymentGroup === 'qris') {
+                        try {
+                            const chargeRes = await api.post('/cart/midtrans_charge.php', { order_id: orderId, group: 'qris' });
+                            if (chargeRes.data && chargeRes.data.status === 'success') {
+                                setQrisData({
+                                    order_id: orderId,
+                                    qr_string: chargeRes.data.qr_string,
+                                    total_price: chargeRes.data.total_price,
+                                    expiry: chargeRes.data.expiry_minutes,
+                                });
+                                setLoading(false);
+                                setQrisBusy(false);
+                                if (setIsCartOpen) setIsCartOpen(false);
+                                startQrisPolling(orderId);
+                                return;
+                            }
+                            // disabled / use_snap / error -> lanjut ke Snap (grup qris).
+                            console.warn('[QRIS]', chargeRes.data?.message || 'QRIS tidak tersedia, pakai Snap.');
+                        } catch (chargeErr) {
+                            console.error('[QRIS Charge Error]', chargeErr);
+                        }
+                    }
+
                     try {
-                        const snapRes = await api.post('/cart/midtrans_snap.php', { order_id: orderId });
+                        const snapRes = await api.post('/cart/midtrans_snap.php', { order_id: orderId, group: paymentGroup });
 
                         // Pembayaran online nonaktif (key belum diisi) -> alur lama.
                         if (!snapRes.data || snapRes.data.status !== 'success') {
                             console.warn('[Midtrans]', snapRes.data?.message || 'Midtrans response not successful');
-                            proceedLegacy();
-                            finishCheckout();
+                            proceedLegacyFor(orderId);
+                            finishCheckoutFor(orderId);
                             return;
                         }
 
@@ -315,8 +509,8 @@ export default function CheckoutForm() {
                                 try {
                                     await api.post('/cart/midtrans_check_status.php', { order_id: orderId });
                                 } catch { /* tetap lanjut, webhook akan sinkron */ }
-                                proceedLegacy();
-                                finishCheckout();
+                                proceedLegacyFor(orderId);
+                                finishCheckoutFor(orderId);
                             },
                             onPending: async () => {
                                 // Tunggu konfirmasi pembayaran (maks ±30 detik).
@@ -328,22 +522,22 @@ export default function CheckoutForm() {
                                         if (check.data && check.data.paid) { paid = true; break; }
                                     } catch { /* lanjut polling */ }
                                 }
-                                if (paid) proceedLegacy();
-                                finishCheckout();
+                                if (paid) proceedLegacyFor(orderId);
+                                finishCheckoutFor(orderId);
                             },
                             onError: (err) => {
                                 console.error('[Midtrans Payment Error]', err);
-                                finishCheckout();
+                                finishCheckoutFor(orderId);
                             },
                             onClose: () => {
-                                finishCheckout();
+                                finishCheckoutFor(orderId);
                             },
                         });
                     } catch (snapErr) {
                         // Snap gagal dimuat/dijalankan -> alur lama agar pesanan tetap tertangani.
                         console.error('[Midtrans Snap Load/Run Error]', snapErr);
-                        proceedLegacy();
-                        finishCheckout();
+                        proceedLegacyFor(orderId);
+                        finishCheckoutFor(orderId);
                     } 
                 } else {
                     alert(response.data?.message || 'Gagal memproses pesanan.');
@@ -369,6 +563,21 @@ export default function CheckoutForm() {
 
     // Jika keranjang belanja kosong, tampilkan placeholder
     if (cart.length === 0) {
+        if (qrisData) {
+            return (
+                <QrisPaymentModal
+                    qrisData={qrisData}
+                    qrisBusy={qrisBusy}
+                    onCheckNow={async () => {
+                        setQrisBusy(true);
+                        await checkQrisPaid(qrisData.order_id);
+                        setQrisBusy(false);
+                    }}
+                    onDone={() => finishCheckoutFor(qrisData.order_id)}
+                    onClose={() => { stopPolling(); setQrisData(null); }}
+                />
+            );
+        }
         return (
             <div className="text-center py-8 text-slate-400">
                 <ShoppingBag className="w-12 h-12 mx-auto mb-2 opacity-30" />
@@ -419,6 +628,33 @@ export default function CheckoutForm() {
                     </button>
                 </div>
             </div>
+
+            {/* PILIH METODE ONLINE (QRIS / E-WALLET / TRANSFER) */}
+            {paymentMode === 'online' && visibleGroups.length > 0 && (
+                <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Pilih Cara Bayar</label>
+                    <div className={`grid gap-2 ${visibleGroups.length >= 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                        {visibleGroups.map(opt => {
+                            const Icon = opt.icon;
+                            return (
+                                <button
+                                    key={opt.key}
+                                    type="button"
+                                    onClick={() => setPaymentGroup(opt.key)}
+                                    className={`rounded-xl border px-2 py-2.5 text-left text-[11px] font-bold transition-all cursor-pointer flex flex-col items-center gap-1 ${paymentGroup === opt.key
+                                        ? 'border-emerald-600 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-500/20'
+                                        : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-300'
+                                    }`}
+                                >
+                                    <Icon className="w-5 h-5" />
+                                    {opt.label}
+                                    <span className="block font-medium text-[9px] text-slate-400 leading-tight text-center">{opt.desc}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* INPUT NAMA LENGKAP */}
             <div className="space-y-1">
@@ -518,19 +754,77 @@ export default function CheckoutForm() {
                 </div>
             )}
 
+            {/* TUKAR POIN MEMBER */}
+            {availablePoints > 0 && (
+            <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
+                        <Coins className="w-4 h-4 text-amber-500" /> Tukar Poin
+                    </label>
+                    <span className="text-[11px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full">
+                        Saldo: {availablePoints.toLocaleString('id-ID')} poin
+                    </span>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-amber-50/60 border border-amber-100 rounded-xl">
+                    <button
+                        type="button"
+                        onClick={toggleUsePoints}
+                        className={`relative w-10 h-6 rounded-full transition-colors shrink-0 cursor-pointer ${usePoints ? 'bg-amber-500' : 'bg-slate-300'}`}
+                        aria-label="Pakai poin"
+                    >
+                        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${usePoints ? 'translate-x-4' : ''}`} />
+                    </button>
+                    <div className="flex-1">
+                        <p className="text-xs font-semibold text-slate-700">
+                            {usePoints ? `Potongan Rp ${pointsDiscount.toLocaleString('id-ID')}` : 'Pakai poin sebagai potongan harga'}
+                        </p>
+                        {usePoints ? (
+                            <div className="flex items-center gap-2 mt-1">
+                                <input
+                                    type="number"
+                                    min="0"
+                                                    max={availablePoints}
+                                    value={pointsToUse}
+                                    onChange={(e) => setPointsToUse(e.target.value)}
+                                    className="w-28 text-sm px-2 py-1 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 bg-white"
+                                />
+                                <span className="text-[11px] text-slate-500">poin (maks {availablePoints})</span>
+                            </div>
+                        ) : null}
+                    </div>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                    {redeemRate > 0 ? `1 poin = Rp ${redeemRate.toLocaleString('id-ID')} · ` : ''}Belanja Rp 1.000 = {earningRate} poin. Poin yang dipakai dikembalikan bila pesanan dibatalkan.
+                </p>
+            </div>
+            )}
+
             {/* RINGKASAN STRUK BELANJA TOTAL */}
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-2 mt-2">
                 <div className="flex justify-between text-xs text-slate-500">
                     <span>Subtotal Barang:</span>
                     <span className="font-mono font-medium">Rp {cartDetails.subtotal.toLocaleString('id-ID')}</span>
                 </div>
+                {cartDetails.promoDiscount > 0 && (
+                    <div className="flex justify-between text-xs font-semibold text-emerald-600">
+                        <span>Hemat Promo ({cartDetails.itemsReport.filter(i => i.discount > 0).length} item):</span>
+                        <span className="font-mono">-Rp {cartDetails.promoDiscount.toLocaleString('id-ID')}</span>
+                    </div>
+                )}
                 <div className="flex justify-between text-xs text-slate-500">
                     <span>{paymentMode === 'cash' ? 'Tunai di Kasir (Walk-in):' : `Ongkos Kirim (${selectedZone ? selectedZone.name : 'Reguler'}):`}</span>
                     <span className="font-mono font-medium">Rp {cartDetails.shippingFee.toLocaleString('id-ID')}</span>
                 </div>
+                {pointsDiscount > 0 && (
+                    <div className="flex justify-between text-xs font-semibold text-amber-600">
+                        <span>Potongan Poin ({pointsUsed.toLocaleString('id-ID')} poin):</span>
+                        <span className="font-mono">-Rp {pointsDiscount.toLocaleString('id-ID')}</span>
+                    </div>
+                )}
                 <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-dashed border-slate-200">
                     <span>Total Bayar:</span>
-                    <span className="font-mono text-red-600">Rp {cartDetails.grandTotal.toLocaleString('id-ID')}</span>
+                    <span className="font-mono text-red-600">Rp {finalTotal.toLocaleString('id-ID')}</span>
                 </div>
             </div>
 
@@ -540,8 +834,68 @@ export default function CheckoutForm() {
                 disabled={loading || cart.length === 0}
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
             >
-                {loading ? 'Mengunci Stok & Memproses...' : `Bayar Sekarang (Rp ${cartDetails.grandTotal.toLocaleString('id-ID')})`}
+                {loading ? 'Mengunci Stok & Memproses...' : `Bayar Sekarang (Rp ${finalTotal.toLocaleString('id-ID')})`}
             </button>
         </form>
+    );
+}
+
+function QrisPaymentModal({ qrisData, qrisBusy, onCheckNow, onDone, onClose }) {
+    const total = Number(qrisData?.total_price) || 0;
+
+    return (
+        <div className="fixed inset-0 z-[80] bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-pop-in">
+                <div className="bg-gradient-to-br from-emerald-600 to-teal-600 px-5 py-4 flex items-center justify-between text-white">
+                    <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-80">QRIS</p>
+                        <p className="text-lg font-black">Scan untuk Bayar</p>
+                    </div>
+                    <button type="button" onClick={onClose} className="p-1.5 rounded-full bg-white/15 hover:bg-white/25 transition-colors cursor-pointer" aria-label="Tutup">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+
+                <div className="p-6 flex flex-col items-center">
+                    <p className="text-2xl font-black text-slate-900">
+                        Rp {total.toLocaleString('id-ID')}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1 mb-4">Scan QR di bawah dengan aplikasi apa pun yang mendukung QRIS (GoPay, ShopeePay, OVO, DANA, m-Banking).</p>
+
+                    <div className="bg-white border-2 border-emerald-100 rounded-2xl p-3 shadow-inner">
+                        {qrImage ? (
+                            <img src={qrImage} alt="QR Code pembayaran" className="w-56 h-56" />
+                        ) : (
+                            <div className="w-56 h-56 flex items-center justify-center text-slate-300">
+                                <Loader2 className="w-8 h-8 animate-spin" />
+                            </div>
+                        )}
+                    </div>
+
+                    <p className="text-[11px] text-slate-400 mt-3">
+                        Berlaku {Number(qrisData?.expiry) || 15} menit · status dicek otomatis
+                    </p>
+
+                    <div className="mt-4 space-y-2 w-full">
+                        <button
+                            type="button"
+                            onClick={onCheckNow}
+                            disabled={qrisBusy}
+                            className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold py-3 rounded-xl text-sm transition-colors cursor-pointer"
+                        >
+                            {qrisBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                            {qrisBusy ? 'Memeriksa...' : 'Saya Sudah Bayar'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onDone}
+                            className="w-full flex items-center justify-center gap-2 border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold py-3 rounded-xl text-sm transition-colors cursor-pointer"
+                        >
+                            Lihat Status Pesanan
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }

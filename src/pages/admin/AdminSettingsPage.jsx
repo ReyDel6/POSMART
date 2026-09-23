@@ -1,6 +1,6 @@
 // File: src/pages/admin/AdminSettingsPage.jsx
 import { useState, useEffect } from 'react';
-import { Settings, Store, Printer, Save, Loader2, Mail } from 'lucide-react';
+import { Settings, Store, Printer, Save, Loader2, Mail, Coins, QrCode, Wallet, Landmark } from 'lucide-react';
 import api from '../../utils/api';
 
 const DEFAULTS = {
@@ -10,7 +10,24 @@ const DEFAULTS = {
     whatsapp: '',
     store_email: '',
     receipt_footer: 'Terima kasih telah berbelanja di POSMart! Barang yang sudah dibeli tidak dapat ditukar.',
+    point_earning_rate: '1',
+    point_redeem_rate: '50',
+    payment_methods: 'qris,gopay,shopeepay,ovo,dana,bank_transfer',
 };
+
+const PAYMENT_OPTIONS = [
+    { code: 'qris', label: 'QRIS', icon: QrCode },
+    { code: 'gopay', label: 'GoPay', icon: Wallet },
+    { code: 'shopeepay', label: 'ShopeePay', icon: Wallet },
+    { code: 'ovo', label: 'OVO', icon: Wallet },
+    { code: 'dana', label: 'DANA', icon: Wallet },
+    { code: 'bank_transfer', label: 'Transfer (VA)', icon: Landmark },
+    { code: 'echannel', label: 'Mandiri e-Channel', icon: Landmark },
+    { code: 'bca_va', label: 'BCA VA', icon: Landmark },
+    { code: 'bni_va', label: 'BNI VA', icon: Landmark },
+    { code: 'bri_va', label: 'BRI VA', icon: Landmark },
+    { code: 'permata_va', label: 'Permata VA', icon: Landmark },
+];
 
 export default function AdminSettingsPage() {
     const [form, setForm] = useState(DEFAULTS);
@@ -42,6 +59,18 @@ export default function AdminSettingsPage() {
 
     const handleChange = (e) => {
         setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        setNotice('');
+    };
+
+    const handlePaymentToggle = (code) => {
+        setForm(prev => {
+            const current = String(prev.payment_methods || '')
+                .split(',').map(s => s.trim()).filter(Boolean);
+            const next = current.includes(code)
+                ? current.filter(c => c !== code)
+                : [...current, code];
+            return { ...prev, payment_methods: next.join(',') };
+        });
         setNotice('');
     };
 
@@ -135,6 +164,52 @@ export default function AdminSettingsPage() {
                         <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Pesan Footer Struk</label>
                         <textarea name="receipt_footer" value={form.receipt_footer} onChange={handleChange} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 h-24 resize-none" />
                     </div>
+                </div>
+
+                <div className="space-y-4 pb-4">
+                    <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <Coins className="w-5 h-5 text-amber-500" /> Program Poin Member
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Poin per Rp 1.000 Belanja</label>
+                            <input type="number" min="0" name="point_earning_rate" value={form.point_earning_rate} onChange={handleChange} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                            <p className="text-[11px] text-slate-400 mt-1">Contoh: isi 1 berarti belanja Rp 1.000 mendapat 1 poin (hanya untuk pembayaran lunas).</p>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nilai 1 Poin (Rp)</label>
+                            <input type="number" min="0" name="point_redeem_rate" value={form.point_redeem_rate} onChange={handleChange} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                            <p className="text-[11px] text-slate-400 mt-1">Potongan rupiah per poin saat pelanggan menukar poin di checkout.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-4 pb-4">
+                    <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <Wallet className="w-5 h-5 text-emerald-600" /> Metode Pembayaran Online
+                    </h3>
+                    <p className="text-xs text-slate-500">Aktifkan/nonaktifkan metode yang tampil di checkout pelanggan (perlu konfigurasi Midtrans).</p>
+                    <div className="flex flex-wrap gap-2">
+                        {PAYMENT_OPTIONS.map(opt => {
+                            const active = String(form.payment_methods || '').split(',').map(s => s.trim()).filter(Boolean).includes(opt.code);
+                            const Icon = opt.icon;
+                            return (
+                                <button
+                                    key={opt.code}
+                                    type="button"
+                                    onClick={() => handlePaymentToggle(opt.code)}
+                                    className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition-colors cursor-pointer ${active
+                                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-md'
+                                        : 'bg-white text-slate-500 border-slate-200 hover:border-emerald-300'
+                                    }`}
+                                >
+                                    <Icon className="w-3.5 h-3.5" />
+                                    {opt.label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    <p className="text-[11px] text-slate-400">Pilih minimal satu. QRIS tampil sebagai kode QR langsung di aplikasi; sisanya lewat halaman pembayaran Midtrans.</p>
                 </div>
 
                 <div className="flex justify-end pt-2">

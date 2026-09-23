@@ -102,7 +102,7 @@ export default function OrdersPage() {
                 address: order.address,
                 courier: order.courier,
                 subtotal,
-                shipping_fee: Math.max(0, Number(order.total_price) - subtotal),
+                shipping_fee: order.shipping_fee ?? Math.max(0, Number(order.total_price) - subtotal - (Number(order.points_discount) || 0)),
                 total_price: Number(order.total_price),
                 items: order.items.map(i => ({ name: i.name, qty: i.qty, price: Number(i.price), total: Number(i.total) })),
             };
@@ -214,6 +214,9 @@ export default function OrdersPage() {
                                             <p className="text-slate-500">Telepon: <span className="font-semibold text-slate-800">{order.phone}</span></p>
                                             <p className="text-slate-500">Alamat: <span className="font-semibold text-slate-800">{order.address}</span></p>
                                             <p className="text-slate-500">Pengiriman: <span className="font-semibold text-slate-800 capitalize">{order.courier}</span></p>
+                                            {Number(order.points_discount) > 0 && (
+                                                <p className="text-amber-600 font-semibold">Poin dipakai: {order.points_used.toLocaleString('id-ID')} poin (- Rp {Number(order.points_discount).toLocaleString('id-ID')})</p>
+                                            )}
                                         </div>
 
                                         <div className="space-y-2">

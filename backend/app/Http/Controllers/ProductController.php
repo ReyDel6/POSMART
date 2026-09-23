@@ -36,11 +36,16 @@ class ProductController extends Controller
 
         $search   = trim($request->input('search', ''));
         $category = trim($request->input('category', 'All'));
+        $sort     = trim($request->input('sort', 'newest'));
 
         $query = Product::query();
 
         if ($search !== '') {
-            $query->where('name', 'LIKE', "%$search%");
+            $query->where(function ($w) use ($search) {
+                $w->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('description', 'LIKE', "%{$search}%")
+                    ->orWhere('category', 'LIKE', "%{$search}%");
+            });
         }
         if ($category !== '' && $category !== 'All') {
             $query->where('category', $category);
@@ -48,9 +53,24 @@ class ProductController extends Controller
 
         $total = (clone $query)->count();
 
-        $products = (clone $query)
-            ->withCount('reviews')
-            ->orderBy('created_at', 'desc')
+        $pageQuery = (clone $query)->withCount('reviews');
+
+        if ($sort === 'popular') {
+            // Paling laris: jumlah qty terjual (hanya order berstatus paid)
+            $pageQuery
+                ->withCount(['orderItems as sold_count' => function ($q) {
+                    $q->whereHas('order', function ($o) {
+                        $o->where('payment_status', 'paid');
+                    })
+                        ->select(\Illuminate\Support\Facades\DB::raw('coalesce(sum(qty), 0)'));
+                }])
+                ->orderBy('sold_count', 'desc')
+                ->orderBy('id', 'desc');
+        } else {
+            $pageQuery->orderBy('created_at', 'desc');
+        }
+
+        $products = $pageQuery
             ->skip($offset)
             ->take($limit)
             ->get()
@@ -67,6 +87,42 @@ class ProductController extends Controller
                 'total'      => $total,
                 'totalPages' => max(1, (int) ceil($total / $limit)),
             ],
+        ]);
+    }
+
+    public function suggestions(Request $request)
+    {
+        $q     = trim($request->input('q', ''));
+        $limit = min(8, max(1, (int) $request->input('limit', 8)));
+
+        $query = Product::query()
+            ->withCount(['orderItems as sold_count' => function ($sQ) {
+                $sQ->whereHas('order', function ($o) {
+                    $o->where('payment_status', 'paid');
+                })
+                    ->select(\Illuminate\Support\Facades\DB::raw('coalesce(sum(qty), 0)'));
+            }]);
+
+        if ($q !== '') {
+            $query->where(function ($w) use ($q) {
+                $w->where('name', 'LIKE', "%{$q}%")
+                    ->orWhere('description', 'LIKE', "%{$q}%")
+                    ->orWhere('category', 'LIKE', "%{$q}%");
+            });
+        }
+
+        $products = (clone $query)
+            ->orderBy('sold_count', 'desc')
+            ->orderBy('id', 'desc')
+            ->take($limit)
+            ->get()
+            ->map(function ($p) {
+                return $this->cardPayload($p);
+            });
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $products,
         ]);
     }
 
@@ -115,8 +171,17 @@ class ProductController extends Controller
         ]);
     }
 
+    private $promoService;
+
+    private function promo()
+    {
+        return $this->promoService ??= app(\App\Services\PromotionService::class);
+    }
+
     private function cardPayload(Product $p): array
     {
+        $deal = $this->promo()->dealFor((int) $p->id);
+
         return [
             'id'            => (int) $p->id,
             'barcode'       => $p->barcode,
@@ -129,6 +194,11 @@ class ProductController extends Controller
             'promo'         => (int) $p->promo,
             'image'         => '/product/' . $p->image,
             'reviews_count' => (int) $p->reviews_count,
+            'deal'          => $deal ? [
+                'id'    => (int) $deal->id,
+                'type'  => $deal->type,
+                'label' => $this->promo()->label($deal),
+            ] : null,
         ];
     }
 

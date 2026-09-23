@@ -21,6 +21,9 @@ class AdminOrderController extends Controller
                     'address'       => $o->address,
                     'courier'       => $o->courier,
                     'total_price'   => $o->total_price,
+                    'discount'      => (int) $o->discount,
+                    'points_used'   => (int) $o->points_used,
+                    'points_discount' => (int) $o->points_discount,
                     'status'        => $o->status,
                     'payment_status' => $o->payment_status,
                     'payment_mode'   => $o->payment_mode,
@@ -74,6 +77,7 @@ class AdminOrderController extends Controller
 
             try {
                 app(\App\Services\StoreNotifier::class)->orderPaid($order);
+                app(\App\Services\LoyaltyService::class)->awardForOrder($order);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('Gagal kirim notifikasi pembayaran: ' . $e->getMessage());
             }
@@ -83,6 +87,8 @@ class AdminOrderController extends Controller
         if ($status === 'cancelled' && $order->payment_status !== 'paid') {
             $order->update(['payment_status' => 'cancelled']);
             $order->releaseItemsStock();
+            // Poin tukar yang dipakai dikembalikan ke member.
+            app(\App\Services\LoyaltyService::class)->refundForOrder($order);
         }
 
         return response()->json([

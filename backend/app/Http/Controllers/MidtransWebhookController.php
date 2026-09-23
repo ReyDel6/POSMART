@@ -57,6 +57,7 @@ class MidtransWebhookController extends Controller
 
             try {
                 app(\App\Services\StoreNotifier::class)->orderPaid($order);
+                app(\App\Services\LoyaltyService::class)->awardForOrder($order);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('Gagal kirim notifikasi pembayaran: ' . $e->getMessage());
             }
@@ -64,6 +65,8 @@ class MidtransWebhookController extends Controller
             $order->update(['payment_status' => $transactionStatus]);
             // Stok yang tadi dikunci dikembalikan agar produk bisa dijual lagi.
             $order->releaseItemsStock();
+            // Poin tukar yang dipakai dikembalikan ke member.
+            app(\App\Services\LoyaltyService::class)->refundForOrder($order);
         }
 
         return response()->json(['status' => 'success']);

@@ -58,6 +58,23 @@ class MidtransService
         }
     }
 
+    /**
+     * Charge langsung ke Core API Midtrans (dipakai QRIS supaya QR tampil di aplikasi).
+     */
+    public function charge(array $payload): ?array
+    {
+        try {
+            $response = Http::withBasicAuth(config('midtrans.server_key'), '')
+                ->acceptJson()
+                ->asJson()
+                ->post($this->transactionApiUrl() . 'v2/charge', $payload);
+
+            return $response->json();
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     public function isPaid(array $status): bool
     {
         $transactionStatus = $status['transaction_status'] ?? null;

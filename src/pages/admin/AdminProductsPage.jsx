@@ -223,13 +223,14 @@ export default function AdminProductsPage() {
                             <th className="p-4">Kategori</th>
                             <th className="p-4">Stok</th>
                             <th className="p-4">Harga</th>
+                            <th className="p-4">Promo</th>
                             <th className="p-4 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
                         {visibleProducts.length === 0 ? (
                             <tr>
-                                <td colSpan="7" className="p-8 text-center text-slate-400">
+                                <td colSpan="8" className="p-8 text-center text-slate-400">
                                     Tidak ada produk yang cocok. Silakan tambah produk baru.
                                 </td>
                             </tr>
@@ -259,6 +260,13 @@ export default function AdminProductsPage() {
                                     </td>
                                     <td className="p-4">{stockBadge(p.stock)}</td>
                                     <td className="p-4 font-bold text-slate-900">Rp {Number(p.price).toLocaleString('id-ID')}</td>
+                                    <td className="p-4">
+                                        {p.is_promo ? (
+                                            <span className="px-2 py-1 bg-red-50 text-red-600 border border-red-100 rounded-lg text-xs font-bold">-{p.promo || 0}%</span>
+                                        ) : (
+                                            <span className="text-slate-300 text-xs">-</span>
+                                        )}
+                                    </td>
                                     <td className="p-4">
                                         <div className="flex justify-center items-center gap-2">
                                             <button

@@ -21,6 +21,7 @@ class User extends Authenticatable
         'phone',
         'address',
         'role',
+        'points',
     ];
 
     protected $hidden = [
@@ -31,11 +32,17 @@ class User extends Authenticatable
     {
         return [
             'password' => 'hashed',
+            'points'   => 'integer',
         ];
     }
 
     public function orders()
     {
         return $this->hasMany(Order::class, 'user_id');
+    }
+
+    public function points()
+    {
+        return $this->hasMany(UserPoint::class, 'user_id');
     }
 }

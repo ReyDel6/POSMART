@@ -14,6 +14,8 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
             price: productToEdit.price || '',
             category: productToEdit.category || '',
             stock: productToEdit.stock || '',
+            is_promo: !!productToEdit.is_promo,
+            promo: productToEdit.promo || 0,
             image: productToEdit.image || '',
             description: productToEdit.description || '',
             gallery: Array.isArray(productToEdit.gallery) ? productToEdit.gallery : [],
@@ -24,6 +26,8 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
             price: '',
             category: '',
             stock: '',
+            is_promo: false,
+            promo: 0,
             image: '',
             description: '',
             gallery: [],
@@ -268,6 +272,37 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
                                 placeholder="Contoh: 100"
                                 required
                                 min="0"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="is_promo" className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-1 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    id="is_promo"
+                                    name="is_promo"
+                                    checked={!!formData.is_promo}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, is_promo: e.target.checked, promo: e.target.checked ? (prev.promo || 0) : 0 }))}
+                                    className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                Diskon Produk (%)
+                            </label>
+                        </div>
+                        <div>
+                            <label htmlFor="promo" className="block text-sm font-semibold text-slate-700 mb-1">Potongan (%)</label>
+                            <input
+                                type="number"
+                                id="promo"
+                                name="promo"
+                                min="0"
+                                max="90"
+                                disabled={!formData.is_promo}
+                                value={formData.is_promo ? formData.promo : 0}
+                                onChange={(e) => handleInputChange({ target: { name: 'promo', value: Math.max(0, Math.min(90, Number(e.target.value) || 0)) } })}
+                                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm disabled:bg-slate-100 disabled:text-slate-400"
+                                placeholder="Contoh: 15"
                             />
                         </div>
                     </div>

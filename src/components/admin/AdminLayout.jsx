@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
-import { Store, LayoutDashboard, Package, ShoppingBag, LogOut, UserCheck, Menu, X, Tags, BarChart3, Users, Settings, ChevronDown, ChevronRight, Truck } from 'lucide-react';
+import { Store, LayoutDashboard, Package, ShoppingBag, LogOut, UserCheck, Menu, X, Tags, BarChart3, Users, Settings, ChevronDown, ChevronRight, Truck, Percent, Radar } from 'lucide-react';
 
 export default function AdminLayout() {
     const navigate = useNavigate();
@@ -43,6 +43,8 @@ export default function AdminLayout() {
         '/admin/users': { title: 'Kelola Staf & Kasir', parent: 'Pengaturan & Staf' },
         '/admin/settings': { title: 'Pengaturan Toko', parent: 'Pengaturan & Staf' },
         '/admin/shipping-zones': { title: 'Zona Pengiriman', parent: 'Manajemen Produk' },
+        '/admin/promos': { title: 'Kelola Promo', parent: 'Manajemen Produk' },
+        '/admin/analytics': { title: 'Analitik & Restock', parent: 'Transaksi & Laporan' },
     };
 
     const currentRouteInfo = routeTitles[location.pathname] || { title: 'Admin Panel', parent: 'POS' };
@@ -62,6 +64,7 @@ export default function AdminLayout() {
             children: [
                 { path: '/admin/products', label: 'Kelola Produk', icon: Package },
                 { path: '/admin/categories', label: 'Kategori Produk', icon: Tags },
+                { path: '/admin/promos', label: 'Promo & Paket', icon: Percent },
                 { path: '/admin/shipping-zones', label: 'Zona Pengiriman', icon: Truck },
             ]
         }] : []),
@@ -73,6 +76,7 @@ export default function AdminLayout() {
             children: [
                 { path: '/admin/orders', label: 'Daftar Transaksi', icon: ShoppingBag },
                 { path: '/admin/reports', label: 'Laporan Penjualan', icon: BarChart3 },
+                { path: '/admin/analytics', label: 'Analitik & Restock', icon: Radar },
             ]
         },
         ...(!isOwner ? [{

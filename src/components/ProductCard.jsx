@@ -124,6 +124,11 @@ export default function ProductCard({ product, storeSettings }) {
             -{item.promo}%
           </div>
         )}
+        {!item.is_promo && item.deal && (
+          <div className="absolute top-2 left-2 bg-linear-to-r from-red-500 to-rose-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
+            {item.deal.label}
+          </div>
+        )}
         <button
           type="button"
           onClick={() => setZoomOpen(true)}

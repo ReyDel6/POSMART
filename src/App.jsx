@@ -21,6 +21,8 @@ const AdminReportsPage = lazy(() => import('./pages/admin/AdminReportsPage'));
 const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
 const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'));
 const AdminShippingZonesPage = lazy(() => import('./pages/admin/AdminShippingZonesPage'));
+const AdminPromosPage = lazy(() => import('./pages/admin/AdminPromosPage'));
+const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'));
 
 function PageLoader() {
   return (
@@ -51,7 +53,9 @@ const router = createBrowserRouter([
       { path: 'reports', element: <AdminReportsPage /> },
       { path: 'users', element: <AdminUsersPage /> },
       { path: 'settings', element: <AdminSettingsPage /> },
-      { path: 'shipping-zones', element: <AdminShippingZonesPage /> }
+      { path: 'shipping-zones', element: <AdminShippingZonesPage /> },
+      { path: 'promos', element: <AdminPromosPage /> },
+      { path: 'analytics', element: <AdminAnalyticsPage /> }
     ]
   },
   { path: '*', element: <NotFoundPage /> },

@@ -1,6 +1,7 @@
 // File: src/pages/ProfilePage.jsx
-import { useState } from 'react';
-import { Mail, Phone, MapPin, LogOut, Store, ArrowLeft, ShieldCheck, UserCheck } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Mail, Phone, MapPin, LogOut, Store, ArrowLeft, ShieldCheck, UserCheck, Coins, TrendingUp, TrendingDown } from 'lucide-react';
+import api from '../utils/api';
 
 export default function ProfilePage() {
     const [profile] = useState(() => {
@@ -13,6 +14,21 @@ export default function ProfilePage() {
         }
     });
 
+    const [points, setPoints] = useState(null);
+
+    useEffect(() => {
+        if (!profile || !localStorage.getItem('token')) return;
+        let active = true;
+        api.get('/user/points.php')
+            .then(res => {
+                if (active && res.data?.status === 'success') {
+                    setPoints(res.data.data);
+                }
+            })
+            .catch(() => {});
+        return () => { active = false; };
+    }, [profile]);
+
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user_profile');
@@ -22,6 +38,8 @@ export default function ProfilePage() {
     const initial = (profile?.name || '?').charAt(0).toUpperCase();
     const roleLabel = profile?.role === 'admin' ? 'Administrator' : profile?.role === 'owner' ? 'Pemilik Toko' : profile?.role === 'cashier' ? 'Kasir' : 'Pelanggan';
     const isBackOffice = profile?.role === 'admin' || profile?.role === 'owner';
+
+    const formatIDR = (v) => new Intl.NumberFormat('id-ID', { maximumFractionDigits: 0 }).format(Number(v) || 0);
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col items-center p-6">
@@ -59,6 +77,25 @@ export default function ProfilePage() {
                             </div>
                         ) : (
                             <>
+                                {/* KARTU POIN MEMBER */}
+                                {points && (
+                                    <div className="mt-6 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 p-5 text-white shadow-lg shadow-amber-500/20">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-[10px] font-black uppercase tracking-widest opacity-80">Poin Member</p>
+                                                <p className="text-4xl font-black mt-1">{points.points.toLocaleString('id-ID')}</p>
+                                                {Number(points.redeem_rate) > 0 && (
+                                                    <p className="text-[11px] font-semibold opacity-90 mt-0.5">1 poin = Rp {formatIDR(points.redeem_rate)}</p>
+                                                )}
+                                            </div>
+                                            <Coins className="w-12 h-12 opacity-40" />
+                                        </div>
+                                        <p className="text-[11px] font-medium opacity-90 mt-2">
+                                            Belanja Rp 1.000 = {Number(points.earning_rate) || 1} poin. Tukarkan poin saat checkout.
+                                        </p>
+                                    </div>
+                                )}
+
                                 <div className="mt-6 space-y-3">
                                     <ProfileRow icon={<Mail className="w-4 h-4" />} label="Email" value={profile.email || '-'} />
                                     <ProfileRow icon={<Phone className="w-4 h-4" />} label="Telepon" value={profile.phone || '-'} />
@@ -69,6 +106,32 @@ export default function ProfilePage() {
                                         </a>
                                     )}
                                 </div>
+
+                                {/* RIWAYAT POIN */}
+                                {points && Array.isArray(points.ledger) && points.ledger.length > 0 && (
+                                    <div className="mt-6">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Riwayat Poin</p>
+                                        <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden divide-y divide-slate-100">
+                                            {points.ledger.slice(0, 5).map(entry => (
+                                                <div key={entry.id} className="flex items-center gap-3 p-3">
+                                                    <span className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${entry.amount > 0 ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                                                        {entry.amount > 0
+                                                            ? <TrendingUp className="w-4 h-4" />
+                                                            : <TrendingDown className="w-4 h-4" />}
+                                                    </span>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-semibold text-slate-700 truncate">{entry.description || (entry.type === 'earn' ? 'Poin dari pesanan' : 'Tukar poin')}</p>
+                                                        <p className="text-[10px] text-slate-400">{new Date(entry.created_at).toLocaleString('id-ID')}</p>
+                                                    </div>
+                                                    <span className={`text-sm font-black ${entry.amount > 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                                        {entry.amount > 0 ? `+${entry.amount}` : entry.amount}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 <button onClick={handleLogout} className="mt-6 w-full flex items-center justify-center gap-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 font-bold py-3 rounded-xl text-sm transition-colors">
                                     <LogOut className="w-4 h-4" /> Logout
                                 </button>

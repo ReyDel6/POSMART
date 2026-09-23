@@ -90,6 +90,12 @@ export default function OrderSuccess() {
                 <div className="receipt-line">------------------------------------</div>
                 <div className="receipt-row"><span>Subtotal</span><span>Rp {orderSummary.subtotal.toLocaleString('id-ID')}</span></div>
                 <div className="receipt-row"><span>Ongkir</span><span>Rp {orderSummary.shipping_fee.toLocaleString('id-ID')}</span></div>
+                {Number(orderSummary.discount) > 0 && (
+                    <div className="receipt-row text-emerald-600"><span>Hemat Promo</span><span>-Rp {Number(orderSummary.discount).toLocaleString('id-ID')}</span></div>
+                )}
+                {Number(orderSummary.points_discount) > 0 && (
+                    <div className="receipt-row"><span>Poin ({orderSummary.points_used} poin)</span><span>-Rp {Number(orderSummary.points_discount).toLocaleString('id-ID')}</span></div>
+                )}
                 <div className="receipt-total"><span>TOTAL</span><span>Rp {orderSummary.total_price.toLocaleString('id-ID')}</span></div>
                 <div className="receipt-line">------------------------------------</div>
                 {qrCodeUrl && (

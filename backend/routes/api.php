@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminCategoryController;
+use App\Http\Controllers\Admin\AdminAnalyticsController;
 use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminProductController;
+use App\Http\Controllers\Admin\AdminPromotionController;
 use App\Http\Controllers\Admin\AdminReportsController;
 use App\Http\Controllers\Admin\AdminSettingController;
 use App\Http\Controllers\Admin\AdminShippingZoneController;
@@ -14,9 +16,11 @@ use App\Http\Controllers\MidtransWebhookController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserOrderController;
+use App\Http\Controllers\UserPointsController;
 use Illuminate\Support\Facades\Route;
 
 // =========================================================================
@@ -25,6 +29,10 @@ use Illuminate\Support\Facades\Route;
 
 // Catalog & categories
 Route::get('/get.product.php', [ProductController::class, 'index']);
+Route::get('/get.search_suggestions.php', [ProductController::class, 'suggestions']);
+
+// Promo aktif (block / b1g1 / bundle) untuk katalog & keranjang
+Route::get('/get.promotions.php', [PromotionController::class, 'index']);
 
 // Ulasan produk (publik baca)
 Route::get('/product_reviews.php', [ReviewController::class, 'show']);
@@ -56,6 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Midtrans: buat transaksi Snap & cek status pembayaran
     Route::post('/cart/midtrans_snap.php', [OrderController::class, 'snap']);
+    Route::post('/cart/midtrans_charge.php', [OrderController::class, 'charge']);
     Route::post('/cart/midtrans_check_status.php', [OrderController::class, 'checkPaymentStatus']);
 
     // Pesanan saya
@@ -64,6 +73,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Nilai & ulas produk
     Route::post('/product/review.php', [ReviewController::class, 'store']);
+
+    // Poin/koin member
+    Route::get('/user/points.php', [UserPointsController::class, 'index']);
 });
 
 // =========================================================================
@@ -78,8 +90,9 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::get('/admin/stats.php', [AdminStatsController::class, 'index']);
 
     // Reports per periode (hari/minggu/bulan/tahun) + export CSV
-    Route::get('/admin/reports.php', [AdminReportsController::class, 'index']);
-    Route::get('/admin/reports/export.php', [AdminReportsController::class, 'export']);
+Route::get('/admin/reports.php', [AdminReportsController::class, 'index']);
+Route::get('/admin/reports/export.php', [AdminReportsController::class, 'export']);
+Route::get('/admin/analytics.php', [AdminAnalyticsController::class, 'index']);
 });
 
 // =========================================================================
@@ -103,6 +116,12 @@ Route::middleware(['auth:sanctum', 'manager'])->group(function () {
 
     // Category
     Route::get('/admin/categories.php', [AdminCategoryController::class, 'index']);
+
+    // Promotions (diskon blok / B1G1 / bundle)
+    Route::get('/admin/promos.php', [AdminPromotionController::class, 'index']);
+    Route::post('/admin/promos.php', [AdminPromotionController::class, 'store']);
+    Route::put('/admin/promos.php', [AdminPromotionController::class, 'update']);
+    Route::delete('/admin/promos.php', [AdminPromotionController::class, 'destroy']);
 
     // Shipping zones (ongkir per zona)
     Route::get('/admin/shipping_zones.php', [AdminShippingZoneController::class, 'index']);

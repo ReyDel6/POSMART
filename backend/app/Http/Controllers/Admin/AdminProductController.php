@@ -36,6 +36,8 @@ class AdminProductController extends Controller
             'category'    => $data['category'],
             'stock'       => $data['stock'],
             'image'       => $image,
+            'is_promo'    => filter_var($data['is_promo'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'promo'       => max(0, min(90, (int) ($data['promo'] ?? 0))),
             'description' => trim((string) ($data['description'] ?? '')),
             'gallery'     => $this->sanitizeGallery($data['gallery'] ?? []),
         ]);
@@ -58,6 +60,8 @@ class AdminProductController extends Controller
             'category'    => $data['category'],
             'stock'       => $data['stock'],
             'image'       => $image,
+            'is_promo'    => filter_var($data['is_promo'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'promo'       => max(0, min(90, (int) ($data['promo'] ?? 0))),
             'description' => trim((string) ($data['description'] ?? '')),
             'gallery'     => $this->sanitizeGallery($data['gallery'] ?? []),
         ]);

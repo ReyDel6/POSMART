@@ -1,6 +1,8 @@
 //File: components/CartModal.jsx
 import { useState, useMemo } from "react";
 import { useCartContext } from "../context/CartContext";
+import { usePromotions } from "../hooks/usePromotions";
+import { linePrice, bundleLinePrice } from "../utils/pricing";
 import { ArrowLeft, ShoppingBag, X } from "lucide-react";
 import CheckoutForm from "./CheckoutForm";
 import useDialog from "../hooks/useDialog";
@@ -12,25 +14,37 @@ export default function CartModal() {
         handleRemoveItem,
         handleUpdateQty } = useCartContext();
 
+    const { byProduct: dealMap, byBundleId: bundleMap } = usePromotions();
     const [isCheckout, setIsCheckout] = useState(false);
 
     const cartDetail = useMemo(() => {
         const items = cart.map(
             cartItem => {
-                const price = Number(cartItem.price) || 0;
                 const qty = Number(cartItem.qty) || 0;
+                if (cartItem.bundle_id) {
+                    const b = bundleMap[String(cartItem.bundle_id)];
+                    const lp = bundleLinePrice(b || { bundle_price: cartItem.price, list_total: cartItem.price }, qty);
+                    return { ...cartItem, qty, subtotal: lp.total, discount: lp.discount, label: lp.label, unitPrice: lp.unit, basePrice: Number(b?.list_total || cartItem.price) || 0 };
+                }
+                const deal = dealMap[cartItem.id];
+                const lp = linePrice(cartItem, qty, deal);
                 return {
-                    ...cartItem, 
-                    qty: qty,
-                    subtotal: price * qty
+                    ...cartItem,
+                    qty,
+                    subtotal: lp.total,
+                    discount: lp.discount,
+                    label: lp.label,
+                    unitPrice: lp.unit,
+                    basePrice: Number(cartItem.price) || 0,
                 };
             }
         );
 
         const grandTotal = items.reduce((acc, item) => acc + item.subtotal, 0);
+        const totalDiscount = items.reduce((acc, item) => acc + item.discount, 0);
 
-        return {items, grandTotal};
-    }, [cart]);
+        return {items, grandTotal, totalDiscount};
+    }, [cart, dealMap, bundleMap]);
 
     const handleCloseModal = () => {
         setIsCartOpen(false);
@@ -95,10 +109,25 @@ export default function CartModal() {
                                         />
                                         <div className="flex-1 min-w-0">
                                             <h4 className="text-xs font-bold text-slate-900 truncate">{item.name}</h4>
-                                            <p className="text-xs font-mono font-bold text-emerald-700 mt-0.5"
-                                            >
-                                                Rp {(item.price || 0).toLocaleString('id-ID')}
-                                            </p>
+                                            {item.label && (
+                                                <span className="inline-block mt-1 px-1.5 py-0.5 bg-red-50 text-red-600 border border-red-100 rounded text-[9px] font-black tracking-tight">
+                                                    {item.label}
+                                                </span>
+                                            )}
+                                            {item.discount > 0 ? (
+                                                <p className="flex items-center gap-1.5 mt-0.5">
+                                                    <span className="text-[10px] text-slate-400 font-mono line-through">
+                                                        Rp {(item.basePrice * item.qty).toLocaleString('id-ID')}
+                                                    </span>
+                                                    <span className="text-xs font-mono font-black text-emerald-700">
+                                                        Rp {item.unitPrice.toLocaleString('id-ID')}
+                                                    </span>
+                                                </p>
+                                            ) : (
+                                                <p className="text-xs font-mono font-bold text-emerald-700 mt-0.5">
+                                                    Rp {(item.basePrice || 0).toLocaleString('id-ID')}
+                                                </p>
+                                            )}
 
                                             {/* Qty changer & Subtotal */}
                                             <div className="flex items-center justify-between mt-2">
@@ -145,6 +174,12 @@ export default function CartModal() {
                             <span className="font-bold text-slate-500 ">Total Belanja</span>
                             <span className="text-lg font-mono font-black text-emerald-700">Rp {cartDetail.grandTotal.toLocaleString('id-ID')}</span>
                         </div>
+                        {cartDetail.totalDiscount > 0 && (
+                            <div className="flex justify-between items-center text-xs font-semibold text-emerald-600">
+                                <span>Kamu hemat</span>
+                                <span className="font-mono">-Rp {cartDetail.totalDiscount.toLocaleString('id-ID')}</span>
+                            </div>
+                        )}
                         <button
                             onClick={() => setIsCheckout(true)}
                             className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm transition-colors shadow-sm cursor-pointer text-center"
