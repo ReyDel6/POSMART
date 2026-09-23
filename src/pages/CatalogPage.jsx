@@ -24,6 +24,8 @@ import {
     X,
     History,
     Zap,
+    Truck,
+    ShieldCheck,
 } from "lucide-react";
 import { useProduct } from "../hooks/useProduct";
 import { usePromotions } from "../hooks/usePromotions";
@@ -359,64 +361,103 @@ export default function CatalogPage() {
             {/* ===== CAROUSEL PROMO ===== */}
             <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-5">
                 <div className="relative rounded-3xl overflow-hidden shadow-lg">
-                    <Link
-                        to={bannerIsProduct && activeBanner?.id ? `/product/${activeBanner.id}` : '#katalog-produk'}
-                        className={`relative block bg-linear-to-br ${activeBanner?.color || 'from-emerald-700 via-emerald-600 to-teal-700'} text-white px-6 sm:px-10 py-6 sm:py-8 h-60 sm:h-64 overflow-hidden`}
+                    <div
+                        className={`relative block bg-linear-to-br ${activeBanner?.color || 'from-emerald-700 via-emerald-600 to-teal-700'} text-white px-6 sm:px-10 py-8 sm:py-10 lg:py-12 min-h-[22rem] sm:min-h-[26rem] overflow-hidden`}
                     >
                         {/* Dekorasi background */}
                         <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
                         <div className="absolute -left-10 -bottom-28 w-72 h-72 rounded-full bg-white/5 blur-2xl pointer-events-none" />
 
-                        {bannerIsProduct ? (
-                            <div className="relative z-10 flex items-center justify-between gap-5 w-full h-full">
-                                <div className="min-w-0 flex-1">
-                                    <span className="inline-flex items-center gap-1 bg-amber-400 text-emerald-950 text-[10px] font-black px-2.5 py-1 rounded-md mb-3">
-                                        <Percent className="w-3 h-3" /> HEMAT {activeBanner.promo}%
+                        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+                            {/* Teks Kiri */}
+                            <div className="lg:col-span-7 space-y-4">
+                                {bannerIsProduct ? (
+                                    <span className="inline-flex items-center gap-1 bg-amber-400 text-emerald-950 text-[11px] font-black px-3 py-1 rounded-full">
+                                        <Percent className="w-3.5 h-3.5" /> HEMAT {activeBanner.promo}% · Promo Terbatas
                                     </span>
-                                    <h2 className="text-xl sm:text-2xl font-black leading-tight line-clamp-2">{activeBanner.name}</h2>
-                                    <p className="text-emerald-100 text-xs sm:text-sm mt-2">
+                                ) : (
+                                    <span className="inline-flex items-center gap-1 bg-white/20 text-[11px] font-black px-3 py-1 rounded-full">
+                                        <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" /> POSMart
+                                    </span>
+                                )}
+
+                                {bannerIsProduct ? (
+                                    <Link to={`/product/${activeBanner.id}`} className="block">
+                                        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-tight line-clamp-2 hover:underline transition-all">
+                                            {activeBanner.name}
+                                        </h1>
+                                    </Link>
+                                ) : (
+                                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
+                                        {activeBanner.name}
+                                    </h1>
+                                )}
+
+                                {bannerIsProduct ? (
+                                    <p className="text-emerald-100/90 text-base sm:text-lg font-bold">
                                         {formatIDR(promoPrice)}
-                                        <span className="line-through text-emerald-200/70 ml-2">{formatIDR(activeBanner.price)}</span>
+                                        <span className="font-normal line-through text-emerald-200/70 ml-2">{formatIDR(activeBanner.price)}</span>
                                     </p>
-                                    <span className="inline-flex items-center gap-1 mt-3 text-xs font-bold bg-amber-400 text-emerald-950 px-4 py-2 rounded-full shadow-md">
-                                        Belanja Sekarang <ArrowRight className="w-3.5 h-3.5" />
-                                    </span>
+                                ) : (
+                                    <p className="text-emerald-100/90 text-sm sm:text-base max-w-xl leading-relaxed">{activeBanner.subtitle}</p>
+                                )}
+
+                                {/* CTA yang jelas ala hero lama */}
+                                <div className="flex flex-wrap items-center gap-3 pt-1">
+                                    <a
+                                        href="#katalog-produk"
+                                        className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-300 text-emerald-950 font-bold text-sm px-6 py-3 rounded-xl shadow-lg shadow-amber-400/20 hover:scale-[1.02] transition-all"
+                                    >
+                                        Belanja Sekarang
+                                        <ArrowRight className="w-4 h-4" />
+                                    </a>
+                                    <button
+                                        onClick={() => setOnlyPromo(true)}
+                                        className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-sm px-5 py-3 rounded-xl backdrop-blur-md transition-all cursor-pointer"
+                                    >
+                                        <Percent className="w-4 h-4 text-amber-300" />
+                                        Lihat Promo Hari Ini
+                                    </button>
                                 </div>
-                                <div className="relative shrink-0">
-                                    <img
-                                        src={activeBanner.image || BANNER_IMG_FALLBACK}
-                                        alt={activeBanner.name}
-                                        onError={(e) => { e.target.onerror = null; e.target.src = BANNER_IMG_FALLBACK; }}
-                                        className="w-32 h-32 sm:w-44 sm:h-44 object-cover rounded-3xl shadow-2xl ring-4 ring-white/30"
-                                    />
-                                    <div className="absolute -left-3 sm:-left-4 -bottom-4 bg-white text-slate-800 px-3 py-1.5 rounded-xl shadow-xl border border-slate-100 flex items-center gap-1.5 animate-bounce">
-                                        <Zap className="w-3.5 h-3.5 text-amber-500" /> <span className="text-[10px] font-bold">Harga Promo</span>
+                            </div>
+
+                            {/* Showcase Visual Kanan */}
+                            <div className="lg:col-span-5 relative flex justify-center items-center py-4">
+                                <div className="relative w-full max-w-xs sm:max-w-sm bg-linear-to-tr from-white/15 to-white/5 border border-white/20 rounded-3xl p-5 backdrop-blur-lg shadow-2xl">
+                                    <Link to={bannerIsProduct ? `/product/${activeBanner.id}` : '#katalog-produk'} className="block relative">
+                                        <img
+                                            src={activeBanner.image || BANNER_IMG_FALLBACK}
+                                            alt={activeBanner.name}
+                                            onError={(e) => { e.target.onerror = null; e.target.src = BANNER_IMG_FALLBACK; }}
+                                            className="w-full aspect-square object-cover rounded-2xl shadow-xl ring-4 ring-white/30"
+                                        />
+                                    </Link>
+
+                                    {/* Floating Trust Badge 1: Pengiriman */}
+                                    <div className="absolute -bottom-3 left-2 bg-white text-slate-800 px-3 py-2 rounded-xl shadow-xl border border-slate-100 flex items-center gap-2 animate-bounce">
+                                        <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                                            <Truck className="w-4 h-4" />
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-[11px] font-bold text-slate-900">Garansi 30 Menit</div>
+                                            <div className="text-[10px] text-slate-500">Pasti sampai tujuan</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Floating Trust Badge 2: Kualitas */}
+                                    <div className="absolute -top-3 right-2 bg-white text-slate-800 px-3 py-2 rounded-xl shadow-xl border border-slate-100 flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
+                                            <ShieldCheck className="w-4 h-4" />
+                                        </div>
+                                        <div className="text-left">
+                                            <div className="text-[11px] font-bold text-slate-900">100% Produk Fresh</div>
+                                            <div className="text-[10px] text-slate-500">Dicek setiap pagi</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="relative z-10 flex items-center justify-between gap-6 w-full h-full">
-                                <div className="min-w-0 flex-1">
-                                    <span className="inline-flex items-center gap-1 bg-white/20 text-[10px] font-black px-2.5 py-1 rounded-md mb-3">
-                                        <Star className="w-3 h-3 fill-amber-300 text-amber-300" /> POSMart
-                                    </span>
-                                    <h2 className="text-xl sm:text-3xl font-black leading-tight">{activeBanner.name}</h2>
-                                    <p className="text-emerald-100/90 text-xs sm:text-sm mt-2 max-w-sm">{activeBanner.subtitle}</p>
-                                </div>
-                                <div className="relative shrink-0">
-                                    <img
-                                        src={activeBanner.image || BANNER_IMG_FALLBACK}
-                                        alt={activeBanner.name}
-                                        onError={(e) => { e.target.onerror = null; e.target.src = BANNER_IMG_FALLBACK; }}
-                                        className="w-32 h-32 sm:w-44 sm:h-44 object-cover rounded-3xl shadow-2xl ring-4 ring-white/30"
-                                    />
-                                    <div className="absolute -left-3 sm:-left-4 -bottom-4 bg-white text-slate-800 px-3 py-1.5 rounded-xl shadow-xl border border-slate-100 flex items-center gap-1.5 animate-bounce">
-                                        <Zap className="w-3.5 h-3.5 text-amber-500" /> <span className="text-[10px] font-bold">Antar Cepat</span>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </Link>
+                        </div>
+                    </div>
 
                     {/* arrows */}
                     <button

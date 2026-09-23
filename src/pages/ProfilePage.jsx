@@ -3,13 +3,13 @@ import { useState, useEffect } from 'react';
 import {
     Mail, Phone, MapPin, LogOut, Store, ShieldCheck, UserCheck, Coins,
     TrendingUp, TrendingDown, ShoppingBag, ChevronRight, Sparkles, Crown,
-    History, BadgeCheck,
+    History, BadgeCheck, Pencil, Loader2, CheckCircle2, AlertCircle,
 } from 'lucide-react';
 import Header from '../components/Header';
 import api from '../utils/api';
 
 export default function ProfilePage() {
-    const [profile] = useState(() => {
+    const [profile, setProfile] = useState(() => {
         try {
             const saved = localStorage.getItem('user_profile');
             return saved ? JSON.parse(saved) : null;
@@ -20,6 +20,63 @@ export default function ProfilePage() {
     });
 
     const [points, setPoints] = useState(null);
+
+    // ===== Form "Lengkapi Profil" =====
+    const [editing, setEditing] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [formMsg, setFormMsg] = useState(null);
+    const [formErr, setFormErr] = useState(null);
+    const [form, setForm] = useState({ name: '', phone: '', address: '' });
+
+    useEffect(() => {
+        if (profile) {
+            setForm({
+                name: profile.name || '',
+                phone: profile.phone || '',
+                address: profile.address || '',
+            });
+        }
+    }, [profile]);
+
+    const saveProfile = async (e) => {
+        e.preventDefault();
+        if (!form.name.trim()) {
+            setFormErr('Nama wajib diisi.');
+            return;
+        }
+        setSaving(true);
+        setFormErr(null);
+        setFormMsg(null);
+        try {
+            const res = await api.put('/user/update.php', {
+                name: form.name,
+                email: profile?.email || '',
+                phone: form.phone,
+                address: form.address,
+            });
+            if (res.data?.status === 'success') {
+                setProfile(res.data.user);
+                localStorage.setItem('user_profile', JSON.stringify(res.data.user));
+                setEditing(false);
+                setFormMsg('Profil berhasil diperbarui.');
+                setTimeout(() => setFormMsg(null), 3000);
+            } else {
+                setFormErr(res.data?.message || 'Gagal memperbarui profil.');
+            }
+        } catch (err) {
+            setFormErr('Terjadi kesalahan. Coba lagi.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const startEdit = () => {
+        setEditing(true);
+        setFormErr(null);
+        setTimeout(() => {
+            document.getElementById('edit-profil')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
+    };
 
     useEffect(() => {
         if (!profile || !localStorage.getItem('token')) return;
@@ -155,18 +212,85 @@ export default function ProfilePage() {
                         {/* ===== KOLOM KANAN (konten) ===== */}
                         <div className="lg:col-span-7 xl:col-span-8 space-y-5">
                             {/* Lengkapi profil */}
-                            {completeness < 3 && (
-                                <div className="bg-white border border-gray-200 shadow-sm rounded-3xl px-5 py-4">
+                            {(completeness < 3 || editing) && (
+                                <div id="edit-profil" className="bg-white border border-gray-200 shadow-sm rounded-3xl px-6 py-5 scroll-mt-28">
                                     <div className="flex items-center justify-between mb-2">
                                         <p className="text-sm font-black text-slate-800 flex items-center gap-2">
-                                            <BadgeCheck className="w-4 h-4 text-emerald-500" /> Lengkapi profil kamu
+                                            <BadgeCheck className="w-4 h-4 text-emerald-500" />
+                                            {editing ? 'Ubah profil kamu' : completeness < 3 ? 'Lengkapi profil kamu' : 'Profil lengkap'}
                                         </p>
                                         <p className="text-xs font-black text-slate-400 tabular-nums">{completenessPct}%</p>
                                     </div>
-                                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-3">
                                         <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500" style={{ width: `${completenessPct}%` }} />
                                     </div>
-                                    <p className="text-xs text-slate-400 mt-2">Lengkapi email, telepon, dan alamat untuk checkout lebih cepat.</p>
+                                    <p className="text-xs text-slate-400 mb-4">Lengkapi nama, telepon, dan alamat untuk checkout lebih cepat.</p>
+
+                                    {formMsg && (
+                                        <div className="mb-4 flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold px-3.5 py-2.5 rounded-xl">
+                                            <CheckCircle2 className="w-4 h-4 shrink-0" /> {formMsg}
+                                        </div>
+                                    )}
+                                    {formErr && (
+                                        <div className="mb-4 flex items-center gap-2 bg-red-50 border border-red-200 text-red-600 text-xs font-bold px-3.5 py-2.5 rounded-xl">
+                                            <AlertCircle className="w-4 h-4 shrink-0" /> {formErr}
+                                        </div>
+                                    )}
+
+                                    <form onSubmit={saveProfile} className="space-y-3.5">
+                                        <div>
+                                            <label htmlFor="pf-name" className="text-xs font-bold text-slate-600 mb-1.5 block">Nama Lengkap</label>
+                                            <input
+                                                id="pf-name"
+                                                type="text"
+                                                value={form.name}
+                                                onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+                                                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                                placeholder="Nama kamu"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="pf-phone" className="text-xs font-bold text-slate-600 mb-1.5 block">No. Telepon</label>
+                                            <input
+                                                id="pf-phone"
+                                                type="text"
+                                                value={form.phone}
+                                                onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))}
+                                                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                                placeholder="08xxxxxxxxxx"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="pf-address" className="text-xs font-bold text-slate-600 mb-1.5 block">Alamat</label>
+                                            <textarea
+                                                id="pf-address"
+                                                rows="2"
+                                                value={form.address}
+                                                onChange={(e) => setForm(f => ({ ...f, address: e.target.value }))}
+                                                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+                                                placeholder="Alamat lengkap pengiriman"
+                                            />
+                                        </div>
+                                        <div className="flex items-center gap-3 pt-1">
+                                            <button
+                                                type="submit"
+                                                disabled={saving}
+                                                className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors shadow-md cursor-pointer"
+                                            >
+                                                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                                                {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                                            </button>
+                                            {editing && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setEditing(false); setFormErr(null); }}
+                                                    className="text-sm font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+                                                >
+                                                    Batal
+                                                </button>
+                                            )}
+                                        </div>
+                                    </form>
                                 </div>
                             )}
 
@@ -197,8 +321,16 @@ export default function ProfilePage() {
 
                             {/* Data kontak */}
                             <div className="bg-white border border-gray-200 shadow-sm rounded-3xl overflow-hidden">
-                                <div className="px-6 pt-5 pb-3 border-b border-slate-100">
+                                <div className="px-6 pt-5 pb-3 border-b border-slate-100 flex items-center justify-between">
                                     <h3 className="text-sm font-black text-slate-800">Data Kontak</h3>
+                                    {!editing && (
+                                        <button
+                                            onClick={startEdit}
+                                            className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline cursor-pointer"
+                                        >
+                                            <Pencil className="w-3.5 h-3.5" /> Ubah
+                                        </button>
+                                    )}
                                 </div>
                                 <div className="p-5 space-y-3">
                                     <ProfileRow icon={<Mail className="w-4 h-4" />} label="Email" value={profile.email || 'Belum diisi'} />

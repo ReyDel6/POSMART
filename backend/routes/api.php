@@ -21,6 +21,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserOrderController;
 use App\Http\Controllers\UserPointsController;
+use App\Http\Controllers\UserProfileController;
 use Illuminate\Support\Facades\Route;
 
 // =========================================================================
@@ -76,6 +77,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Poin/koin member
     Route::get('/user/points.php', [UserPointsController::class, 'index']);
+
+    // Perbarui profil sendiri
+    Route::put('/user/update.php', [UserProfileController::class, 'update']);
 });
 
 // =========================================================================
