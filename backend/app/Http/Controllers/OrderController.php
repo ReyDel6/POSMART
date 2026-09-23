@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\ShippingZone;
 use App\Services\MidtransService;
+use App\Services\StoreNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -30,7 +32,7 @@ class OrderController extends Controller
         $isWalkIn = $paymentMode === 'cash';
 
         if ($isWalkIn) {
-            if ($courier === '') $courier = 'walkin';
+            $courier = 'walkin';
             if ($address === '') $address = 'Ambil di toko';
         }
 
@@ -41,24 +43,40 @@ class OrderController extends Controller
             ], 422);
         }
 
-        // Ongkir dihitung dari kurir di sisi server (selaras dengan logika frontend)
-        $shippingFee = $isWalkIn ? 0 : ($courier === 'express' ? 20000 : 10000);
+        // Ongkir dihitung dari zona pengiriman (server-side, bukan dari client).
+        $shippingFee = 0;
+        $zone        = null;
+        if (!$isWalkIn) {
+            $zoneId = (int) ($data['shipping_zone_id'] ?? 0);
+            $zone = ShippingZone::where('is_active', true)->find($zoneId);
+
+            if ($zone) {
+                $shippingFee = (int) $zone->fee;
+                $courier     = $zone->name;
+            } else {
+                // Fallback untuk order lama/klien lawas yang hanya mengirim 'courier'.
+                $shippingFee = $courier === 'express' ? 20000 : 10000;
+                if ($courier === '') $courier = 'regular';
+            }
+        }
 
         try {
-            $order = DB::transaction(function () use ($user, $customerName, $phone, $address, $courier, $cartItems, $shippingFee, $isWalkIn, $paymentMode) {
+            $order = DB::transaction(function () use ($user, $customerName, $phone, $address, $courier, $zone, $shippingFee, $cartItems, $isWalkIn, $paymentMode) {
                 $order = Order::create([
-                    'user_id'       => $user->id,
-                    'customer_name' => $customerName,
-                    'phone'         => $phone,
-                    'address'       => $address,
-                    'courier'       => $courier,
-                    'total_price'   => 0,
-                    'status'        => $isWalkIn ? 'paid' : 'pending',
-                    'payment_mode'  => $paymentMode,
-                    'payment_status'=> $isWalkIn ? 'paid' : 'pending',
-                    'payment_method'=> $isWalkIn ? 'cash' : null,
-                    'payment_type'  => $isWalkIn ? 'cash' : null,
-                    'paid_at'       => $isWalkIn ? now() : null,
+                    'user_id'        => $user->id,
+                    'customer_name'  => $customerName,
+                    'phone'          => $phone,
+                    'address'        => $address,
+                    'courier'        => $courier,
+                    'shipping_zone_id' => $zone?->id,
+                    'shipping_fee'   => $shippingFee,
+                    'total_price'    => 0,
+                    'status'         => $isWalkIn ? 'paid' : 'pending',
+                    'payment_mode'   => $paymentMode,
+                    'payment_status' => $isWalkIn ? 'paid' : 'pending',
+                    'payment_method' => $isWalkIn ? 'cash' : null,
+                    'payment_type'   => $isWalkIn ? 'cash' : null,
+                    'paid_at'        => $isWalkIn ? now() : null,
                 ]);
 
                 $grandTotal = 0;
@@ -101,6 +119,13 @@ class OrderController extends Controller
 
                 return $order;
             });
+
+            // Kirim notifikasi (email) — kegagalan email tidak boleh menggagalkan pesanan.
+            try {
+                app(StoreNotifier::class)->orderCreated($order);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Gagal mengirim notifikasi pesanan: ' . $e->getMessage());
+            }
 
             return response()->json([
                 'status'       => 'success',
@@ -183,7 +208,10 @@ class OrderController extends Controller
             ];
         }
 
-        $shippingFee = $order->courier === 'express' ? 20000 : 10000;
+        $shippingFee = (int) $order->shipping_fee;
+        if ($shippingFee <= 0 && $order->courier !== 'walkin') {
+            $shippingFee = $order->courier === 'express' ? 20000 : 10000;
+        }
         if ($shippingFee > 0) {
             $items[] = [
                 'id'       => 'SHIPPING',
@@ -278,6 +306,12 @@ class OrderController extends Controller
 
             if ($order->status === 'pending') {
                 $order->update(['status' => 'paid']);
+            }
+
+            try {
+                app(StoreNotifier::class)->orderPaid($order);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Gagal kirim notifikasi pembayaran: ' . $e->getMessage());
             }
         } elseif (!$paid && in_array($status['transaction_status'] ?? '', ['expire', 'cancel', 'deny'], true) && $order->payment_status !== 'paid') {
             $order->update(['payment_status' => $status['transaction_status']]);

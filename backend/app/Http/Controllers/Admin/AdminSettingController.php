@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class AdminSettingController extends Controller
 {
-    public const KEYS = ['store_name', 'store_phone', 'store_address', 'receipt_footer', 'whatsapp'];
+    public const KEYS = ['store_name', 'store_phone', 'store_address', 'receipt_footer', 'whatsapp', 'store_email'];
 
     public function index()
     {

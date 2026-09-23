@@ -30,12 +30,14 @@ class AdminProductController extends Controller
         $image = !empty($data['image']) ? $data['image'] : 'default_product.jpeg';
 
         Product::create([
-            'barcode'  => $barcode,
-            'name'     => $data['name'],
-            'price'    => $data['price'],
-            'category' => $data['category'],
-            'stock'    => $data['stock'],
-            'image'    => $image,
+            'barcode'     => $barcode,
+            'name'        => $data['name'],
+            'price'       => $data['price'],
+            'category'    => $data['category'],
+            'stock'       => $data['stock'],
+            'image'       => $image,
+            'description' => trim((string) ($data['description'] ?? '')),
+            'gallery'     => $this->sanitizeGallery($data['gallery'] ?? []),
         ]);
 
         return response()->json([
@@ -50,18 +52,34 @@ class AdminProductController extends Controller
         $image = !empty($data['image']) ? $data['image'] : 'default_product.jpeg';
 
         Product::where('id', $data['id'])->update([
-            'barcode'  => $data['barcode'],
-            'name'     => $data['name'],
-            'price'    => $data['price'],
-            'category' => $data['category'],
-            'stock'    => $data['stock'],
-            'image'    => $image,
+            'barcode'     => $data['barcode'],
+            'name'        => $data['name'],
+            'price'       => $data['price'],
+            'category'    => $data['category'],
+            'stock'       => $data['stock'],
+            'image'       => $image,
+            'description' => trim((string) ($data['description'] ?? '')),
+            'gallery'     => $this->sanitizeGallery($data['gallery'] ?? []),
         ]);
 
         return response()->json([
             'status'  => 'success',
             'message' => 'Produk berhasil diperbarui',
         ]);
+    }
+
+    private function sanitizeGallery($gallery): ?array
+    {
+        $items = [];
+        foreach ((array) $gallery as $name) {
+            $name = trim((string) $name);
+            if ($name !== '' && str_contains($name, '.') && !str_starts_with($name, '/')) {
+                $items[] = $name;
+            }
+        }
+        $items = array_values(array_unique(array_slice($items, 0, 8)));
+
+        return $items === [] ? null : $items;
     }
 
     public function destroy(Request $request)

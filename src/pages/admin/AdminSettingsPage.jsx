@@ -1,6 +1,6 @@
 // File: src/pages/admin/AdminSettingsPage.jsx
 import { useState, useEffect } from 'react';
-import { Settings, Store, Printer, Save, Loader2 } from 'lucide-react';
+import { Settings, Store, Printer, Save, Loader2, Mail } from 'lucide-react';
 import api from '../../utils/api';
 
 const DEFAULTS = {
@@ -8,6 +8,7 @@ const DEFAULTS = {
     store_phone: '081234567890',
     store_address: 'Jl. Raya Bogor No. 45, Jakarta Timur',
     whatsapp: '',
+    store_email: '',
     receipt_footer: 'Terima kasih telah berbelanja di POSMart! Barang yang sudah dibeli tidak dapat ditukar.',
 };
 
@@ -115,7 +116,14 @@ export default function AdminSettingsPage() {
                     <div>
                         <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Nomor WhatsApp Toko (format: 628xxxxxxxxxx)</label>
                         <input type="text" name="whatsapp" value={form.whatsapp} onChange={handleChange} placeholder="628123456789" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
-                        <p className="text-[11px] text-slate-400 mt-1">Dipakai untuk menerima notifikasi pesanan baru via WhatsApp. Kosongkan untuk memakai nomor pelanggan.</p>
+                        <p className="text-[11px] text-slate-400 mt-1">Dipakai untuk menerima notifikasi pesanan baru via WhatsApp dan tombol "Pesan via WhatsApp". Kosongkan untuk memakai nomor pelanggan.</p>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-700 uppercase mb-1 flex items-center gap-1.5">
+                            <Mail className="w-3.5 h-3.5 text-emerald-600" /> Email Notifikasi Toko
+                        </label>
+                        <input type="email" name="store_email" value={form.store_email} onChange={handleChange} placeholder="tokoposmart@email.com" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+                        <p className="text-[11px] text-slate-400 mt-1">Email penerima notifikasi pesanan baru (order & pembayaran). Kosongkan untuk menonaktifkan email notifikasi ke toko.</p>
                     </div>
                 </div>
 

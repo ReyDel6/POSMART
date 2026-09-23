@@ -71,6 +71,12 @@ class AdminOrderController extends Controller
                 'payment_type'   => $order->payment_type ?: 'manual',
                 'paid_at'        => now(),
             ]);
+
+            try {
+                app(\App\Services\StoreNotifier::class)->orderPaid($order);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Gagal kirim notifikasi pembayaran: ' . $e->getMessage());
+            }
         }
 
         // Saat transaksi dibatalkan manual, stok yang sempat dikunci dikembalikan.

@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\AdminProductController;
 use App\Http\Controllers\Admin\AdminReportsController;
 use App\Http\Controllers\Admin\AdminSettingController;
+use App\Http\Controllers\Admin\AdminShippingZoneController;
 use App\Http\Controllers\Admin\AdminStatsController;
 use App\Http\Controllers\Admin\AdminUploadController;
 use App\Http\Controllers\Admin\AdminUserController;
@@ -39,6 +40,9 @@ Route::post('/user/reset-password.php', [PasswordResetController::class, 'reset'
 
 // Informasi toko publik (dipakai struk, invoice, notifikasi WA)
 Route::get('/public/settings.php', [SettingController::class, 'publicIndex']);
+
+// Daftar zona ongkir aktif (dipakai checkout, publik)
+Route::get('/shipping_zones.php', [SettingController::class, 'publicZones']);
 
 // Webhook pembayaran Midtrans (dipanggil server Midtrans, tanpa token)
 Route::post('/midtrans/webhook.php', [MidtransWebhookController::class, 'handle']);
@@ -97,8 +101,14 @@ Route::middleware(['auth:sanctum', 'manager'])->group(function () {
     Route::put('/admin/users.php', [AdminUserController::class, 'update']);
     Route::delete('/admin/users.php', [AdminUserController::class, 'destroy']);
 
-    // Categories
+    // Category
     Route::get('/admin/categories.php', [AdminCategoryController::class, 'index']);
+
+    // Shipping zones (ongkir per zona)
+    Route::get('/admin/shipping_zones.php', [AdminShippingZoneController::class, 'index']);
+    Route::post('/admin/shipping_zones.php', [AdminShippingZoneController::class, 'store']);
+    Route::put('/admin/shipping_zones.php', [AdminShippingZoneController::class, 'update']);
+    Route::delete('/admin/shipping_zones.php', [AdminShippingZoneController::class, 'destroy']);
 
     // Store settings
     Route::get('/admin/settings.php', [AdminSettingController::class, 'index']);

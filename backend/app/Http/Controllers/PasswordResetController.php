@@ -48,11 +48,13 @@ class PasswordResetController extends Controller
             ['token' => $token, 'created_at' => now()]
         );
 
-        // Mode demo: SMTP tidak dikonfigurasi, token dikembalikan agar bisa langsung dipakai
-        // dari halaman reset. Di produksi, ganti dengan pengiriman e-Mail nyata.
+        // Kirim e-Mail berisi link reset (with log-mailer saat demo, SMTP saat produksi).
+        app(\App\Services\StoreNotifier::class)->sendResetLink($email, $token);
+
+        // Mode demo: token tetap dikembalikan agar halaman reset bisa langsung digunakan.
         return response()->json([
             'status'  => 'success',
-            'message' => 'Link reset password telah dibuat.',
+            'message' => 'Link reset password telah dikirim ke e-Mail Anda.',
             'token'   => $token,
         ]);
     }

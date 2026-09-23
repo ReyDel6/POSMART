@@ -37,6 +37,7 @@ export default function CheckoutForm() {
             phone: phone,
             address: address,
             courier: 'regular',
+            shippingZoneId: '',
             customerId: customerId
         };
     });
@@ -50,6 +51,9 @@ export default function CheckoutForm() {
     // Informasi toko publik (nama + WA toko) untuk notifikasi pesanan
     const [storeSettings, setStoreSettings] = useState({});
 
+    // Zona pengiriman aktif (dari backend)
+    const [shippingZones, setShippingZones] = useState([]);
+
     useEffect(() => {
         let active = true;
         api.get('/public/settings.php')
@@ -59,10 +63,25 @@ export default function CheckoutForm() {
                 }
             })
             .catch(() => {});
+        api.get('/shipping_zones.php')
+            .then(res => {
+                if (active && res.data && res.data.status === 'success') {
+                    const zones = res.data.data || [];
+                    setShippingZones(zones);
+                    // Default: pilih zona pertama
+                    setFormData(prev => ({ ...prev, shippingZoneId: zones.length ? String(zones[0].id) : '' }));
+                }
+            })
+            .catch(() => {});
         return () => { active = false; };
     }, []);
 
     const storeName = storeSettings.store_name || 'POSMart';
+
+    const selectedZone = useMemo(() => {
+        if (!formData.shippingZoneId || !shippingZones.length) return null;
+        return shippingZones.find(z => String(z.id) === String(formData.shippingZoneId)) || null;
+    }, [formData.shippingZoneId, shippingZones]);
 
     const cartDetails = useMemo(() => {
         // A. Map data langsung dari item keranjang
@@ -82,12 +101,14 @@ export default function CheckoutForm() {
         // B. Hitung subtotal menggunakan .reduce()
         const subtotal = itemsReport.reduce((acc, item) => acc + item.total, 0);
 
-        // C. Hitung ongkir berdasarkan kurir (0 bila bayar tunai di kasir / walk-in)
-        const shippingFee = paymentMode === 'cash' ? 0 : (formData.courier === 'express' ? 20000 : 10000);
+        // C. Hitung ongkir berdasarkan zona pengiriman (0 bila bayar tunai di kasir / walk-in)
+        const shippingFee = paymentMode === 'cash'
+            ? 0
+            : (selectedZone ? (Number(selectedZone.fee) || 0) : (formData.courier === 'express' ? 20000 : 10000));
         const grandTotal = subtotal + shippingFee;
 
         return { itemsReport, subtotal, shippingFee, grandTotal };
-    }, [cart, formData.courier, paymentMode]);
+    }, [cart, paymentMode, selectedZone, formData.courier]);
 
     // 4. Handler universal untuk mendeteksi setiap ketikan user pada input form
     const handleInputChange = (e) => {
@@ -137,6 +158,8 @@ export default function CheckoutForm() {
 
         if (!formData.address.trim() && paymentMode !== 'cash') newErrors.address = 'Alamat pengiriman wajib diisi';
 
+        if (paymentMode !== 'cash' && !formData.shippingZoneId) newErrors.shippingZoneId = 'Pilih zona pengiriman terlebih dahulu';
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0; // Return true jika tidak ada eror
     };
@@ -165,13 +188,16 @@ export default function CheckoutForm() {
 
         const whatsappFormattedPhone = `62${formData.phone}`;
 
-        const effectiveCourier = paymentMode === 'cash' ? 'walkin' : formData.courier;
+        const effectiveCourier = paymentMode === 'cash'
+            ? 'walkin'
+            : (selectedZone ? selectedZone.name : formData.courier);
 
         const payload = {
             customer_name: formData.fullName,
             phone: whatsappFormattedPhone,
             address: formData.address,
             courier: effectiveCourier,
+            shipping_zone_id: paymentMode === 'cash' ? null : (selectedZone ? selectedZone.id : null),
             payment_mode: paymentMode,
             items: cartDetails.itemsReport,
             total_price: cartDetails.grandTotal,
@@ -222,7 +248,7 @@ export default function CheckoutForm() {
                         textMessage += `Nama: ${formData.fullName}\n`;
                         textMessage += `WA: ${whatsappFormattedPhone}\n`;
                         textMessage += `Alamat: ${formData.address}\n`;
-                        textMessage += `Kurir: ${formData.courier.toUpperCase()}\n\n`;
+                        textMessage += `Kurir/Zona: ${effectiveCourier.toUpperCase()}\n\n`;
 
                         textMessage += `*Daftar Belanjaan:*\n`;
                         cartDetails.itemsReport.forEach((item, index) => {
@@ -455,22 +481,33 @@ export default function CheckoutForm() {
             </div>
             )}
 
-            {/* OPSI ONDOS KIRIM / METODE PENGIRIMAN */}
+            {/* OPSI ZONA PENGIRIMAN */}
             {paymentMode !== 'cash' && (
             <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Layanan Pengiriman</label>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Zona Pengiriman</label>
                 <div className="relative">
                     <Truck className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
                     <select
-                        name="courier"
-                        value={formData.courier}
+                        name="shippingZoneId"
+                        value={formData.shippingZoneId}
                         onChange={handleInputChange}
-                        className="w-full text-sm pl-10 pr-3 py-2 border border-slate-200 bg-slate-50 rounded-lg focus:outline-hidden focus:border-red-500 cursor-pointer"
+                        className={`w-full text-sm pl-10 pr-3 py-2 border rounded-lg focus:outline-hidden transition-colors cursor-pointer ${errors.shippingZoneId ? 'border-red-500 focus:border-red-500 bg-red-50/30' : 'border-slate-200 bg-slate-50 focus:border-red-500'
+                            }`}
                     >
-                        <option value="regular">Reguler (2-3 Hari) - Rp 10.000</option>
-                        <option value="express">Sameday Kilat (Hari Ini Sampai) - Rp 20.000</option>
+                        {shippingZones.length === 0 && (
+                            <option value="">Zona tidak tersedia...</option>
+                        )}
+                        {shippingZones.map(zone => (
+                            <option key={zone.id} value={zone.id}>
+                                {zone.name} - Rp {Number(zone.fee).toLocaleString('id-ID')}
+                            </option>
+                        ))}
                     </select>
                 </div>
+                {errors.shippingZoneId && <p className="text-[11px] text-red-600 font-medium">{errors.shippingZoneId}</p>}
+                {shippingZones.length === 0 && (
+                    <p className="text-[11px] text-amber-600 font-medium">Zona belum diatur admin. Hubungi toko untuk konfirmasi ongkir.</p>
+                )}
             </div>
             )}
 
@@ -488,7 +525,7 @@ export default function CheckoutForm() {
                     <span className="font-mono font-medium">Rp {cartDetails.subtotal.toLocaleString('id-ID')}</span>
                 </div>
                 <div className="flex justify-between text-xs text-slate-500">
-                    <span>{paymentMode === 'cash' ? 'Tunai di Kasir (Walk-in):' : `Ongkos Kirim (${formData.courier === 'express' ? 'Kilat' : 'Reguler'}):`}</span>
+                    <span>{paymentMode === 'cash' ? 'Tunai di Kasir (Walk-in):' : `Ongkos Kirim (${selectedZone ? selectedZone.name : 'Reguler'}):`}</span>
                     <span className="font-mono font-medium">Rp {cartDetails.shippingFee.toLocaleString('id-ID')}</span>
                 </div>
                 <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-dashed border-slate-200">

@@ -1,11 +1,12 @@
 //File: components/ProductCard.jsx
 import { useState, useEffect, useCallback } from "react";
-import { ShoppingBag, Star, X } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ShoppingBag, Star, X, ZoomIn, MessageCircle } from "lucide-react";
 import { useCartContext } from "../context/CartContext";
 import useDialog from "../hooks/useDialog";
 import api from "../utils/api";
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, storeSettings }) {
   const { handleAddToCart } = useCartContext();
   const [zoomOpen, setZoomOpen] = useState(false);
   const [reviewsOpen, setReviewsOpen] = useState(false);
@@ -106,11 +107,10 @@ export default function ProductCard({ product }) {
     <div className="group bg-white rounded-xl border border-slate-200 overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col h-full">
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-slate-100">
-        <button
-          type="button"
-          onClick={() => setZoomOpen(true)}
-          aria-label={`Lihat detail gambar ${item.name}`}
-          className="block w-full h-full cursor-pointer focus:outline-hidden focus-visible:ring-2 focus-visible:ring-green-600"
+        <Link
+          to={`/product/${item.id}`}
+          aria-label={`Lihat detail ${item.name}`}
+          className="block w-full h-full group/img focus:outline-hidden focus-visible:ring-2 focus-visible:ring-green-600"
         >
           <img
             src={item.image ? (item.image.startsWith('http') || item.image.startsWith('/') ? item.image : `/product/${item.image}`) : 'https://placehold.co/300x300?text=No+Image'}
@@ -118,12 +118,20 @@ export default function ProductCard({ product }) {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/300x300?text=No+Image'; }}
           />
-        </button>
+        </Link>
         {item.is_promo && (
           <div className="absolute top-2 left-2 bg-linear-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-sm">
             -{item.promo}%
           </div>
         )}
+        <button
+          type="button"
+          onClick={() => setZoomOpen(true)}
+          aria-label={`Perbesar gambar ${item.name}`}
+          className="absolute bottom-2 right-2 p-2 rounded-full bg-white/90 text-slate-600 shadow-md hover:bg-white transition-colors cursor-pointer"
+        >
+          <ZoomIn className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Zoom lightbox */}
@@ -277,9 +285,12 @@ export default function ProductCard({ product }) {
           {item.category}
         </span>
 
-        <h3 className="text-sm font-medium text-slate-800 line-clamp-2 mb-2 group-hover:text-green-600 transition-colors">
+        <Link
+          to={`/product/${item.id}`}
+          className="text-sm font-medium text-slate-800 line-clamp-2 mb-2 group-hover:text-green-600 transition-colors hover:underline"
+        >
           {item.name}
-        </h3>
+        </Link>
 
         <button
           type="button"
@@ -304,18 +315,34 @@ export default function ProductCard({ product }) {
             </span>
           </div>
 
-          <button
-            onClick={() => handleAddToCart(item)}
-            disabled={isOutOfStock}
-            className={`w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-              isOutOfStock
-                ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                : "bg-green-50 text-green-600 hover:bg-green-600 hover:text-white border border-green-100"
-            }`}
-          >
-            <ShoppingBag className="w-4 h-4" />
-            {isOutOfStock ? "Stok habis" : "Tambah ke keranjang"}
-          </button>
+          <div className="grid grid-cols-1 gap-2">
+            <button
+              onClick={() => handleAddToCart(item)}
+              disabled={isOutOfStock}
+              className={`w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                isOutOfStock
+                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  : "bg-green-50 text-green-600 hover:bg-green-600 hover:text-white border border-green-100"
+              }`}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              {isOutOfStock ? "Stok habis" : "Tambah ke keranjang"}
+            </button>
+
+            {!isOutOfStock && storeSettings?.whatsapp && (
+              <a
+                href={`https://wa.me/${storeSettings.whatsapp}?text=${encodeURIComponent(
+                  `Halo, saya ingin memesan produk *${item.name}* seharga ${formatIDR(currentPrice)}.`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border border-green-200 text-green-800 bg-green-50 hover:bg-green-100 transition-all"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                Pesan via WA
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </div>

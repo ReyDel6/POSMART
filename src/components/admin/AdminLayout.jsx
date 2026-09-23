@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
-import { Store, LayoutDashboard, Package, ShoppingBag, LogOut, UserCheck, Menu, X, Tags, BarChart3, Users, Settings, ChevronDown, ChevronRight } from 'lucide-react';
+import { Store, LayoutDashboard, Package, ShoppingBag, LogOut, UserCheck, Menu, X, Tags, BarChart3, Users, Settings, ChevronDown, ChevronRight, Truck } from 'lucide-react';
 
 export default function AdminLayout() {
     const navigate = useNavigate();
@@ -42,6 +42,7 @@ export default function AdminLayout() {
         '/admin/reports': { title: 'Laporan Penjualan', parent: 'Transaksi & Laporan' },
         '/admin/users': { title: 'Kelola Staf & Kasir', parent: 'Pengaturan & Staf' },
         '/admin/settings': { title: 'Pengaturan Toko', parent: 'Pengaturan & Staf' },
+        '/admin/shipping-zones': { title: 'Zona Pengiriman', parent: 'Manajemen Produk' },
     };
 
     const currentRouteInfo = routeTitles[location.pathname] || { title: 'Admin Panel', parent: 'POS' };
@@ -61,6 +62,7 @@ export default function AdminLayout() {
             children: [
                 { path: '/admin/products', label: 'Kelola Produk', icon: Package },
                 { path: '/admin/categories', label: 'Kategori Produk', icon: Tags },
+                { path: '/admin/shipping-zones', label: 'Zona Pengiriman', icon: Truck },
             ]
         }] : []),
         {

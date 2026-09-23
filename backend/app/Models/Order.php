@@ -14,6 +14,8 @@ class Order extends Model
         'phone',
         'address',
         'courier',
+        'shipping_zone_id',
+        'shipping_fee',
         'total_price',
         'status',
         'midtrans_order_id',
@@ -31,6 +33,7 @@ class Order extends Model
     {
         return [
             'total_price'       => 'float',
+            'shipping_fee'      => 'float',
             'paid_at'           => 'datetime',
             'stock_released_at' => 'datetime',
         ];

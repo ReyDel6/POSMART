@@ -15,6 +15,8 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
             category: productToEdit.category || '',
             stock: productToEdit.stock || '',
             image: productToEdit.image || '',
+            description: productToEdit.description || '',
+            gallery: Array.isArray(productToEdit.gallery) ? productToEdit.gallery : [],
         }
         : {
             barcode: generateBarcode(),
@@ -23,8 +25,11 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
             category: '',
             stock: '',
             image: '',
+            description: '',
+            gallery: [],
         });
     const [uploading, setUploading] = useState(false);
+    const [uploadingGallery, setUploadingGallery] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [previewUrl, setPreviewUrl] = useState(() => {
@@ -34,6 +39,7 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
     const [categoryOptions, setCategoryOptions] = useState(() => productToEdit?.category ? [productToEdit.category] : []);
     const [isCustomCategory, setIsCustomCategory] = useState(false);
     const fileInputRef = useRef(null);
+    const galleryInputRef = useRef(null);
 
     useDialog(isOpen, onClose);
 
@@ -99,6 +105,51 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
 
     const handleGenerateBarcode = () => {
         setFormData(prev => ({ ...prev, barcode: generateBarcode() }));
+    };
+
+    const handleGalleryUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        e.target.value = '';
+
+        if (formData.gallery.length >= 8) {
+            setError('Maksimal 8 gambar galeri.');
+            return;
+        }
+
+        const data = new FormData();
+        data.append('image', file);
+
+        setUploadingGallery(true);
+        setError('');
+
+        try {
+            const response = await api.post('/admin/upload_product_image.php', data, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            if (response.data && response.data.status === 'success') {
+                const uploadedFileName = response.data.image_name;
+                setFormData(prev => ({
+                    ...prev,
+                    gallery: [...(Array.isArray(prev.gallery) ? prev.gallery : []), uploadedFileName].slice(0, 8),
+                }));
+            } else {
+                setError(response.data?.message || "Gagal mengunggah gambar galeri.");
+            }
+        } catch (err) {
+            console.error("Gagal upload gambar galeri:", err);
+            setError(err.response?.data?.message || "Terjadi kesalahan saat mengunggah gambar galeri.");
+        } finally {
+            setUploadingGallery(false);
+        }
+    };
+
+    const removeGalleryImage = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            gallery: (Array.isArray(prev.gallery) ? prev.gallery : []).filter((_, i) => i !== index),
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -293,19 +344,72 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
                         </div>
                     </div>
                     
+                    {/* DESKRIPSI PRODUK */}
+                    <div>
+                        <label htmlFor="description" className="block text-sm font-semibold text-slate-700 mb-1">Deskripsi Produk</label>
+                        <textarea
+                            id="description"
+                            name="description"
+                            rows={3}
+                            value={formData.description}
+                            onChange={handleInputChange}
+                            className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm resize-none"
+                            placeholder="Tuliskan detail produk (varian, isi, cara pakai, dll.) agar pembeli makin yakin..."
+                        />
+                    </div>
+
+                    {/* GALLERY FOTO */}
+                    <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-sm font-semibold text-slate-700">Galeri Foto (opsional, maks. 8)</label>
+                            <span className="text-xs text-slate-400 font-bold">{formData.gallery.length}/8</span>
+                        </div>
+                        <input type="file" ref={galleryInputRef} onChange={handleGalleryUpload} accept="image/*" className="hidden" />
+                        <div className="grid grid-cols-4 gap-2">
+                            {formData.gallery.map((img, index) => (
+                                <div key={index} className="relative group rounded-xl overflow-hidden border border-slate-200 aspect-square">
+                                    <img
+                                        src={`/product/${img}`}
+                                        alt={`Galeri ${index + 1}`}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/150x150?text=No+Image'; }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeGalleryImage(index)}
+                                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                                        title="Hapus foto"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => galleryInputRef.current?.click()}
+                                disabled={uploadingGallery || formData.gallery.length >= 8}
+                                className="rounded-xl border-2 border-dashed border-slate-300 hover:border-emerald-500 bg-slate-50 hover:bg-emerald-50/30 aspect-square flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-emerald-600 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                {uploadingGallery ? <Loader2 className="w-5 h-5 text-emerald-600 animate-spin" /> : <Upload className="w-5 h-5" />}
+                                <span className="text-[9px] font-bold">{uploadingGallery ? 'Upload...' : 'Tambah Foto'}</span>
+                            </button>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1.5">Foto tambahan akan ditampilkan sebagai galeri di halaman detail produk.</p>
+                    </div>
+
                     <div className="flex justify-end gap-3 pt-4">
                         <button
                             type="button"
                             onClick={onClose}
                             className="px-5 py-2.5 rounded-xl text-slate-600 font-bold hover:bg-slate-100 transition-colors text-sm"
-                            disabled={loading || uploading}
+                            disabled={loading || uploading || uploadingGallery}
                         >
                             Batal
                         </button>
                         <button
                             type="submit"
                             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                            disabled={loading || uploading}
+                            disabled={loading || uploading || uploadingGallery}
                         >
                             <Save className="w-4 h-4" />
                             {loading ? 'Menyimpan...' : (productToEdit ? 'Update Produk' : 'Tambah Produk')}

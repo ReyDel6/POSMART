@@ -54,6 +54,12 @@ class MidtransWebhookController extends Controller
             if ($order->status === 'pending') {
                 $order->update(['status' => 'paid']);
             }
+
+            try {
+                app(\App\Services\StoreNotifier::class)->orderPaid($order);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Gagal kirim notifikasi pembayaran: ' . $e->getMessage());
+            }
         } elseif (!$paid && in_array($transactionStatus, ['expire', 'cancel', 'deny'], true) && $order->payment_status !== 'paid') {
             $order->update(['payment_status' => $transactionStatus]);
             // Stok yang tadi dikunci dikembalikan agar produk bisa dijual lagi.

@@ -18,6 +18,8 @@ class Product extends Model
         'is_promo',
         'promo',
         'image',
+        'description',
+        'gallery',
     ];
 
     protected function casts(): array
@@ -28,6 +30,7 @@ class Product extends Model
             'stock'    => 'integer',
             'is_promo' => 'boolean',
             'promo'    => 'integer',
+            'gallery'  => 'array',
         ];
     }
 

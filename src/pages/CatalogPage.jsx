@@ -29,6 +29,7 @@ export default function CatalogPage() {
     const { products, loading, error, pagination, fetchProducts } = useProduct();
     const [categories, setCategories] = useState(['All']);
     const [loadingCategories, setLoadingCategories] = useState(true);
+    const [storeSettings, setStoreSettings] = useState({});
 
     const [onlyPromo, setOnlyPromo] = useState(false);
     const [sortBy, setSortBy] = useState('none');
@@ -119,6 +120,21 @@ export default function CatalogPage() {
     const promoProducts = useMemo(() => {
         return products ? products.filter(product => product.is_promo) : [];
     }, [products]);
+
+    // Fetch settings toko (nomor WA untuk tombol "Pesan via WA")
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                const response = await api.get('/public/settings.php');
+                if (response.data && response.data.status === 'success') {
+                    setStoreSettings(response.data.data || {});
+                }
+            } catch (err) {
+                console.error('Error fetching settings:', err);
+            }
+        };
+        fetchSettings();
+    }, []);
 
     useEffect(() => {
         fetchProducts({
@@ -339,7 +355,7 @@ export default function CatalogPage() {
                                 <div className="absolute top-2 right-2 z-10 bg-linear-to-br from-amber-500 to-red-500 text-white text-[10px] font-black px-2 py-1 rounded-md shadow-sm">
                                     PROMO HEMAT
                                 </div>
-                                <ProductCard product={product} />
+                                <ProductCard product={product} storeSettings={storeSettings} />
 
                                 {/* Progress Stok */}
                                 <div className="mt-2 bg-white rounded-xl border border-amber-100 px-3 py-2 shadow-sm">
@@ -487,7 +503,7 @@ export default function CatalogPage() {
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
                             {filteredProduct.map((singleProduct) => (
-                                <ProductCard key={singleProduct.id} product={singleProduct} />
+                                <ProductCard key={singleProduct.id} product={singleProduct} storeSettings={storeSettings} />
                             ))}
                         </div>
                     )}
