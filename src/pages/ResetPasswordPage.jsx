@@ -44,25 +44,25 @@ export default function ResetPasswordPage() {
         }
     };
 
-    const inputClass = "w-full text-sm pl-11 pr-11 py-3 border border-slate-300 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all bg-slate-50/50";
+    const inputClass = "w-full text-sm pl-11 pr-11 py-3 border-2 border-ink/30 rounded-xl focus:outline-none focus:border-ink focus:ring-2 focus:ring-lime transition-all bg-cream/50";
 
     return (
         <AuthLayout>
-            <div className="w-full max-w-md bg-white rounded-3xl border border-slate-100 shadow-xl p-7 sm:p-10">
-                <button onClick={() => navigate('/forgot-password')} className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600 transition-colors cursor-pointer mb-6">
+            <div className="w-full max-w-md bg-white rounded-3xl border-2 border-ink shadow-[8px_8px_0_#161616] p-7 sm:p-10">
+                <button onClick={() => navigate('/forgot-password')} className="flex items-center gap-1.5 text-xs font-black text-slate-400 hover:text-ink transition-colors cursor-pointer mb-6">
                     <ArrowLeft className="w-3.5 h-3.5" /> Kembali
                 </button>
 
                 <div className="mb-7">
-                    <div className="w-12 h-12 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-lime border-2 border-ink text-ink shadow-[2px_2px_0_#161616] flex items-center justify-center mb-4">
                         <KeyRound className="w-6 h-6" />
                     </div>
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Buat password baru</h2>
+                    <h2 className="text-2xl font-black text-ink tracking-tight">Buat password baru</h2>
                     <p className="text-sm text-slate-500 mt-1.5">Masukkan e-mail, kode reset, dan password baru Anda.</p>
                 </div>
 
                 {error && (
-                    <div className="text-sm text-red-600 bg-red-50 border border-red-100 p-3 rounded-xl mb-4 animate-shake">{error}</div>
+                    <div className="text-sm text-red-700 bg-red-50 border-2 border-ink p-3 rounded-xl mb-4 animate-shake">{error}</div>
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -78,7 +78,7 @@ export default function ResetPasswordPage() {
                         <label htmlFor="token" className="text-xs font-bold text-slate-600">Kode Reset</label>
                         <div className="relative">
                             <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
-                            <input id="token" type="text" required value={token} onChange={(e) => setToken(e.target.value)} placeholder="Kode reset dari email/demo" className="w-full text-sm pl-11 pr-3 py-3 border border-slate-300 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all bg-slate-50/50 font-mono" />
+                            <input id="token" type="text" required value={token} onChange={(e) => setToken(e.target.value)} placeholder="Kode reset dari email/demo" className="w-full text-sm pl-11 pr-3 py-3 border-2 border-ink/30 rounded-xl focus:outline-none focus:border-ink focus:ring-2 focus:ring-lime transition-all bg-cream/50 font-mono" />
                         </div>
                     </div>
 
@@ -121,7 +121,7 @@ export default function ResetPasswordPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full flex items-center justify-center gap-2 py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer shadow-sm shadow-green-600/20"
+                        className="w-full flex items-center justify-center gap-2 py-3 bg-ink hover:bg-slate-900 disabled:bg-slate-400 text-cream font-black text-sm rounded-xl border-2 border-ink shadow-[3px_3px_0_#161616] transition-colors cursor-pointer"
                     >
                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
                         {loading ? 'Memproses...' : 'Reset Password'}
@@ -129,7 +129,7 @@ export default function ResetPasswordPage() {
 
                     <p className="text-center text-sm text-slate-500">
                         Sudah ingat?{' '}
-                        <Link to="/login" className="text-green-600 font-bold hover:underline">Masuk di sini</Link>
+                        <Link to="/login" className="text-coral font-black hover:underline">Masuk di sini</Link>
                     </p>
                 </form>
             </div>

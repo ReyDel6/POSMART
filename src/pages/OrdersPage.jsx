@@ -124,16 +124,16 @@ export default function OrdersPage() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
-            <header className="bg-white border-b border-slate-100 sticky top-0 z-30 px-4 py-3">
+        <div className="min-h-screen bg-cream font-sans text-ink">
+            <header className="bg-white border-b-2 border-ink sticky top-0 z-30 px-4 py-3">
                 <div className="max-w-3xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <button onClick={() => navigate('/')} className="p-2 hover:bg-slate-100 rounded-xl text-slate-600 transition-colors cursor-pointer" aria-label="Kembali">
+                        <button onClick={() => navigate('/')} className="p-2 hover:bg-lime rounded-xl text-ink transition-colors cursor-pointer" aria-label="Kembali">
                             <ArrowLeft className="w-5 h-5" />
                         </button>
-                        <h1 className="text-lg font-black tracking-tight text-emerald-700">Pesanan Saya</h1>
+                        <h1 className="text-lg font-black tracking-tight text-ink">Pesanan Saya</h1>
                     </div>
-                    <button onClick={fetchOrders} title="Refresh" className="p-2 hover:bg-slate-100 rounded-xl text-slate-500 cursor-pointer">
+                    <button onClick={fetchOrders} title="Refresh" className="p-2 hover:bg-lime rounded-xl text-ink cursor-pointer">
                         <RefreshCcw className="w-5 h-5" />
                     </button>
                 </div>
@@ -145,9 +145,9 @@ export default function OrdersPage() {
                         <button
                             key={tab.key || 'all'}
                             onClick={() => setFilter(tab.key)}
-                            className={`shrink-0 text-xs font-bold px-4 py-2 rounded-full border transition-all cursor-pointer ${filter === tab.key
-                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20'
-                                : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-700'
+                            className={`shrink-0 text-xs font-black px-4 py-2 rounded-full border-2 border-ink transition-all cursor-pointer ${filter === tab.key
+                                ? 'bg-ink text-cream shadow-[2px_2px_0_#161616]'
+                                : 'bg-white text-slate-600 hover:bg-lime'
                             }`}
                         >
                             {tab.label}
@@ -156,23 +156,23 @@ export default function OrdersPage() {
                 </div>
 
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-28 gap-3 text-slate-400">
-                        <RefreshCcw className="w-8 h-8 animate-spin text-emerald-600" />
-                        <p className="text-sm font-semibold">Memuat pesanan...</p>
+                    <div className="flex flex-col items-center justify-center py-28 gap-3 text-slate-500">
+                        <div className="w-8 h-8 border-2 border-ink border-t-lime rounded-full animate-spin" />
+                        <p className="text-sm font-bold">Memuat pesanan...</p>
                     </div>
                 ) : error ? (
-                    <div className="bg-rose-50 border border-rose-200 text-rose-700 p-6 rounded-2xl text-center">
+                    <div className="bg-rose-50 border-2 border-ink text-rose-700 p-6 rounded-2xl text-center shadow-[4px_4px_0_#161616]">
                         <p className="font-bold text-sm">⚠️ {error}</p>
-                        <button onClick={fetchOrders} className="mt-3 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg cursor-pointer">
+                        <button onClick={fetchOrders} className="mt-3 px-4 py-2 bg-ink hover:bg-slate-900 text-cream text-xs font-black rounded-lg border-2 border-ink cursor-pointer">
                             Coba Lagi
                         </button>
                     </div>
                 ) : orders.length === 0 ? (
-                    <div className="bg-white border border-slate-100 rounded-2xl py-20 text-center space-y-3">
-                        <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto" />
-                        <p className="text-sm font-bold text-slate-500">Belum ada pesanan</p>
-                        <p className="text-xs text-slate-400">Ayo mulai belanja kebutuhan harian Anda.</p>
-                        <button onClick={() => navigate('/')} className="mt-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl cursor-pointer">
+                    <div className="bg-white border-2 border-ink rounded-2xl py-20 text-center space-y-3 shadow-[5px_5px_0_#161616]">
+                        <ShoppingBag className="w-12 h-12 text-ink mx-auto opacity-20" />
+                        <p className="text-sm font-black text-ink">Belum ada pesanan</p>
+                        <p className="text-xs text-slate-500">Ayo mulai belanja kebutuhan harian Anda.</p>
+                        <button onClick={() => navigate('/')} className="mt-2 px-5 py-2.5 bg-ink hover:bg-slate-900 text-cream text-xs font-black rounded-xl border-2 border-ink shadow-[2px_2px_0_#161616] cursor-pointer">
                             Mulai Belanja
                         </button>
                     </div>
@@ -180,36 +180,36 @@ export default function OrdersPage() {
                     orders.map(order => {
                         const expanded = expandedId === order.id;
                         return (
-                            <div key={order.id} className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+                            <div key={order.id} className="bg-white border-2 border-ink rounded-2xl shadow-[4px_4px_0_#161616] overflow-hidden">
                                 <button
                                     onClick={() => setExpandedId(expanded ? null : order.id)}
-                                    className="w-full text-left p-5 hover:bg-slate-50/60 transition-colors cursor-pointer"
+                                    className="w-full text-left p-5 hover:bg-lime/20 transition-colors cursor-pointer"
                                 >
                                     <div className="flex items-center justify-between gap-3">
                                         <div>
-                                            <p className="text-sm font-black text-slate-900">Order <span className="font-mono">#{order.id}</span></p>
-                                            <p className="text-xs text-slate-400 mt-0.5">{new Date(order.created_at).toLocaleString('id-ID')}</p>
+                                            <p className="text-sm font-black text-ink">Order <span className="font-mono">#{order.id}</span></p>
+                                            <p className="text-xs text-slate-500 mt-0.5">{new Date(order.created_at).toLocaleString('id-ID')}</p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${statusStyle(order.status, order.payment_status)}`}>
+                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-black border ${statusStyle(order.status, order.payment_status)}`}>
                                                 {statusLabel(order.status, order.payment_status)}
                                             </span>
-                                            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                                            <ChevronDown className={`w-4 h-4 text-ink transition-transform ${expanded ? 'rotate-180' : ''}`} />
                                         </div>
                                     </div>
                                     <div className="mt-3 flex items-center justify-between">
                                         <div className="flex items-center gap-2 text-xs text-slate-500">
-                                            <Package className="w-4 h-4 text-emerald-600" />
+                                            <Package className="w-4 h-4 text-ink" />
                                             {order.items_count} item · {getPaymentLabel(order)}
-                                            {order.payment_mode === 'cash' && <span className="text-emerald-600 font-semibold">Tunai</span>}
+                                            {order.payment_mode === 'cash' && <span className="text-ink font-black">Tunai</span>}
                                         </div>
-                                        <p className="text-base font-black text-emerald-700">{formatIDR(order.total_price)}</p>
+                                        <p className="text-base font-black text-ink">{formatIDR(order.total_price)}</p>
                                     </div>
                                 </button>
 
                                 {expanded && (
-                                    <div className="px-5 pb-5 border-t border-slate-100 pt-4 space-y-3">
-                                        <div className="rounded-xl bg-slate-50 p-3 space-y-1.5 text-xs">
+                                    <div className="px-5 pb-5 border-t-2 border-ink pt-4 space-y-3">
+                                        <div className="rounded-xl bg-[#EFEFE6] border-2 border-ink p-3 space-y-1.5 text-xs">
                                             <p className="text-slate-500">Nama: <span className="font-semibold text-slate-800">{order.customer_name}</span></p>
                                             <p className="text-slate-500">Telepon: <span className="font-semibold text-slate-800">{order.phone}</span></p>
                                             <p className="text-slate-500">Alamat: <span className="font-semibold text-slate-800">{order.address}</span></p>
@@ -223,13 +223,13 @@ export default function OrdersPage() {
                                             {order.items.map((item, idx) => (
                                                 <div key={idx} className="flex items-center gap-3">
                                                     {item.image && (
-                                                        <img src={item.image} alt={item.name} className="w-10 h-10 rounded-lg object-cover bg-slate-100 border border-slate-100" onError={(e) => { e.target.style.display = 'none'; }} />
+                                                        <img src={item.image} alt={item.name} className="w-10 h-10 rounded-lg object-cover bg-[#EFEFE6] border border-ink" onError={(e) => { e.target.style.display = 'none'; }} />
                                                     )}
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-sm font-semibold text-slate-800 truncate">{item.name}</p>
+                                                        <p className="text-sm font-bold text-ink truncate">{item.name}</p>
                                                         <p className="text-xs text-slate-500">{item.qty} x {formatIDR(item.price)}</p>
                                                     </div>
-                                                    <span className="text-sm font-bold text-slate-700">{formatIDR(item.total)}</span>
+                                                    <span className="text-sm font-black text-ink">{formatIDR(item.total)}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -237,7 +237,7 @@ export default function OrdersPage() {
                                         <button
                                             onClick={() => handleDownloadInvoice(order)}
                                             disabled={downloadingId === order.id}
-                                            className="w-full flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-60 text-white text-xs font-bold py-3 rounded-xl transition-colors cursor-pointer"
+                                            className="w-full flex items-center justify-center gap-2 bg-ink hover:bg-slate-900 disabled:opacity-60 text-cream text-xs font-black py-3 rounded-xl border-2 border-ink shadow-[2px_2px_0_#161616] transition-colors cursor-pointer"
                                         >
                                             <Download className="w-4 h-4" />
                                             {downloadingId === order.id ? 'Membuat PDF...' : 'Download Invoice PDF'}

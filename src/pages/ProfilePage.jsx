@@ -118,10 +118,10 @@ export default function ProfilePage() {
 
             <div className="max-w-7xl mx-auto px-4 w-full py-8">
                 {!profile ? (
-                    <div className="max-w-md mx-auto bg-white rounded-3xl border border-slate-200 p-10 text-center shadow-sm">
+                    <div className="max-w-md mx-auto bg-white rounded-3xl border-2 border-ink shadow-[6px_6px_0_#161616] p-10 text-center">
                         <p className="text-sm text-slate-500">Anda belum masuk. Silakan login untuk melihat profil.</p>
-                        <a href="/login" className="mt-4 inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-colors">
-                            <UserCheck className="w-4 h-4" /> Login
+                        <a href="/login" className="mt-4 inline-flex items-center gap-2 bg-ink hover:bg-slate-900 text-cream font-black px-5 py-2.5 rounded-xl text-sm border-2 border-ink shadow-[3px_3px_0_#161616] transition-colors">
+                            <UserCheck className="w-4 h-4 text-lime" /> Login
                         </a>
                     </div>
                 ) : (

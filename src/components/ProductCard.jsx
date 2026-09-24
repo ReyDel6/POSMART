@@ -104,9 +104,9 @@ export default function ProductCard({ product, storeSettings }) {
   const ratingDisplay = Number(item.rating) || reviewMeta.rating || 0;
 
   return (
-    <div className="group bg-white rounded-xl border border-gray-100 overflow-hidden hover:shadow-lg hover:border-gray-200 transition-all duration-300 flex flex-col h-full">
+    <div className="group bg-white rounded-xl border-2 border-ink shadow-[4px_4px_0_#161616] hover:-translate-y-1 hover:shadow-[6px_6px_0_#161616] transition-all duration-300 flex flex-col h-full overflow-hidden">
       {/* Product Image */}
-      <div className="relative aspect-square overflow-hidden bg-gray-100">
+      <div className="relative aspect-square overflow-hidden bg-[#EFEFE6] border-b-2 border-ink">
         <Link
           to={`/product/${item.id}`}
           aria-label={`Lihat detail ${item.name}`}
@@ -120,17 +120,17 @@ export default function ProductCard({ product, storeSettings }) {
           />
         </Link>
         {!isOutOfStock && item.is_promo && (
-          <div className="absolute top-2 left-2 bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-sm">
+          <div className="absolute top-2 left-2 bg-coral text-white text-[11px] font-black px-2.5 py-1 rounded-md shadow-[2px_2px_0_#161616]">
             -{item.promo}%
           </div>
         )}
         {!isOutOfStock && !item.is_promo && item.deal && (
-          <div className="absolute top-2 left-2 bg-amber-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-sm">
+          <div className="absolute top-2 left-2 bg-amber-500 text-white text-[11px] font-black px-2.5 py-1 rounded-md shadow-[2px_2px_0_#161616]">
             {item.deal.label}
           </div>
         )}
         {isOutOfStock && (
-          <div className="absolute top-2 left-2 bg-gray-600/90 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-sm">
+          <div className="absolute top-2 left-2 bg-ink text-cream text-[11px] font-black px-2.5 py-1 rounded-md">
             Stok habis
           </div>
         )}
@@ -138,7 +138,7 @@ export default function ProductCard({ product, storeSettings }) {
           type="button"
           onClick={() => setZoomOpen(true)}
           aria-label={`Perbesar gambar ${item.name}`}
-          className="absolute bottom-2 right-2 p-2 rounded-full bg-white/90 text-slate-600 shadow-md hover:bg-white transition-colors cursor-pointer"
+          className="absolute bottom-2 right-2 p-2 rounded-full bg-white text-ink border border-ink shadow-[2px_2px_0_#161616] hover:bg-lime transition-colors cursor-pointer"
         >
           <ZoomIn className="w-4 h-4" />
         </button>
@@ -176,9 +176,9 @@ export default function ProductCard({ product, storeSettings }) {
             className="relative w-full max-w-lg max-h-[85vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+            <div className="flex items-center justify-between px-5 py-4 border-b-2 border-ink shrink-0">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-[#EFEFE6] border-2 border-ink overflow-hidden shrink-0">
                   <img
                     src={item.image ? (item.image.startsWith('http') || item.image.startsWith('/') ? item.image : `/product/${item.image}`) : 'https://placehold.co/300x300?text=No+Image'}
                     alt={item.name}
@@ -209,7 +209,7 @@ export default function ProductCard({ product, storeSettings }) {
 
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               {reviewsError && (
-                <div className="text-sm text-red-600 bg-red-50 border border-red-100 p-3 rounded-xl">{reviewsError}</div>
+                <div className="text-sm text-red-700 bg-red-50 border-2 border-ink p-3 rounded-lg">{reviewsError}</div>
               )}
 
               {reviewsLoading ? (
@@ -224,20 +224,20 @@ export default function ProductCard({ product, storeSettings }) {
                 <div className="space-y-4">
                   {reviews.map((review, idx) => (
                     <div key={review.id || idx} className="flex gap-3">
-                      <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-xs shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-lime text-ink border-2 border-ink font-black flex items-center justify-center text-xs shrink-0">
                         {(review.user_name || '?').charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-bold text-slate-800 truncate">{review.user_name}</p>
-                          <span className="text-[10px] text-slate-400 shrink-0">{review.created_at}</span>
+                          <p className="text-sm font-black text-ink truncate">{review.user_name}</p>
+                          <span className="text-[10px] text-slate-500 shrink-0">{review.created_at}</span>
                         </div>
                         <div className="flex items-center gap-0.5 my-0.5">
                           {[1, 2, 3, 4, 5].map(star => (
                             <Star key={star} className={`w-3 h-3 ${star <= Number(review.rating) ? 'fill-amber-400 text-amber-400' : 'fill-slate-200 text-slate-200'}`} />
                           ))}
                         </div>
-                        {review.comment && <p className="text-sm text-slate-600 leading-relaxed">{review.comment}</p>}
+                        {review.comment && <p className="text-sm text-slate-700 leading-relaxed">{review.comment}</p>}
                       </div>
                     </div>
                   ))}
@@ -245,18 +245,18 @@ export default function ProductCard({ product, storeSettings }) {
               )}
             </div>
 
-            <div className="border-t border-slate-100 p-5 bg-slate-50 shrink-0">
+            <div className="border-t-2 border-ink p-5 bg-cream shrink-0">
               {isLoggedIn && reviewMeta.can_review ? (
                 <form onSubmit={handleSubmitReview} className="space-y-3">
                   <div>
-                    <p className="text-xs font-bold text-slate-600 mb-1.5">Penilaian Anda</p>
+                    <p className="text-xs font-black text-ink mb-1.5">Penilaian Anda</p>
                     <div className="flex items-center gap-1">
                       {[1, 2, 3, 4, 5].map(star => (
                         <button key={star} type="button" onClick={() => setFormRating(star)} aria-label={`${star} bintang`} className="cursor-pointer p-0.5">
                           <Star className={`w-6 h-6 ${star <= Number(formRating) ? 'fill-amber-400 text-amber-400' : 'fill-slate-200 text-slate-200'}`} />
                         </button>
                       ))}
-                      <span className="ml-2 text-xs font-bold text-slate-500">{Number(formRating)}/5</span>
+                      <span className="ml-2 text-xs font-black text-ink">{Number(formRating)}/5</span>
                     </div>
                   </div>
                   <textarea
@@ -264,22 +264,22 @@ export default function ProductCard({ product, storeSettings }) {
                     value={formComment}
                     onChange={(e) => setFormComment(e.target.value)}
                     placeholder="Bagaimana kualitas produk ini?"
-                    className="w-full text-sm px-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all bg-white resize-none"
+                    className="w-full text-sm px-3 py-2 border-2 border-ink rounded-lg focus:outline-none focus:ring-2 focus:ring-ink/15 transition-all bg-white resize-none"
                   />
                   <button
                     type="submit"
                     disabled={submitting || !formComment.trim()}
-                    className="w-full py-2.5 bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer disabled:cursor-not-allowed"
+                    className="w-full py-2.5 bg-ink hover:bg-slate-900 disabled:bg-slate-400 text-cream font-black text-sm rounded-lg border-2 border-ink shadow-[3px_3px_0_#161616] transition-colors cursor-pointer disabled:cursor-not-allowed"
                   >
                     {submitting ? 'Menyimpan...' : 'Kirim Ulasan'}
                   </button>
                 </form>
               ) : isLoggedIn ? (
-                <p className="text-center text-xs text-slate-500">Ulasan hanya bisa diberikan oleh pembeli yang sudah menerima pesanan produk ini.</p>
+                <p className="text-center text-xs font-bold text-slate-600">Ulasan hanya bisa diberikan oleh pembeli yang sudah menerima pesanan produk ini.</p>
               ) : (
                 <button
                   onClick={() => { window.location.href = `/login?redirect=/`; }}
-                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer"
+                  className="w-full py-2.5 bg-ink hover:bg-slate-900 text-cream font-black text-sm rounded-lg border-2 border-ink shadow-[3px_3px_0_#161616] transition-colors cursor-pointer"
                 >
                   Masuk untuk memberi ulasan
                 </button>
@@ -291,13 +291,13 @@ export default function ProductCard({ product, storeSettings }) {
 
       {/* Product Info */}
       <div className="p-4 flex flex-col flex-grow">
-        <span className="self-start inline-block bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider mb-2">
+        <span className="self-start inline-block bg-lime text-ink border border-ink px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider mb-2">
           {item.category}
         </span>
 
         <Link
           to={`/product/${item.id}`}
-          className="text-sm font-medium text-slate-800 line-clamp-2 mb-2 group-hover:text-emerald-600 transition-colors hover:underline"
+          className="text-sm font-bold text-ink line-clamp-2 mb-2 group-hover:text-coral transition-colors hover:underline"
         >
           {item.name}
         </Link>
@@ -309,19 +309,19 @@ export default function ProductCard({ product, storeSettings }) {
           className="flex items-center gap-1 mb-2 text-amber-500 hover:text-amber-600 transition-colors cursor-pointer self-start"
         >
           <Star className="w-3.5 h-3.5 fill-amber-500" />
-          <span className="text-xs font-bold">{ratingDisplay > 0 ? Number(ratingDisplay).toFixed(1) : ''}</span>
-          {ratingDisplay <= 0 && <span className="inline-block bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md text-[10px] font-bold">Baru</span>}
-          {item.reviews_count > 0 && <span className="text-[10px] text-slate-400 font-medium">({item.reviews_count})</span>}
+          <span className="text-xs font-black">{ratingDisplay > 0 ? Number(ratingDisplay).toFixed(1) : ''}</span>
+          {ratingDisplay <= 0 && <span className="inline-block bg-lime text-ink border border-ink px-2 py-0.5 rounded-md text-[10px] font-black">Baru</span>}
+          {item.reviews_count > 0 && <span className="text-[10px] text-slate-500 font-medium">({item.reviews_count})</span>}
         </button>
 
         <div className="mt-auto">
           {item.is_promo && (
-            <span className="text-xs text-slate-400 line-through">
+            <span className="text-xs text-slate-400 font-semibold line-through">
               {formatIDR(item.price)}
             </span>
           )}
           <div className="mt-1 mb-3">
-            <span className="text-base font-bold text-emerald-600">
+            <span className="text-lg font-black text-ink">
               {formatIDR(currentPrice)}
             </span>
           </div>
@@ -330,13 +330,13 @@ export default function ProductCard({ product, storeSettings }) {
             <button
               onClick={() => handleAddToCart(item)}
               disabled={isOutOfStock}
-              className={`w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              className={`w-full py-2 rounded-lg text-xs font-black flex items-center justify-center gap-2 border-2 border-ink transition-all cursor-pointer ${
                 isOutOfStock
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow-md"
+                  ? "bg-slate-200 text-slate-500 border-slate-200 cursor-not-allowed"
+                  : "bg-ink text-cream hover:bg-slate-900 shadow-[3px_3px_0_#161616] hover:-translate-y-0.5"
               }`}
             >
-              <ShoppingBag className="w-4 h-4" />
+              <ShoppingBag className="w-4 h-4 text-lime" />
               {isOutOfStock ? "Stok habis" : "Tambah ke keranjang"}
             </button>
 
@@ -347,7 +347,7 @@ export default function ProductCard({ product, storeSettings }) {
                 )}`}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-all"
+                className="w-full py-2 rounded-lg text-xs font-black flex items-center justify-center gap-2 border-2 border-ink text-ink bg-white hover:bg-lime transition-all"
               >
                 <MessageCircle className="w-3.5 h-3.5" />
                 Pesan via WA

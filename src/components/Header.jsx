@@ -145,38 +145,44 @@ export default function Header() {
     };
 
     return (
-        <header className="bg-white border-b border-slate-100 sticky top-0 z-50 p-4 shadow-xs" style={{ position: 'sticky' }}>
+        <header className="bg-cream border-b-2 border-ink sticky top-0 z-50 px-4 py-3 shadow-sm" style={{ position: 'sticky' }}>
             <div className="max-w-7xl mx-auto flex justify-between items-center">
                 <h1 className="shrink-0" style={{ minWidth: 150 }}>
                     <Link to="/" className="flex items-center gap-2.5" aria-label="POSMart beranda">
-                        <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/25">
+                        <span className="w-10 h-10 rounded-xl border-2 border-ink bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-[3px_3px_0_#161616] transition-transform hover:-translate-y-0.5">
                             <ShoppingBag className="w-5 h-5" />
                         </span>
                         <span className="flex flex-col leading-none">
-                            <span className="text-lg font-black tracking-tight text-slate-900 leading-none">
-                                POS<span className="text-emerald-600">Mart</span>
+                            <span className="text-lg font-black tracking-tight text-ink leading-none display">
+                                POS<span className="text-coral">Mart</span>
                             </span>
-                            <span className="text-[9px] font-bold text-slate-400 tracking-[0.18em] uppercase mt-1">
+                            <span className="text-[9px] font-bold text-slate-500 tracking-[0.18em] uppercase mt-1">
                                 Minimarket Digital
                             </span>
                         </span>
                     </Link>
                 </h1>
 
+                {/* navpills */}
+                <nav className="hidden lg:flex items-center gap-2">
+                    <a href="/" className="text-[13px] font-bold px-4 py-2 rounded-full border-2 border-ink bg-lime">Beranda</a>
+                    <a href="/#katalog-produk" className="text-[13px] font-bold px-4 py-2 rounded-full border-2 border-ink hover:bg-white transition-colors">Kategori</a>
+                </nav>
+
                 {/* SEARCH BAR */}
-                <div className="hidden sm:flex flex-1 max-w-md relative">
+                <div className="hidden md:flex flex-1 max-w-md relative">
                     <SearchBox {...searchBoxProps} mobile={false} />
                 </div>
                 {/*action & authentication interface*/}
-                <div className="flex items-center gap-4 relative">
+                <div className="flex items-center gap-3 relative">
                     {/* keranjang belanja */}
                     <button onClick={() => setIsOpenCart(true)}
                         aria-label="Buka keranjang belanja"
-                        className="relative p-2 text-slate-500 hover:text-emerald-600 transition-colors cursor-pointer"
+                        className="relative w-10 h-10 rounded-full border-2 border-ink bg-white flex items-center justify-center text-ink shadow-[3px_3px_0_#161616] hover:bg-ink hover:text-lime transition-colors cursor-pointer"
                     >
-                        <ShoppingCart className="w-6 h-6" />
+                        <ShoppingCart className="w-5 h-5" />
                         {totalCartItemsCount > 0 && (
-                            <span className="absolute -top-1 -right-1 bg-emerald-600 text-white font-mono text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-pulse">
+                            <span className="absolute -top-1 -right-1 bg-coral text-white font-mono text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center animate-pulse">
                                 {totalCartItemsCount}
                             </span>
                         )}
@@ -186,44 +192,44 @@ export default function Header() {
                     {!isLoggedIn ? (
                         <button
                             onClick={() => window.location.href = '/login'}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
+                            className="bg-ink hover:bg-slate-900 text-cream font-bold text-xs px-5 py-2.5 rounded-lg border-2 border-ink shadow-[3px_3px_0_#161616] active:shadow-none active:translate-x-0.5 flex items-center gap-2 transition-all cursor-pointer neo-press"
                         >
                             <LogIn className="w-4 h-4" />
-                            LOG IN
+                            MASUK
                         </button>
                     ) : (
                         <div className="relative">
                             <button
                                 onClick={() => setShowDropDown(!shopDropdown)}
                                 aria-label="Buka menu akun"
-                                className="flex items-center gap-2 hover:bg-slate-50 p-1.5 rounded-lg transition-colors cursor-pointer focus:outline-hidden"
+                                className="flex items-center gap-2 p-1.5 pr-3 rounded-full border-2 border-ink bg-white shadow-[3px_3px_0_#161616] hover:bg-cream transition-colors cursor-pointer focus:outline-hidden"
                             >
                                 <img
                                     src={userProfile.avatar}
                                     alt={userProfile.name}
-                                    className="w-8 h-8 rounded-full object-cover border-slate-200"
+                                    className="w-8 h-8 rounded-full object-cover border-2 border-ink"
                                 />
-                                <span className="hidden md:inline-block text-sm font-semibold text-slate-700 max-w-30 truncate">
+                                <span className="hidden md:inline-block text-sm font-bold text-ink max-w-30 truncate">
                                     {userProfile.name}
                                 </span>
-                                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${shopDropdown ? 'rotate-180' : ''}`} />
+                                <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${shopDropdown ? 'rotate-180' : ''}`} />
                             </button>
 
                             {shopDropdown && (
                                 <>
                                     <div className="fixed inset-0 z-40" onClick={() => setShowDropDown(false)}></div>
-                                    <div className="absolute right-0 mt-2 w-48 bg-white border-slate-200 rounded-xl shadow-lg py-1 z-40 ">
-                                        <div className="px-4 py-2 border-b border-slate-100 md:hidden">
-                                            <p className="text-sm font-bold text-slate-500 truncate">{userProfile.name}</p>
+                                    <div className="absolute right-0 mt-2 w-52 bg-white border-2 border-ink rounded-xl shadow-lg py-1 z-40">
+                                        <div className="px-4 py-2 border-b-2 border-ink md:hidden">
+                                            <p className="text-sm font-black text-ink truncate">{userProfile.name}</p>
                                         </div>
                                         <button
                                             onClick={() => {
                                                 setShowDropDown(false);
                                                 window.location.href = '/profile';
                                             }}
-                                            className="w-full text-left px-4 py-2.5 text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                            className="w-full text-left px-4 py-2.5 text-slate-800 hover:bg-lime/40 flex items-center gap-2.5 transition-colors cursor-pointer"
                                         >
-                                            <User className="w-4 h-4 text-slate-400" />
+                                            <User className="w-4 h-4 text-slate-500" />
                                             lihat profil
                                         </button>
                                         <button
@@ -231,16 +237,16 @@ export default function Header() {
                                                 setShowDropDown(false);
                                                 window.location.href = '/orders';
                                             }}
-                                            className="w-full text-left px-4 py-2.5 text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                            className="w-full text-left px-4 py-2.5 text-slate-800 hover:bg-lime/40 flex items-center gap-2.5 transition-colors cursor-pointer"
                                         >
-                                            <ShoppingCart className="w-4 h-4 text-slate-400" />
+                                            <ShoppingCart className="w-4 h-4 text-slate-500" />
                                             pesanan saya
                                         </button>
                                         <button
                                             onClick={handleLogout}
-                                            className="w-full text-left px-4 py-2.5 text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                            className="w-full text-left px-4 py-2.5 text-slate-800 hover:bg-lime/40 flex items-center gap-2.5 transition-colors cursor-pointer"
                                         >
-                                            <LogOut className="w-4 h-4 text-slate-400" />
+                                            <LogOut className="w-4 h-4 text-slate-500" />
                                             LOGOUT
                                         </button>
                                     </div>
@@ -250,7 +256,7 @@ export default function Header() {
                     )}
 
                     {/* mobile menu */}
-                    <button onClick={() => setMobileSearchOpen(prev => !prev)} aria-label="Buka pencarian" className="sm:hidden p-2 text-slate-500 hover:text-emerald-600 transition-colors cursor-pointer"><Menu /></button>
+                    <button onClick={() => setMobileSearchOpen(prev => !prev)} aria-label="Buka pencarian" className="sm:hidden w-10 h-10 rounded-full border-2 border-ink bg-white flex items-center justify-center text-ink cursor-pointer"><Menu /></button>
                 </div>
             </div>
 
@@ -276,7 +282,7 @@ function SearchBox({ value, onChange, suggestions, sugLoading, searchFocused, se
 
     return (
         <div className="relative w-full">
-            <Search className="absolute left-3 top-3 w-4 h-4 text-slate-500 pointer-events-none" />
+            <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-500 pointer-events-none" />
             <input
                 type="text"
                 value={value}
@@ -286,7 +292,7 @@ function SearchBox({ value, onChange, suggestions, sugLoading, searchFocused, se
                 onChange={(e) => onChange(e.target.value)}
                 placeholder="cari kebutuhan harian anda..."
                 aria-label="Cari produk"
-                className="w-full bg-gray-100/70 border border-gray-300 rounded-lg pl-9 pr-9 py-2 text-sm shadow-sm focus:outline-hidden focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:bg-white transition-all"
+                className="w-full bg-white border-2 border-ink rounded-full pl-9 pr-9 py-2 text-sm shadow-sm focus:outline-hidden focus:border-ink focus:ring-2 focus:ring-ink/15 focus:bg-white transition-all"
             />
             {hasValue && (
                 <button
@@ -300,11 +306,11 @@ function SearchBox({ value, onChange, suggestions, sugLoading, searchFocused, se
 
             {open && (
                 <>
-                    <div className={`absolute ${mobile ? 'top-full' : 'top-full'} left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden z-50`}>
+                    <div className={`absolute top-full left-0 right-0 mt-2 bg-white border-2 border-ink rounded-xl shadow-lg overflow-hidden z-50`}>
                         {showRecent && recentSearches.length > 0 && (
                             <div className="p-2">
                                 <div className="flex items-center justify-between px-3 py-1.5">
-                                    <p className="text-[11px] font-black uppercase tracking-wide text-slate-400 flex items-center gap-1">
+                                    <p className="text-[11px] font-black uppercase tracking-wide text-slate-500 flex items-center gap-1">
                                         <Clock className="w-3 h-3" /> Pencarian Terakhir
                                     </p>
                                 </div>
@@ -312,7 +318,7 @@ function SearchBox({ value, onChange, suggestions, sugLoading, searchFocused, se
                                     <div key={term} className="group flex items-center">
                                         <button
                                             onClick={() => onCommit(term)}
-                                            className="flex-1 text-left px-3 py-2 text-sm text-slate-700 hover:bg-emerald-50 rounded-xl flex items-center gap-2 cursor-pointer"
+                                            className="flex-1 text-left px-3 py-2 text-sm text-slate-800 hover:bg-lime/40 rounded-lg flex items-center gap-2 cursor-pointer"
                                         >
                                             <Search className="w-3.5 h-3.5 text-slate-400" />
                                             {term}
@@ -347,22 +353,22 @@ function SearchBox({ value, onChange, suggestions, sugLoading, searchFocused, se
                                             <button
                                                 key={p.id}
                                                 onClick={() => { window.location.href = `/product/${p.id}`; }}
-                                                className="w-full text-left px-2 py-2 hover:bg-emerald-50 rounded-xl flex items-center gap-3 cursor-pointer"
+                                                className="w-full text-left px-2 py-2 hover:bg-lime/40 rounded-lg flex items-center gap-3 cursor-pointer"
                                             >
                                                 <img
                                                     src={p.image || 'https://placehold.co/100x100?text=No'}
                                                     alt={p.name}
                                                     onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100?text=No'; }}
-                                                    className="w-9 h-9 rounded-lg object-cover bg-slate-100 border border-slate-100"
+                                                    className="w-9 h-9 rounded-lg object-cover bg-slate-100 border-2 border-ink"
                                                 />
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-semibold text-slate-800 truncate">{p.name}</p>
-                                                    <p className="text-xs text-slate-400">{p.category}</p>
+                                                    <p className="text-sm font-bold text-ink truncate">{p.name}</p>
+                                                    <p className="text-xs text-slate-500">{p.category}</p>
                                                 </div>
                                                 <div className="text-right shrink-0">
                                                     <p className="text-sm font-black text-emerald-700">{formatIDR(p.price)}</p>
                                                     {dealLabel && (
-                                                        <p className="text-[10px] font-bold text-red-500">{dealLabel}</p>
+                                                        <p className="text-[10px] font-bold text-coral">{dealLabel}</p>
                                                     )}
                                                 </div>
                                             </button>
@@ -375,7 +381,7 @@ function SearchBox({ value, onChange, suggestions, sugLoading, searchFocused, se
                         {showSuggestions && hasValue && (
                             <button
                                 onClick={() => onCommit(value)}
-                                className="w-full text-left px-4 py-3 border-t border-slate-100 text-sm font-black text-emerald-700 hover:bg-emerald-50 flex items-center justify-between cursor-pointer"
+                                className="w-full text-left px-4 py-3 border-t-2 border-ink text-sm font-black text-emerald-800 hover:bg-lime/40 flex items-center justify-between cursor-pointer"
                             >
                                 <span className="flex items-center gap-2">
                                     <Search className="w-4 h-4" />
@@ -387,7 +393,7 @@ function SearchBox({ value, onChange, suggestions, sugLoading, searchFocused, se
 
                         {showRecent && recentSearches.length === 0 && (
                             <div className="px-3 py-6 text-center">
-                                <Check className="w-6 h-6 mx-auto text-slate-300 mb-1" />
+                                <Check className="w-6 h-6 mx-auto text-slate-500 mb-1" />
                                 <p className="text-xs text-slate-400">Ketik untuk mencari produk.</p>
                             </div>
                         )}

@@ -48,12 +48,12 @@ export default function LoginForm({ onLoginSuccess }) {
         }
     };
 
-    const inputClass = "w-full text-sm pl-11 pr-11 py-3 border border-slate-300 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all bg-slate-50/50";
+    const inputClass = "w-full text-sm pl-11 pr-11 py-3 border-2 border-ink/30 rounded-xl focus:outline-none focus:border-ink focus:ring-2 focus:ring-lime transition-all bg-cream/50";
 
     return (
         <form onSubmit={handleFormSubmit} className="space-y-4">
             {error && (
-                <div className="text-sm text-red-600 bg-red-50 border border-red-100 p-3 rounded-xl animate-shake">
+                <div className="text-sm text-red-700 bg-red-50 border-2 border-ink p-3 rounded-xl animate-shake">
                     {error}
                 </div>
             )}
@@ -79,7 +79,7 @@ export default function LoginForm({ onLoginSuccess }) {
             <div className="space-y-1">
                 <div className="flex items-center justify-between">
                 <label htmlFor="password" className="text-xs font-bold text-slate-600">Password</label>
-                <Link to="/forgot-password" className="text-xs font-semibold text-green-600 hover:text-green-700 hover:underline transition-colors cursor-pointer">
+                <Link to="/forgot-password" className="text-xs font-black text-coral hover:underline transition-colors cursor-pointer">
                     Lupa password?
                 </Link>
             </div>
@@ -111,38 +111,38 @@ export default function LoginForm({ onLoginSuccess }) {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="flex-[2] py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-sm shadow-green-600/20"
+                    className="flex-[2] py-3 bg-ink hover:bg-slate-900 disabled:bg-slate-400 text-cream font-black text-sm rounded-xl border-2 border-ink shadow-[3px_3px_0_#161616] transition-colors cursor-pointer flex items-center justify-center gap-2"
                 >
-                    <LogIn className="w-4 h-4" />
+                    <LogIn className="w-4 h-4 text-lime" />
                     {loading ? "Memproses..." : "Masuk Akun"}
                 </button>
                 <Link
                     to="/register"
-                    className="flex-1 flex items-center justify-center py-3 px-4 border border-green-600 text-green-600 font-bold text-sm rounded-xl hover:bg-green-50 transition-colors cursor-pointer"
+                    className="flex-1 flex items-center justify-center py-3 px-4 border-2 border-coral text-coral font-black text-sm rounded-xl hover:bg-lime transition-colors cursor-pointer"
                 >
                     Daftar
                 </Link>
             </div>
 
-            <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-500 border border-slate-100">
-                <p className="font-semibold text-slate-700 mb-2">Akun demo — klik untuk mengisi otomatis:</p>
+            <div className="rounded-xl bg-[#EFEFE6] p-3 text-xs text-slate-500 border-2 border-ink">
+                <p className="font-black text-ink mb-2">Akun demo — klik untuk mengisi otomatis:</p>
                 <div className="grid grid-cols-2 gap-2">
                     {DEMO_ACCOUNTS.map((acc) => (
                         <button
                             key={acc.email}
                             type="button"
                             onClick={() => setFormData({ email: acc.email, password: 'password' })}
-                            className="flex items-center gap-2 rounded-lg bg-white px-2.5 py-2 text-left border border-slate-100 hover:border-green-500 hover:ring-2 hover:ring-green-500/30 transition cursor-pointer"
+                            className="flex items-center gap-2 rounded-lg bg-white px-2.5 py-2 text-left border-2 border-ink/40 hover:border-ink hover:bg-lime hover:border-ink transition cursor-pointer"
                         >
                             <span className={`h-2 w-2 rounded-full ${acc.dot} shrink-0`}></span>
                             <span className="min-w-0">
-                                <span className="block font-semibold text-slate-800 truncate">{acc.label}</span>
-                                <span className="block truncate font-mono text-[10px] text-slate-400">{acc.email}</span>
+                                <span className="block font-black text-ink truncate">{acc.label}</span>
+                                <span className="block truncate font-mono text-[10px] text-slate-500">{acc.email}</span>
                             </span>
                         </button>
                     ))}
                 </div>
-                <p className="mt-2">Password semua akun: <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200">password</code></p>
+                <p className="mt-2">Password semua akun: <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-ink">password</code></p>
             </div>
         </form>
     );

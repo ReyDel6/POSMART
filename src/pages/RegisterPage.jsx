@@ -76,20 +76,20 @@ export default function RegisterPage() {
         }
     };
 
-    const inputClass = "w-full text-sm pl-11 pr-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all bg-slate-50/50";
-    const passwordInputClass = "w-full text-sm pl-11 pr-11 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all bg-slate-50/50";
+    const inputClass = "w-full text-sm pl-11 pr-3 py-2.5 border-2 border-ink/30 rounded-xl focus:outline-none focus:border-ink focus:ring-2 focus:ring-lime transition-all bg-cream/50";
+    const passwordInputClass = "w-full text-sm pl-11 pr-11 py-2.5 border-2 border-ink/30 rounded-xl focus:outline-none focus:border-ink focus:ring-2 focus:ring-lime transition-all bg-cream/50";
 
     return (
         <AuthLayout panelSide="right">
-            <div className="w-full max-w-md bg-white rounded-3xl border border-slate-100 shadow-xl p-7 sm:p-10">
+            <div className="w-full max-w-md bg-white rounded-3xl border-2 border-ink shadow-[8px_8px_0_#161616] p-7 sm:p-10">
                 <div className="mb-7">
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Daftar Akun Baru</h2>
+                    <h2 className="text-2xl font-black text-ink tracking-tight">Daftar Akun Baru</h2>
                     <p className="text-sm text-slate-500 mt-1.5">Mulai belanja cepat & nikmati keuntungan member.</p>
                 </div>
 
-                {error && <div className="text-sm text-red-600 bg-red-50 border border-red-100 p-3 rounded-xl mb-4 animate-shake">{error}</div>}
+                {error && <div className="text-sm text-red-700 bg-red-50 border-2 border-ink p-3 rounded-xl mb-4 animate-shake">{error}</div>}
                 {success && (
-                    <div className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-100 p-3 rounded-xl mb-4 flex items-center gap-2">
+                    <div className="text-sm text-ink bg-lime border-2 border-ink p-3 rounded-xl mb-4 flex items-center gap-2 font-bold">
                         <CheckCircle className="w-4 h-4 shrink-0" />
                         {success}
                     </div>
@@ -215,7 +215,7 @@ export default function RegisterPage() {
                                 rows="2"
                                 autoComplete="street-address"
                                 placeholder="Jl. Anggrek No. 12"
-                                className="w-full text-sm pl-11 pr-3 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all bg-slate-50/50 resize-none"
+                                className="w-full text-sm pl-11 pr-3 py-2.5 border-2 border-ink/30 rounded-xl focus:outline-none focus:border-ink focus:ring-2 focus:ring-lime transition-all bg-cream/50 resize-none"
                             />
                         </div>
                     </div>
@@ -223,7 +223,7 @@ export default function RegisterPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white font-bold text-sm rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-2 mt-2 shadow-sm shadow-green-600/20"
+                        className="w-full py-3 bg-ink hover:bg-slate-900 disabled:bg-slate-400 text-cream font-black text-sm rounded-xl border-2 border-ink shadow-[3px_3px_0_#161616] transition-colors cursor-pointer flex items-center justify-center gap-2 mt-2"
                     >
                         {loading ? "Mendaftarkan..." : "Daftar Sekarang"}
                     </button>
@@ -231,7 +231,7 @@ export default function RegisterPage() {
 
                 <p className="mt-6 text-center text-sm text-slate-500">
                     Sudah punya akun?{" "}
-                    <Link to="/login" className="text-green-600 font-bold hover:underline">Masuk di sini</Link>
+                    <Link to="/login" className="text-coral font-black hover:underline">Masuk di sini</Link>
                 </p>
             </div>
         </AuthLayout>

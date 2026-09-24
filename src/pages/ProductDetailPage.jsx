@@ -125,14 +125,14 @@ export default function ProductDetailPage() {
   const isLoggedIn = !!localStorage.getItem('token');
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-16">
+    <div className="min-h-screen bg-cream pb-16">
       {/* Top bar */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-30">
+      <div className="bg-white border-b-2 border-ink sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 text-sm font-bold text-slate-700 hover:text-emerald-700 transition-colors">
+          <Link to="/" className="flex items-center gap-2 text-sm font-black text-ink hover:text-coral transition-colors">
             <ArrowLeft className="w-4 h-4" /> Katalog
           </Link>
-          <span className="text-sm font-black text-slate-800 tracking-tight">
+          <span className="text-sm font-black text-ink tracking-tight">
             {storeSettings.store_name || 'POSMart'}
           </span>
         </div>
@@ -141,9 +141,9 @@ export default function ProductDetailPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* ===== GALLERY ===== */}
         <div className="space-y-3">
-          <div className="aspect-square rounded-2xl overflow-hidden bg-white border border-slate-200 relative">
+          <div className="aspect-square rounded-2xl overflow-hidden bg-white border-2 border-ink shadow-[6px_6px_0_#161616] relative">
             {product.is_promo && (
-              <div className="absolute top-3 left-3 z-10 bg-linear-to-r from-amber-500 to-orange-500 text-white text-xs font-bold px-2.5 py-1 rounded-md shadow-sm">
+              <div className="absolute top-3 left-3 z-10 bg-coral text-white text-xs font-black px-2.5 py-1 rounded-md shadow-[2px_2px_0_#161616]">
                 -{product.promo}%
               </div>
             )}
@@ -163,7 +163,7 @@ export default function ProductDetailPage() {
                   type="button"
                   onClick={() => setActiveImage(img)}
                   className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
-                    activeImage === img ? 'border-emerald-600 ring-2 ring-emerald-500/20' : 'border-slate-200 hover:border-emerald-300'
+                    activeImage === img ? 'border-ink ring-2 ring-lime shadow-[2px_2px_0_#161616]' : 'border-ink/30 hover:border-ink'
                   }`}
                 >
                   <img src={imgSrc(img)} alt={`${product.name} ${idx + 1}`} className="w-full h-full object-cover" />
@@ -175,10 +175,10 @@ export default function ProductDetailPage() {
 
         {/* ===== INFO ===== */}
         <div className="space-y-5">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+          <div className="bg-white rounded-2xl border-2 border-ink shadow-[6px_6px_0_#161616] p-6 space-y-4">
             <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">{product.category}</span>
-              <h1 className="text-2xl font-black text-slate-900 leading-tight mt-1">{product.name}</h1>
+              <span className="inline-block bg-lime text-ink border border-ink px-2 py-0.5 rounded-md text-[11px] font-black uppercase tracking-wider">{product.category}</span>
+              <h1 className="text-2xl font-black text-ink leading-tight mt-2">{product.name}</h1>
             </div>
 
             <div className="flex items-center gap-2 text-sm">
@@ -194,7 +194,7 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="flex items-end gap-3">
-              <span className={`font-black ${product.is_promo ? 'text-red-600' : 'text-emerald-700'} text-3xl`}>
+              <span className={`font-black ${product.is_promo ? 'text-coral' : 'text-ink'} text-3xl`}>
                 {formatIDR(currentPrice)}
               </span>
               {product.is_promo && (
@@ -202,11 +202,11 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            <div className="text-xs font-semibold">
+            <div className="text-xs font-black">
               {isOutOfStock ? (
-                <span className="text-red-600 bg-red-50 border border-red-100 px-3 py-1.5 rounded-lg">Stok habis</span>
+                <span className="text-red-700 bg-red-50 border-2 border-ink px-3 py-1.5 rounded-lg">Stok habis</span>
               ) : (
-                <span className="text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-lg">
+                <span className="text-ink bg-lime border-2 border-ink px-3 py-1.5 rounded-lg">
                   Stok tersedia: {product.stock} pcs
                 </span>
               )}
@@ -214,30 +214,30 @@ export default function ProductDetailPage() {
 
             {/* Deskripsi */}
             {product.description && (
-              <div className="pt-4 border-t border-slate-100">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1.5">Deskripsi Produk</h3>
-                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{product.description}</p>
+              <div className="pt-4 border-t-2 border-ink/10">
+                <h3 className="text-xs font-black text-ink uppercase tracking-wide mb-1.5">Deskripsi Produk</h3>
+                <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{product.description}</p>
               </div>
             )}
 
             {/* Qty + Actions */}
             <div className="pt-2 space-y-3">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-bold text-slate-500">Jumlah</span>
-                <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden">
+                <span className="text-xs font-black text-ink">Jumlah</span>
+                <div className="flex items-center border-2 border-ink rounded-xl overflow-hidden bg-white">
                   <button
                     type="button"
                     onClick={() => setQty(q => Math.max(1, q - 1))}
-                    className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 cursor-pointer"
+                    className="px-3 py-2 bg-cream hover:bg-lime text-ink cursor-pointer"
                     aria-label="Kurangi jumlah"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="w-12 text-center font-bold text-sm">{qty}</span>
+                  <span className="w-12 text-center font-black text-sm">{qty}</span>
                   <button
                     type="button"
                     onClick={() => setQty(q => Math.min(Math.max(product.stock, 1), q + 1))}
-                    className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 cursor-pointer"
+                    className="px-3 py-2 bg-cream hover:bg-lime text-ink cursor-pointer"
                     aria-label="Tambah jumlah"
                   >
                     <Plus className="w-4 h-4" />
@@ -249,13 +249,13 @@ export default function ProductDetailPage() {
                 <button
                   onClick={() => handleAddToCart({ ...product, id: product.id, price: currentPrice, image: product.image })}
                   disabled={isOutOfStock}
-                  className={`flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                  className={`flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm transition-all border-2 border-ink cursor-pointer ${
                     isOutOfStock
-                      ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                      : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20'
+                      ? 'bg-slate-200 text-slate-500 border-slate-300 cursor-not-allowed shadow-none'
+                      : 'bg-ink text-cream hover:bg-slate-900 shadow-[4px_4px_0_#161616]'
                   }`}
                 >
-                  <ShoppingBag className="w-4 h-4" />
+                  <ShoppingBag className="w-4 h-4 text-lime" />
                   {isOutOfStock ? 'Stok Habis' : 'Tambah ke Keranjang'}
                 </button>
 
@@ -264,7 +264,7 @@ export default function ProductDetailPage() {
                     href={waUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-center gap-2 py-3 rounded-xl font-bold text-sm bg-green-100 text-green-800 hover:bg-green-200 border border-green-200 transition-all"
+                    className="flex items-center justify-center gap-2 py-3 rounded-xl font-black text-sm bg-white text-ink border-2 border-ink hover:bg-lime transition-all"
                   >
                     <MessageCircle className="w-4 h-4" />
                     Pesan via WhatsApp
@@ -284,13 +284,15 @@ export default function ProductDetailPage() {
 
       {/* ===== ULASAN ===== */}
       <div id="ulasan" className="max-w-6xl mx-auto px-4 sm:px-6 mt-10">
-        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+        <div className="bg-white rounded-2xl border-2 border-ink shadow-[6px_6px_0_#161616] p-6">
           <div className="flex items-center justify-between mb-5">
-            <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-              <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+            <h3 className="text-lg font-black text-ink flex items-center gap-2">
+              <span className="w-9 h-9 rounded-xl bg-lime border-2 border-ink flex items-center justify-center">
+                <Star className="w-5 h-5 text-ink fill-ink" />
+              </span>
               Ulasan Pembeli
               {product.reviews_count > 0 && (
-                <span className="text-sm font-bold text-slate-400">({product.reviews_count})</span>
+                <span className="text-sm font-black text-slate-400">({product.reviews_count})</span>
               )}
             </h3>
             <div className="flex items-center gap-1.5 text-xs font-bold text-amber-500">
@@ -307,7 +309,7 @@ export default function ProductDetailPage() {
               ) : (
                 product.reviews.map((review) => (
                   <div key={review.id} className="flex gap-3 border-b border-slate-100 pb-4">
-                    <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-xs shrink-0">
+                    <div className="w-9 h-9 rounded-full bg-lime text-ink border-2 border-ink font-black flex items-center justify-center text-xs shrink-0">
                       {(review.user_name || '?').charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">

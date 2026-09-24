@@ -51,6 +51,8 @@ const FALLBACK_ICON = { icon: '📦', color: 'bg-slate-100' };
 
 const categoryLookup = (name) => CATEGORY_ICONS[name] || FALLBACK_ICON;
 
+const MARQUEE_ITEMS = ['SEMBAKO', 'BEVERAGE', 'PERSONAL CARE', 'TOOLS', 'SNACK', 'FROZEN FOOD'];
+
 const formatIDR = (value) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
 
@@ -283,9 +285,9 @@ export default function CatalogPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-3">
-                <div className="w-8 h-8 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-sm font-bold text-slate-500 tracking-wide animate-pulse">
+            <div className="min-h-screen flex flex-col items-center justify-center bg-cream gap-3">
+                <div className="w-10 h-10 border-2 border-ink border-t-lime rounded-full animate-spin"></div>
+                <p className="text-sm font-black text-ink tracking-wide animate-pulse">
                     Menghubungkan ke database posmart....
                 </p>
             </div>
@@ -294,13 +296,13 @@ export default function CatalogPage() {
 
     if (error) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-3 px-4 text-center">
+            <div className="min-h-screen flex flex-col items-center justify-center bg-cream gap-3 px-4 text-center">
                 <span className="text-4xl">⚠️</span>
-                <h3 className="font-bold text-slate-500 text-lg">Gagal memuat toko</h3>
+                <h3 className="font-black text-ink text-lg display">Gagal memuat toko</h3>
                 <p className="text-sm text-slate-600">{error}</p>
                 <button
                     onClick={() => fetchProducts({ page: currentPage, search: currentSearch, category: currentCategory })}
-                    className="mt-2 px-4 py-2 bg-emerald-600 text-white text-xs font-bold rounded-lg hover:bg-emerald-700 transition-colors cursor-pointer"
+                    className="mt-2 px-5 py-2.5 bg-ink text-cream text-xs font-black rounded-lg border-2 border-ink shadow-[3px_3px_0_#161616] hover:bg-slate-900 transition-colors cursor-pointer"
                 >
                     Coba lagi
                 </button>
@@ -309,14 +311,14 @@ export default function CatalogPage() {
     }
 
     const sectionHeading = (icon, title, link) => (
-        <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+        <div className="flex items-center justify-between mb-5 gap-3">
+            <div className="flex items-center gap-3">
+                <span className="w-9 h-9 rounded-lg border-2 border-ink bg-lime text-ink flex items-center justify-center shadow-[3px_3px_0_#161616]">
                     {icon}
-                </div>
-                <h3 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">{title}</h3>
+                </span>
+                <h3 className="display text-xl sm:text-2xl text-ink">{title}</h3>
             </div>
-            <Link to={link} className="flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 hover:underline transition-colors">
+            <Link to={link} className="flex items-center gap-1 text-xs font-black text-ink underline underline-offset-4 hover:text-coral transition-colors">
                 Lihat Semua <ChevronRightIcon className="w-3.5 h-3.5" />
             </Link>
         </div>
@@ -337,22 +339,22 @@ export default function CatalogPage() {
     );
 
     return (
-        <div className="min-h-screen bg-slate-50 font-sans antialiased text-slate-800">
+        <div className="min-h-screen bg-cream font-sans antialiased text-ink">
             <Header />
 
-            {/* ===== BAR LOKASI TOKO (ala alfagift) ===== */}
-            <div className="bg-emerald-700 text-white sticky top-[65px] z-40">
+            {/* ===== BAR LOKASI TOKO ===== */}
+            <div className="bg-ink text-white sticky top-[65px] z-40 border-y-2 border-ink">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between">
                     <button onClick={() => window.location.hash = '#katalog-produk'} className="flex items-center gap-2 text-left cursor-pointer hover:opacity-80 transition-opacity">
-                        <MapPin className="w-4 h-4 shrink-0 text-amber-300" />
+                        <MapPin className="w-4 h-4 shrink-0 text-coral" />
                         <div className="min-w-0">
-                            <p className="text-[10px] font-semibold text-emerald-200 uppercase tracking-wide">Kirim ke</p>
-                            <p className="text-xs font-bold truncate max-w-70 sm:max-w-100">
+                            <p className="text-[10px] font-black text-lime uppercase tracking-wide">Kirim ke</p>
+                            <p className="text-xs font-bold truncate max-w-70 sm:max-w-100 text-white">
                                 {storeSettings.store_name || 'POSMart'} · {storeSettings.store_address || 'Alamat toko belum diatur'}
                             </p>
                         </div>
                     </button>
-                    <Link to="/#katalog-produk" className="text-[11px] font-bold bg-white/15 hover:bg-white/25 px-3 py-1.5 rounded-full flex items-center gap-1 shrink-0">
+                    <Link to="/#katalog-produk" className="text-[11px] font-black bg-lime hover:bg-lime/80 text-ink px-4 py-1.5 rounded-full border-2 border-ink flex items-center gap-1 shrink-0 shadow-[3px_3px_0_#CBF169]">
                         Belanja Sekarang
                     </Link>
                 </div>
@@ -360,62 +362,66 @@ export default function CatalogPage() {
 
             {/* ===== CAROUSEL PROMO ===== */}
             <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-5">
-                <div className="relative rounded-3xl overflow-hidden shadow-lg">
-                    <div
-                        className={`relative block bg-linear-to-br ${activeBanner?.color || 'from-emerald-700 via-emerald-600 to-teal-700'} text-white px-6 sm:px-10 py-8 sm:py-10 lg:py-12 min-h-[22rem] sm:min-h-[26rem] overflow-hidden`}
-                    >
-                        {/* Dekorasi background */}
-                        <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-white/10 blur-3xl pointer-events-none" />
-                        <div className="absolute -left-10 -bottom-28 w-72 h-72 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+                <div className="relative border-2 border-ink rounded-2xl overflow-hidden bg-white shadow-[8px_8px_0_#161616]">
+                    <div className="relative px-6 sm:px-10 py-8 sm:py-10 lg:py-12 min-h-[22rem] sm:min-h-[26rem] overflow-hidden">
+                        {/* Dekorasi neo */}
+                        <div className="absolute -right-14 -top-14 w-56 h-56 rounded-full bg-lime border-2 border-ink rotate-12 opacity-90 pointer-events-none" />
+                        <div className="absolute -left-8 -bottom-16 w-48 h-48 rounded-full bg-[#FFD9CC] border-2 border-ink -rotate-6 pointer-events-none" />
+                        <div className="absolute right-8 bottom-6 w-4 h-4 rounded-full bg-coral border-2 border-ink pointer-events-none" />
 
                         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
                             {/* Teks Kiri */}
                             <div className="lg:col-span-7 space-y-4">
                                 {bannerIsProduct ? (
-                                    <span className="inline-flex items-center gap-1 bg-amber-400 text-emerald-950 text-[11px] font-black px-3 py-1 rounded-full">
-                                        <Percent className="w-3.5 h-3.5" /> HEMAT {activeBanner.promo}% · Promo Terbatas
+                                    <span className="inline-flex items-center gap-1.5 -rotate-1 bg-white border-2 border-ink rounded-full text-ink text-[11px] font-black px-3.5 py-1.5 shadow-[3px_3px_0_#161616]">
+                                        <Percent className="w-3.5 h-3.5 text-coral" /> HEMAT {activeBanner.promo}% · Promo Terbatas
                                     </span>
                                 ) : (
-                                    <span className="inline-flex items-center gap-1 bg-white/20 text-[11px] font-black px-3 py-1 rounded-full">
-                                        <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" /> POSMart
+                                    <span className="inline-flex items-center gap-1.5 rotate-1 bg-white border-2 border-ink rounded-full text-ink text-[11px] font-black px-3.5 py-1.5 shadow-[3px_3px_0_#161616]">
+                                        <Star className="w-3.5 h-3.5 text-coral fill-coral" /> POSMart
                                     </span>
                                 )}
 
-                                {bannerIsProduct ? (
-                                    <Link to={`/product/${activeBanner.id}`} className="block">
-                                        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white leading-tight line-clamp-2 hover:underline transition-all">
-                                            {activeBanner.name}
+                                {(() => {
+                                    const words = String(activeBanner.name).split(' ');
+                                    const last = words.pop();
+                                    const head = words.join(' ');
+                                    return bannerIsProduct ? (
+                                        <Link to={`/product/${activeBanner.id}`} className="block">
+                                            <h1 className="display text-4xl sm:text-5xl text-ink leading-[1.02] line-clamp-2">
+                                                {head} <span className="bg-lime px-1.5 box-decoration-clone">{last}</span>
+                                            </h1>
+                                        </Link>
+                                    ) : (
+                                        <h1 className="display text-4xl sm:text-5xl text-ink leading-[1.02]">
+                                            {head} <span className="bg-lime px-1.5 box-decoration-clone">{last}</span>
                                         </h1>
-                                    </Link>
-                                ) : (
-                                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
-                                        {activeBanner.name}
-                                    </h1>
-                                )}
+                                    );
+                                })()}
 
                                 {bannerIsProduct ? (
-                                    <p className="text-emerald-100/90 text-base sm:text-lg font-bold">
-                                        {formatIDR(promoPrice)}
-                                        <span className="font-normal line-through text-emerald-200/70 ml-2">{formatIDR(activeBanner.price)}</span>
+                                    <p className="text-lg font-black text-ink">
+                                        <span className="text-coral text-2xl">{formatIDR(promoPrice)}</span>
+                                        <span className="font-semibold line-through text-slate-400 ml-3">{formatIDR(activeBanner.price)}</span>
                                     </p>
                                 ) : (
-                                    <p className="text-emerald-100/90 text-sm sm:text-base max-w-xl leading-relaxed">{activeBanner.subtitle}</p>
+                                    <p className="text-sm sm:text-base max-w-xl leading-relaxed text-slate-600 font-medium">{activeBanner.subtitle}</p>
                                 )}
 
-                                {/* CTA yang jelas ala hero lama */}
+                                {/* CTA neo */}
                                 <div className="flex flex-wrap items-center gap-3 pt-1">
                                     <a
                                         href="#katalog-produk"
-                                        className="inline-flex items-center gap-2 bg-amber-400 hover:bg-amber-300 text-emerald-950 font-bold text-sm px-6 py-3 rounded-xl shadow-lg shadow-amber-400/20 hover:scale-[1.02] transition-all"
+                                        className="inline-flex neo-press items-center gap-2 bg-ink text-cream font-black text-sm px-6 py-3 rounded-lg border-2 border-ink shadow-[4px_4px_0_#161616] transition-all"
                                     >
                                         Belanja Sekarang
                                         <ArrowRight className="w-4 h-4" />
                                     </a>
                                     <button
                                         onClick={() => setOnlyPromo(true)}
-                                        className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold text-sm px-5 py-3 rounded-xl backdrop-blur-md transition-all cursor-pointer"
+                                        className="inline-flex items-center gap-2 bg-white text-ink font-bold text-sm px-5 py-3 rounded-lg border-2 border-ink shadow-[3px_3px_0_#161616] hover:bg-lime transition-colors cursor-pointer"
                                     >
-                                        <Percent className="w-4 h-4 text-amber-300" />
+                                        <Percent className="w-4 h-4 text-coral" />
                                         Lihat Promo Hari Ini
                                     </button>
                                 </div>
@@ -423,36 +429,27 @@ export default function CatalogPage() {
 
                             {/* Showcase Visual Kanan */}
                             <div className="lg:col-span-5 relative flex justify-center items-center py-4">
-                                <div className="relative w-full max-w-xs sm:max-w-sm bg-linear-to-tr from-white/15 to-white/5 border border-white/20 rounded-3xl p-5 backdrop-blur-lg shadow-2xl">
-                                    <Link to={bannerIsProduct ? `/product/${activeBanner.id}` : '#katalog-produk'} className="block relative">
-                                        <img
-                                            src={activeBanner.image || BANNER_IMG_FALLBACK}
-                                            alt={activeBanner.name}
-                                            onError={(e) => { e.target.onerror = null; e.target.src = BANNER_IMG_FALLBACK; }}
-                                            className="w-full aspect-square object-cover rounded-2xl shadow-xl ring-4 ring-white/30"
-                                        />
-                                    </Link>
-
-                                    {/* Floating Trust Badge 1: Pengiriman */}
-                                    <div className="absolute -bottom-3 left-2 bg-white text-slate-800 px-3 py-2 rounded-xl shadow-xl border border-slate-100 flex items-center gap-2 animate-bounce">
-                                        <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center">
-                                            <Truck className="w-4 h-4" />
-                                        </div>
-                                        <div className="text-left">
-                                            <div className="text-[11px] font-bold text-slate-900">Garansi 30 Menit</div>
-                                            <div className="text-[10px] text-slate-500">Pasti sampai tujuan</div>
-                                        </div>
+                                <div className="relative w-full max-w-xs sm:max-w-sm">
+                                    <div className="border-[3px] border-ink rounded-xl overflow-hidden shadow-[9px_9px_0_#161616] bg-[#EFEFE6]">
+                                        <Link to={bannerIsProduct ? `/product/${activeBanner.id}` : '#katalog-produk'} className="block">
+                                            <img
+                                                src={activeBanner.image || BANNER_IMG_FALLBACK}
+                                                alt={activeBanner.name}
+                                                onError={(e) => { e.target.onerror = null; e.target.src = BANNER_IMG_FALLBACK; }}
+                                                className="w-full aspect-square object-cover"
+                                            />
+                                        </Link>
                                     </div>
 
-                                    {/* Floating Trust Badge 2: Kualitas */}
-                                    <div className="absolute -top-3 right-2 bg-white text-slate-800 px-3 py-2 rounded-xl shadow-xl border border-slate-100 flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center">
-                                            <ShieldCheck className="w-4 h-4" />
-                                        </div>
-                                        <div className="text-left">
-                                            <div className="text-[11px] font-bold text-slate-900">100% Produk Fresh</div>
-                                            <div className="text-[10px] text-slate-500">Dicek setiap pagi</div>
-                                        </div>
+                                    {/* Sticker cor */}
+                                    <div className="absolute -top-5 -right-3 w-24 h-24 rounded-full bg-coral border-2 border-ink text-white flex flex-col items-center justify-center text-center rotate-[-8deg] shadow-[3px_3px_0_#161616]">
+                                        <span className="text-[13px] font-black leading-tight">30 MENIT<br />SAMPAI</span>
+                                    </div>
+
+                                    {/* Price tag */}
+                                    <div className="absolute -bottom-4 -left-3 bg-white border-2 border-ink rounded-lg px-4 py-2 shadow-[4px_4px_0_#161616] text-[11px] font-bold text-slate-600">
+                                        {bannerIsProduct ? 'Harga sekarang' : 'Mulai dari'}
+                                        <b className="block text-base font-black text-ink">{formatIDR(bannerIsProduct ? promoPrice : (activeBanner.price || 8000))}</b>
                                     </div>
                                 </div>
                             </div>
@@ -463,14 +460,14 @@ export default function CatalogPage() {
                     <button
                         onClick={() => goBanner(bannerIndex - 1)}
                         aria-label="Banner sebelumnya"
-                        className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center cursor-pointer"
+                        className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white border-2 border-ink text-ink flex items-center justify-center shadow-[3px_3px_0_#161616] hover:bg-lime transition-colors cursor-pointer"
                     >
                         <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                         onClick={() => goBanner(bannerIndex + 1)}
                         aria-label="Banner berikutnya"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/30 hover:bg-black/50 text-white flex items-center justify-center cursor-pointer"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white border-2 border-ink text-ink flex items-center justify-center shadow-[3px_3px_0_#161616] hover:bg-lime transition-colors cursor-pointer"
                     >
                         <ChevronRight className="w-5 h-5" />
                     </button>
@@ -482,32 +479,61 @@ export default function CatalogPage() {
                                 key={idx}
                                 onClick={() => goBanner(idx)}
                                 aria-label={`Banner ${idx + 1}`}
-                                className={`h-1.5 rounded-full transition-all cursor-pointer ${bannerIndex === idx ? 'w-5 bg-amber-400' : 'w-1.5 bg-white/60'}`}
+                                className={`h-2 rounded-full transition-all cursor-pointer ${bannerIndex === idx ? 'w-6 bg-ink' : 'w-2 bg-slate-500'}`}
                             />
                         ))}
                     </div>
                 </div>
             </section>
 
+            {/* ===== MARQUEE KATEGORI ===== */}
+            <div className="marquee-band mt-6">
+                <div className="marquee-track">
+                    {MARQUEE_ITEMS.concat(MARQUEE_ITEMS).map((t, i) => (
+                        <span key={i} className={i % 2 === 0 ? 'hot' : ''}>{t}</span>
+                    ))}
+                </div>
+            </div>
+
+            {/* ===== FITUR ===== */}
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-9">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                        ['01', 'Delivery Kilat', 'Maks. 30–60 menit', <Truck className="w-5 h-5" />],
+                        ['02', 'Produk Segar', '100% segar & higienis', <ShieldCheck className="w-5 h-5" />],
+                        ['03', 'Return Mudah', 'Garansi retur 1x24 jam', <RotateCcw className="w-5 h-5" />],
+                        ['04', 'Member Untung', 'Kumpulkan koin & promo', <TrendingUp className="w-5 h-5" />],
+                    ].map(([num, title, desc, icon]) => (
+                        <div key={num} className="bg-white border-2 border-ink rounded-xl p-5 shadow-[4px_4px_0_#161616] flex flex-col gap-2 neo-press">
+                            <div className="flex items-center justify-between">
+                                <span className="display text-2xl text-coral">{num}</span>
+                                <span className="w-9 h-9 rounded-lg bg-lime border-2 border-ink text-ink flex items-center justify-center">{icon}</span>
+                            </div>
+                            <b className="text-[15px] text-ink font-black">{title}</b>
+                            <span className="text-xs text-slate-600 font-medium">{desc}</span>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
             {/* ===== ICON KATEGORI ===== */}
             <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
                 {loadingCategories ? (
-                    <div className="flex justify-center py-6"><div className="w-6 h-6 border-emerald-600 border-t-transparent rounded-full animate-spin" /></div>
+                    <div className="flex justify-center py-6"><div className="w-6 h-6 border-2 border-ink border-t-lime rounded-full animate-spin" /></div>
                 ) : (
-                    <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-4">
-                        <div className="grid grid-cols-4 lg:grid-cols-[repeat(auto-fit,minmax(90px,1fr))] gap-3">
-                            {categories.filter(c => c !== 'All').map((cat) => {
+                    <div className="bg-white rounded-2xl border-2 border-ink shadow-[4px_4px_0_#161616] p-4">
+                        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3">
+                            {categories.filter(c => c !== 'All').map((cat, ci) => {
                                 const meta = categoryLookup(cat);
+                                const tileColor = ['bg-lime', 'bg-white', 'bg-[#FFD9CC]', 'bg-[#D9E1FF]', 'bg-[#FFE4D8]'][ci % 5];
                                 return (
                                     <button
                                         key={cat}
                                         onClick={() => handleCategoryChange(cat)}
-                                        className="flex flex-col items-center gap-2 px-1 py-2 group cursor-pointer"
+                                        className={`flex flex-col items-stretch justify-between gap-4 px-4 py-4 min-h-[120px] rounded-xl border-2 border-ink ${tileColor} shadow-[4px_4px_0_#161616] transition-transform duration-150 group hover:-translate-y-1 cursor-pointer`}
                                     >
-                                        <span className={`w-20 h-20 rounded-2xl ${meta.color} flex items-center justify-center text-3xl ring-1 ring-inset ring-black/5 shadow-sm transition-all duration-200 group-hover:scale-105 group-hover:shadow-md group-hover:ring-emerald-200`}>
-                                            {meta.icon}
-                                        </span>
-                                        <span className="text-[11px] font-semibold text-slate-600 text-center leading-tight group-hover:text-emerald-700 transition-colors">
+                                        <span className="text-[24px] leading-none">{meta.icon}</span>
+                                        <span className="text-[13px] font-black text-ink uppercase text-left leading-tight">
                                             {cat}
                                         </span>
                                     </button>
@@ -515,7 +541,7 @@ export default function CatalogPage() {
                             })}
                         </div>
                         {categories.length === 1 && (
-                            <p className="text-xs text-slate-400 text-center py-3">Belum ada kategori terdaftar.</p>
+                            <p className="text-xs text-slate-500 text-center py-3">Belum ada kategori terdaftar.</p>
                         )}
                     </div>
                 )}
@@ -539,27 +565,27 @@ export default function CatalogPage() {
 
             {/* ===== PROMO HARI INI ===== */}
             <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-9">
-                <div className="bg-linear-to-br from-amber-50 to-orange-50 border border-amber-200/70 rounded-3xl p-5 sm:p-6 shadow-sm">
+                <div className="bg-ink border-2 border-ink rounded-xl p-5 sm:p-6 shadow-[6px_6px_0_#161616]">
                     <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
                         <div className="flex items-center gap-3">
-                            <div className="bg-linear-to-br from-amber-500 to-orange-500 text-white p-2.5 rounded-xl shadow-lg shadow-amber-500/30">
+                            <div className="bg-coral text-white p-2.5 rounded-lg border-2 border-ink shadow-[3px_3px_0_#CBF169]">
                                 <Flame className="w-5 h-5" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-black text-slate-900 tracking-tight">Kejar Diskon Hari Ini</h3>
-                                <p className="text-xs font-medium text-amber-700">Produk pilihan, jangan sampai kehabisan</p>
+                                <h3 className="text-lg font-black text-white tracking-tight display">Kejar Diskon Hari Ini</h3>
+                                <p className="text-xs font-bold text-amber-300">Produk pilihan, jangan sampai kehabisan</p>
                             </div>
                         </div>
-                        <div className="inline-flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-amber-200 shadow-sm">
-                            <Clock className="w-4 h-4 text-amber-600" />
-                            <span className="font-mono text-sm font-black text-amber-700 tabular-nums">
+                        <div className="inline-flex items-center gap-2 bg-cream text-ink px-3 py-2 rounded-lg border-2 border-ink shadow-[3px_3px_0_#CBF169]">
+                            <Clock className="w-4 h-4 text-coral" />
+                            <span className="font-mono text-sm font-black tabular-nums text-ink">
                                 {countdown.h}:{countdown.m}:{countdown.s}
                             </span>
                         </div>
                     </div>
 
                     {promoProducts.length === 0 ? (
-                        <p className="text-sm text-slate-500 text-center py-6">Belum ada produk promo saat ini, silakan cek kembali.</p>
+                        <p className="text-sm text-slate-400 text-center py-6">Belum ada produk promo saat ini, silakan cek kembali.</p>
                     ) : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                             {promoProducts.slice(0, 8).map((product) => (
@@ -576,20 +602,20 @@ export default function CatalogPage() {
                     {sectionHeading(<Package className="w-5 h-5" />, 'Paket Hemat', '/#katalog-produk')}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {bundles.slice(0, 6).map((b) => (
-                            <article key={b.bundle_id} className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col gap-3">
+                            <article key={b.bundle_id} className="bg-white border-2 border-ink rounded-xl p-4 shadow-[4px_4px_0_#161616] hover:-translate-y-1 transition-transform flex flex-col gap-3">
                                 <div className="flex items-start gap-3">
                                     <img
                                         src={b.items?.[0]?.image || 'https://placehold.co/100x100?text=Paket'}
                                         alt={b.name}
-                                        className="w-16 h-16 rounded-2xl object-cover bg-slate-100 border border-slate-100"
+                                        className="w-16 h-16 rounded-lg object-cover bg-[#EFEFE6] border-2 border-ink"
                                         onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100?text=Paket'; }}
                                     />
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="text-sm font-black text-slate-900 leading-tight">{b.name}</h4>
-                                        <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-2">
+                                        <h4 className="text-sm font-black text-ink leading-tight">{b.name}</h4>
+                                        <p className="text-[11px] text-slate-600 mt-0.5 line-clamp-2">
                                             {b.items.map(i => `${i.qty}x ${i.name}`).join(' + ')}
                                         </p>
-                                        <span className="inline-block mt-1.5 px-1.5 py-0.5 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded text-[9px] font-black">
+                                        <span className="inline-block mt-1.5 px-2 py-0.5 bg-lime border-2 border-ink text-ink rounded text-[9px] font-black">
                                             HEMAT {b.save_percent}%
                                         </span>
                                     </div>
@@ -597,7 +623,7 @@ export default function CatalogPage() {
                                 <div className="flex items-center justify-between mt-auto">
                                     <div>
                                         <p className="text-[10px] text-slate-400 font-mono line-through">Rp {Number(b.list_total).toLocaleString('id-ID')}</p>
-                                        <p className="text-base font-black text-emerald-700">Rp {Number(b.bundle_price).toLocaleString('id-ID')}</p>
+                                        <p className="text-base font-black text-ink">Rp {Number(b.bundle_price).toLocaleString('id-ID')}</p>
                                     </div>
                                     <button
                                         type="button"
@@ -609,9 +635,9 @@ export default function CatalogPage() {
                                             image: b.items?.[0]?.image || '',
                                             category: 'Bundle',
                                         })}
-                                        className="gap-1.5 inline-flex items-center bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-colors cursor-pointer"
+                                        className="gap-1.5 inline-flex items-center bg-ink hover:bg-slate-900 text-cream text-xs font-black px-4 py-2.5 rounded-lg border-2 border-ink shadow-[3px_3px_0_#161616] transition-colors cursor-pointer"
                                     >
-                                        <SearchCheck className="w-4 h-4" /> Masukkan
+                                        <SearchCheck className="w-4 h-4 text-lime" /> Masukkan
                                     </button>
                                 </div>
                             </article>
@@ -624,26 +650,26 @@ export default function CatalogPage() {
             <main id="katalog-produk" className="max-w-7xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-1 md:grid-cols-4 gap-6">
                 {/*Filter*/}
                 <aside className="md:col-span-1 space-y-6">
-                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm sticky top-20">
-                        <div className="flex items-center gap-2 pb-3 border-b border-slate-100 mb-4 text-slate-900">
-                            <Search className="w-4 h-4 text-emerald-600" />
-                            <h3 className="font-bold text-sm tracking-tight">Filter Belanja</h3>
+                    <div className="bg-white p-5 rounded-xl border-2 border-ink shadow-[4px_4px_0_#161616] sticky top-20">
+                        <div className="flex items-center gap-2 pb-3 border-b-2 border-ink mb-4 text-ink">
+                            <Search className="w-4 h-4 text-coral" />
+                            <h3 className="font-black text-sm tracking-tight">Filter Belanja</h3>
                         </div>
 
                         {/* kategori */}
                         <div className="mb-5">
-                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Kategori</label>
+                            <label className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Kategori</label>
                             {loadingCategories ? (
-                                <div className="text-xs text-slate-400 text-center py-3">Memuat kategori...</div>
+                                <div className="text-xs text-slate-500 text-center py-3">Memuat kategori...</div>
                             ) : (
                                 <div className="flex flex-col gap-1.5">
                                     {categories.map((category) => (
                                         <button
                                             key={category}
                                             onClick={() => handleCategoryChange(category)}
-                                            className={`text-left text-sm px-3 py-2 rounded-lg font-medium transition-colors cursor-pointer ${currentCategory === category
-                                                ? 'bg-emerald-50 text-emerald-700 border-l-2 border-emerald-600'
-                                                : 'text-slate-600 hover:bg-slate-50'
+                                            className={`text-left text-sm px-3 py-2 rounded-lg font-bold transition-colors cursor-pointer ${currentCategory === category
+                                                ? 'bg-lime text-ink border-l-4 border-ink shadow-[2px_2px_0_#161616]'
+                                                : 'text-slate-700 hover:bg-[#EFEDE3]'
                                                 }`}
                                         >
                                             {category === 'All' ? 'Semua Produk' : category}
@@ -656,10 +682,10 @@ export default function CatalogPage() {
                         {/* range harga */}
                         <div className="mb-5">
                             <div className="flex justify-between items-center mb-2">
-                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">
+                                <label className="block text-xs font-black uppercase tracking-wider text-slate-500">
                                     Harga maksimum
                                 </label>
-                                <span className="text-xs font-mono font-bold text-emerald-700">
+                                <span className="text-xs font-mono font-black text-ink">
                                     Rp {effectiveMaxPrice.toLocaleString('id-ID')}
                                 </span>
                             </div>
@@ -670,16 +696,16 @@ export default function CatalogPage() {
                                 step={STEP_VALUE}
                                 value={effectiveMaxPrice}
                                 onChange={(e) => setUserMaxPrice(Number(e.target.value))}
-                                className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                                className="w-full h-1.5 bg-[#DCD9CE] rounded-lg appearance-none cursor-pointer accent-emerald-600"
                             />
-                            <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-1">
+                            <div className="flex justify-between text-[10px] text-slate-500 font-mono mt-1">
                                 <span>Rp {MIN_PRICE_LIMIT.toLocaleString('id-ID')}</span>
                                 <span>Rp {(currentMaxLimit || MIN_PRICE_LIMIT + STEP_VALUE).toLocaleString('id-ID')}</span>
                             </div>
                             {userMaxPrice !== null && (
                                 <button
                                     onClick={() => setUserMaxPrice(null)}
-                                    className="text-xs text-emerald-700 hover:underline mt-2 flex items-center gap-1 cursor-pointer"
+                                    className="text-xs font-black text-ink underline hover:text-coral mt-2 flex items-center gap-1 cursor-pointer"
                                 >
                                     <RotateCcw className="w-3 h-3" /> Reset harga
                                 </button>
@@ -687,13 +713,13 @@ export default function CatalogPage() {
                         </div>
 
                         {/* checkbox promo */}
-                        <div className="pt-3 border-t border-slate-100">
-                            <label className="flex items-center gap-2.5 text-sm font-medium text-slate-700 cursor-pointer select-none">
+                        <div className="pt-3 border-t-2 border-ink">
+                            <label className="flex items-center gap-2.5 text-sm font-bold text-slate-700 cursor-pointer select-none">
                                 <input
                                     type="checkbox"
                                     checked={onlyPromo}
                                     onChange={handlePromoToggle}
-                                    className="w-4 h-4 rounded-sm border-slate-300 text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
+                                    className="w-4 h-4 rounded-sm border-2 border-ink text-emerald-600 focus:ring-emerald-500 accent-emerald-600 cursor-pointer"
                                 />
                                 <span>Hanya Produk Promo</span>
                             </label>
@@ -705,15 +731,15 @@ export default function CatalogPage() {
                 <div className="md:col-span-3">
                     {/* Hasil pencarian banner */}
                     {currentSearch && (
-                        <div className="flex items-center justify-between gap-3 mb-4 bg-white border border-emerald-100 rounded-2xl px-4 py-3">
+                        <div className="flex items-center justify-between gap-3 mb-4 bg-white border-2 border-ink rounded-xl px-4 py-3 shadow-[3px_3px_0_#161616]">
                             <div className="flex items-center gap-2.5 min-w-0">
-                                <SearchCheck className="w-5 h-5 text-emerald-600 shrink-0" />
-                                <p className="text-sm font-bold text-slate-800 truncate">
-                                    Hasil untuk "<span className="text-emerald-700">{currentSearch}</span>"
-                                    <span className="ml-2 text-xs font-semibold text-slate-400">{pagination.total_data} produk</span>
+                                <SearchCheck className="w-5 h-5 text-coral shrink-0" />
+                                <p className="text-sm font-black text-ink truncate">
+                                    Hasil untuk "<span className="bg-lime px-1">{currentSearch}</span>"
+                                    <span className="ml-2 text-xs font-bold text-slate-500">{pagination.total_data} produk</span>
                                 </p>
                             </div>
-                            <button onClick={clearTerm} className="shrink-0 inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-red-600 bg-slate-100 hover:bg-red-50 px-3 py-1.5 rounded-full cursor-pointer transition-colors">
+                            <button onClick={clearTerm} className="shrink-0 inline-flex items-center gap-1 text-xs font-black text-slate-700 hover:text-red-700 bg-[#EFEDE3] hover:bg-red-100 border border-ink px-3 py-1.5 rounded-full cursor-pointer transition-colors">
                                 <X className="w-3.5 h-3.5" /> Hapus
                             </button>
                         </div>
@@ -725,9 +751,9 @@ export default function CatalogPage() {
                             <button
                                 key={cat}
                                 onClick={() => handleCategoryChange(cat)}
-                                className={`shrink-0 text-xs font-bold px-4 py-2 rounded-full border transition-all cursor-pointer ${currentCategory === cat
-                                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20'
-                                    : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300 hover:text-emerald-700'
+                                className={`shrink-0 text-xs font-black px-4 py-2 rounded-full border-2 border-ink transition-all cursor-pointer ${currentCategory === cat
+                                    ? 'bg-ink text-white border-ink shadow-[3px_3px_0_#161616]'
+                                    : 'bg-white text-slate-700 border-ink hover:bg-lime/40'
                                     }`}
                             >
                                 {cat === 'All' ? 'Semua Produk' : cat}
@@ -737,11 +763,11 @@ export default function CatalogPage() {
 
                     {/*Sorting Harga*/}
                     <div className="flex items-center justify-between mb-4">
-                        <p className="text-sm text-slate-500">{filteredProduct.length} produk ditemukan</p>
+                        <p className="text-sm font-bold text-slate-600">{filteredProduct.length} produk ditemukan</p>
                         <select
                             value={sortBy}
                             onChange={(e) => setSortBy(e.target.value)}
-                            className="text-sm border border-slate-200 rounded-lg px-3 py-1.5 bg-white focus:outline-none cursor-pointer"
+                            className="text-sm font-black border-2 border-ink rounded-lg px-3 py-1.5 bg-white focus:outline-none cursor-pointer shadow-[2px_2px_0_#161616]"
                         >
                             <option value="none">Urutkan</option>
                             <option value="asc">Harga Terendah</option>
@@ -752,21 +778,21 @@ export default function CatalogPage() {
                     {/*List Of Product*/}
                     {filteredProduct.length === 0 ? (
                         <div className="text-center py-16">
-                            <PackageSearch className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                            <p className="text-slate-600 font-bold text-sm">
+                            <PackageSearch className="w-12 h-12 mx-auto text-slate-400 mb-3" />
+                            <p className="text-slate-700 font-black text-sm">
                                 {currentSearch ? `Tidak ada hasil untuk "${currentSearch}"` : 'Tidak ada produk yang cocok dengan filter.'}
                             </p>
                             {currentSearch ? (
                                 <>
-                                    <p className="text-xs text-slate-400 mt-1 mb-4">Coba kata kunci lain atau telusuri berikut:</p>
+                                    <p className="text-xs font-bold text-slate-500 mt-1 mb-4">Coba kata kunci lain atau telusuri berikut:</p>
                                     <div className="flex flex-wrap justify-center gap-2">
                                         {hotKeywords.map((k) => (
                                             <button
                                                 key={k}
                                                 onClick={() => setTerm(k)}
-                                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-white border border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-700 transition-colors cursor-pointer"
+                                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-black bg-white border-2 border-ink text-slate-700 hover:bg-lime/40 transition-colors cursor-pointer"
                                             >
-                                                <History className="w-3 h-3 text-slate-400" /> {k}
+                                                <History className="w-3 h-3 text-coral" /> {k}
                                             </button>
                                         ))}
                                     </div>

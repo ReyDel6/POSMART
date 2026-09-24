@@ -1,5 +1,241 @@
 @import "tailwindcss";
 
+@theme {
+  /* ---------- Neo-Bold brand ---------- */
+  --color-cream: #F6F4EC;
+  --color-ink: #161616;
+  --color-lime: #CBF169;
+  --color-coral: #FF5B3C;
+  --color-blue-neo: #4D6EF5;
+
+  /* Repaint emerald -> lime ladder */
+  --color-emerald-50: #FBFDF0;
+  --color-emerald-100: #F5FAD8;
+  --color-emerald-200: #EDF6B8;
+  --color-emerald-300: #E0EF93;
+  --color-emerald-400: #D6EA72;
+  --color-emerald-500: #CBF169;
+  --color-emerald-600: #A9DA45;
+  --color-emerald-700: #8BBE36;
+  --color-emerald-800: #6F9A2C;
+  --color-emerald-900: #577B25;
+  --color-emerald-950: #3D5A1A;
+
+  /* teal/green -> deep lime-green */
+  --color-teal-500: #9CC94B;
+  --color-teal-600: #82B33A;
+  --color-teal-700: #688E2E;
+  --color-teal-800: #4D6C24;
+  --color-teal-900: #3C5420;
+  --color-green-50: #F2F9E3;
+  --color-green-100: #E2F2C3;
+  --color-green-200: #CFE99D;
+  --color-green-500: #A6CE4C;
+  --color-green-600: #8BC23E;
+  --color-green-700: #719E31;
+  --color-green-800: #587B27;
+
+  /* amber -> coral */
+  --color-amber-50: #FFF4EF;
+  --color-amber-100: #FFE4D8;
+  --color-amber-200: #FFC9B0;
+  --color-amber-300: #FFA581;
+  --color-amber-400: #FF7C51;
+  --color-amber-500: #FF5B3C;
+  --color-amber-600: #F14825;
+  --color-amber-700: #C83A1E;
+  --color-amber-800: #A3301B;
+
+  /* red/warm red (errors & danger) */
+  --color-red-50: #FFF0EC;
+  --color-red-100: #FFDED6;
+  --color-red-200: #FFB8AA;
+  --color-red-300: #FF907D;
+  --color-red-400: #FF6B52;
+  --color-red-500: #F3502F;
+  --color-red-600: #D93A1B;
+  --color-red-700: #B32E15;
+  --color-red-800: #8F2616;
+
+  /* rose -> red-coral */
+  --color-rose-50: #FFF0F0;
+  --color-rose-100: #FFDFDC;
+  --color-rose-200: #FFBFBB;
+  --color-rose-300: #FF948E;
+  --color-rose-500: #F6503F;
+  --color-rose-600: #DB3A2E;
+  --color-rose-700: #B72E24;
+  --color-rose-800: #93241D;
+
+  /* orange -> coral-orange */
+  --color-orange-50: #FFF5EE;
+  --color-orange-100: #FFE6D6;
+  --color-orange-200: #FFCBAA;
+  --color-orange-400: #FF8A54;
+  --color-orange-500: #FF6A33;
+  --color-orange-600: #EA5218;
+  --color-orange-700: #C34214;
+
+  /* blue/sky/indigo -> brand blue */
+  --color-blue-50: #EEF1FF;
+  --color-blue-100: #DEE4FE;
+  --color-blue-200: #C4CDFC;
+  --color-blue-300: #A2B0FA;
+  --color-blue-400: #7E91F8;
+  --color-blue-500: #4D6EF5;
+  --color-blue-600: #3A58E0;
+  --color-blue-700: #2E47C4;
+  --color-blue-800: #273C8F;
+  --color-sky-50: #F0F4FF;
+  --color-sky-100: #E3EAFF;
+  --color-sky-200: #C7D5FF;
+  --color-sky-300: #9DB9FF;
+  --color-sky-500: #4D7CF5;
+  --color-sky-600: #3B66E0;
+  --color-sky-700: #2F51C1;
+  --color-indigo-700: #2E47C4;
+
+  /* slate/gray -> cream & ink neutrals */
+  --color-slate-50: #F6F4EC;
+  --color-slate-100: #EFEDE3;
+  --color-slate-200: #E5E3D9;
+  --color-slate-300: #161616;
+  --color-slate-400: #8A887E;
+  --color-slate-500: #56564E;
+  --color-slate-600: #38382F;
+  --color-slate-700: #262620;
+  --color-slate-800: #161616;
+  --color-slate-900: #101011;
+  --color-slate-950: #0A0A0C;
+  --color-gray-50: #F6F4EC;
+  --color-gray-100: #EFEDE3;
+  --color-gray-200: #E5E3D9;
+  --color-gray-300: #161616;
+  --color-gray-400: #8A887E;
+  --color-gray-600: #38382F;
+}
+
+/* ===== NEO-BOLD BASE ===== */
+:root {
+  color-scheme: light;
+}
+
+html, body {
+  background: #F6F4EC;
+  color: #161616;
+}
+
+body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, 'Segoe UI', sans-serif;
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  cursor: pointer;
+}
+
+::selection {
+  background: #CBF169;
+  color: #161616;
+}
+
+.display {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* Soft neutral borders & rings -> ink */
+.border-slate-100,
+.border-slate-200,
+.border-gray-100,
+.border-gray-200,
+.divide-slate-100,
+.divide-slate-200 {
+  border-color: #161616 !important;
+}
+
+.border-slate-300 {
+  border-color: #161616 !important;
+}
+
+.ring-slate-200,
+.ring-slate-300 {
+  --tw-ring-color: #161616;
+}
+
+/* Soft shadows -> hard ink offset */
+.shadow-sm { box-shadow: 3px 3px 0 #161616 !important; }
+.shadow { box-shadow: 4px 4px 0 #161616 !important; }
+.shadow-md { box-shadow: 5px 5px 0 #161616 !important; }
+.shadow-lg { box-shadow: 6px 6px 0 #161616 !important; }
+.shadow-xl { box-shadow: 8px 8px 0 #161616 !important; }
+.shadow-2xl { box-shadow: 10px 10px 0 #161616 !important; }
+
+/* Ink text on repainted light accent surfaces */
+[class*="bg-emerald-"] .text-white,
+[class*="bg-green-"] .text-white,
+[class*="bg-teal-"] .text-white,
+[class*="bg-amber-"] .text-white,
+[class*="from-emerald-"] .text-white,
+[class*="from-teal-"] .text-white,
+[class*="from-green-"] .text-white,
+[class*="to-emerald-"] .text-white,
+[class*="to-teal-"] .text-white,
+[class*="to-green-"] .text-white {
+  color: #161616 !important;
+}
+
+/* Same-element solid buttons repainted to light accents -> ink glyph */
+[class*="bg-emerald-"][class*="text-white"],
+[class*="bg-green-"][class*="text-white"],
+[class*="bg-teal-"][class*="text-white"],
+[class*="bg-amber-"][class*="text-white"],
+[class*="from-emerald-"][class*="text-white"],
+[class*="from-teal-"][class*="text-white"],
+[class*="from-green-"][class*="text-white"],
+[class*="to-emerald-"][class*="text-white"],
+[class*="to-teal-"][class*="text-white"],
+[class*="to-green-"][class*="text-white"] {
+  color: #161616 !important;
+}
+
+/* ===== NEO-HELPER (dipakai komponen) ===== */
+.neo-press:hover {
+  transform: translate(-2px, -2px);
+}
+
+.marquee-band {
+  overflow: hidden;
+  background: #161616;
+  border-top: 2px solid #161616;
+  border-bottom: 2px solid #161616;
+  padding: 12px 0;
+}
+
+.marquee-track {
+  display: flex;
+  gap: 40px;
+  white-space: nowrap;
+  color: #CBF169;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  animation: neo-scroll 22s linear infinite;
+}
+
+.marquee-track span { opacity: 0.6; }
+.marquee-track .hot { opacity: 1; color: #FF5B3C; }
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
+}
+
+@keyframes neo-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
 /* ===== ANIMASI CUSTOM ===== */
 @keyframes fade-in-left {
   from {

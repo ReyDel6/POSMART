@@ -96,15 +96,15 @@ export default function AdminLayout() {
             {/* SIDEBAR */}
             <aside className={`${isSidebarOpen ? 'w-64' : 'w-0'} bg-slate-900 text-slate-300 flex flex-col shadow-xl transition-all duration-300 overflow-hidden`}>
                 {/* Brand / Logo */}
-                <div className="p-6 border-b border-slate-800 flex items-center gap-3 w-64">
-                    <div className="p-2.5 bg-emerald-600 rounded-xl text-white shadow-md">
+                <div className="p-6 border-b-2 border-ink flex items-center gap-3 w-64">
+                    <div className="p-2.5 bg-lime rounded-xl text-ink shadow-[3px_3px_0_#CBF169]">
                         <Store className="w-6 h-6" />
                     </div>
                     <div>
                         <h1 className="font-black text-white text-lg tracking-tight">
-                            POS <span className="text-emerald-400">Mart</span>
+                            POS <span className="text-lime">Mart</span>
                         </h1>
-                        <span className="text-xs text-slate-400 font-medium">{isOwner ? 'Panel Owner' : 'Panel Admin'}</span>
+                        <span className="text-xs text-cream/50 font-medium">{isOwner ? 'Panel Owner' : 'Panel Admin'}</span>
                     </div>
                 </div>
 
@@ -118,9 +118,9 @@ export default function AdminLayout() {
                                 <Link
                                     key={item.path}
                                     to={item.path}
-                                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                                    className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-sm transition-all ${
                                         isActive
-                                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                                            ? 'bg-lime text-ink border-2 border-lime shadow-[3px_3px_0_#CBF169]'
                                             : 'hover:bg-slate-800 text-slate-400 hover:text-white'
                                     }`}
                                 >
@@ -162,9 +162,9 @@ export default function AdminLayout() {
                                                     <Link
                                                         key={child.path}
                                                         to={child.path}
-                                                        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+                                                        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold transition-all ${
                                                             isActive
-                                                                ? 'bg-emerald-600 text-white shadow-md'
+                                                                ? 'bg-lime text-ink'
                                                                 : 'hover:bg-slate-800 text-slate-400 hover:text-white'
                                                         }`}
                                                     >
@@ -198,11 +198,11 @@ export default function AdminLayout() {
             {/* MAIN CONTENT WRAPPER */}
             <div className="flex-1 flex flex-col min-w-0">
                 {/* TOPBAR */}
-                <header className="bg-white h-20 border-b border-slate-200 px-8 flex items-center justify-between shadow-sm">
+                <header className="bg-white h-20 border-b-2 border-ink px-8 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <button 
                             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            className="p-2 hover:bg-slate-100 rounded-lg text-slate-600 cursor-pointer"
+                            className="p-2 hover:bg-lime rounded-lg text-ink cursor-pointer"
                         >
                             {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
@@ -212,19 +212,19 @@ export default function AdminLayout() {
                                 <span>/</span>
                                 <span>{currentRouteInfo.parent}</span>
                                 <span>/</span>
-                                <span className="text-slate-600 font-semibold">{currentRouteInfo.title}</span>
+                                <span className="text-slate-600 font-black">{currentRouteInfo.title}</span>
                             </div>
-                            <h2 className="text-xl font-bold text-slate-900 tracking-tight">{currentRouteInfo.title}</h2>
+                            <h2 className="text-xl font-black text-ink tracking-tight">{currentRouteInfo.title}</h2>
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-                            <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-sm shadow-inner">
+                        <div className="flex items-center gap-3 pl-4 border-l-2 border-ink">
+                            <div className="w-10 h-10 rounded-full bg-lime text-ink border-2 border-ink font-black flex items-center justify-center text-sm">
                                 {user.name ? user.name.charAt(0).toUpperCase() : 'A'}
                             </div>
                             <div className="text-left">
-                                <h4 className="text-sm font-bold text-slate-800">{user.name}</h4>
-                                <span className="text-xs text-emerald-600 font-semibold capitalize flex items-center gap-1">
+                                <h4 className="text-sm font-black text-ink">{user.name}</h4>
+                                <span className="text-xs text-coral font-black capitalize flex items-center gap-1">
                                     <UserCheck className="w-3 h-3" /> {user.role || 'Admin'}
                                 </span>
                             </div>

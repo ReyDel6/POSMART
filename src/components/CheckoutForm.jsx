@@ -589,13 +589,13 @@ export default function CheckoutForm() {
     return (
         <form onSubmit={handleSubmitOrder} className="space-y-5 bg-white! p-2">
 
-            <h3 className="font-bold text-base text-slate-900 border-b border-slate-100 pb-2">
+            <h3 className="font-black text-base text-ink border-b-2 border-ink pb-2">
                 Informasi Pengiriman
             </h3>
 
             {/* Tampilkan Pesan Error Merah Jika Stok Habis/Gagal */}
             {errorMessage && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm font-semibold animate-shake">
+                <div className="p-3 bg-red-50 border-2 border-ink text-red-700 rounded-lg text-sm font-bold animate-shake">
                     ⚠️ {errorMessage}
                 </div>
             )}
@@ -608,8 +608,8 @@ export default function CheckoutForm() {
                         type="button"
                         onClick={() => setPaymentMode('online')}
                         className={`rounded-xl border px-3 py-2.5 text-left text-xs font-bold transition-all cursor-pointer ${paymentMode === 'online'
-                            ? 'border-emerald-600 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-500/20'
-                            : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-300'
+                            ? 'border-ink bg-lime text-ink shadow-[2px_2px_0_#161616]'
+                            : 'border-ink/30 bg-white text-slate-500 hover:border-ink'
                         }`}
                     >
                         Bayar Online
@@ -619,8 +619,8 @@ export default function CheckoutForm() {
                         type="button"
                         onClick={() => setPaymentMode('cash')}
                         className={`rounded-xl border px-3 py-2.5 text-left text-xs font-bold transition-all cursor-pointer ${paymentMode === 'cash'
-                            ? 'border-emerald-600 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-500/20'
-                            : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-300'
+                            ? 'border-ink bg-lime text-ink shadow-[2px_2px_0_#161616]'
+                            : 'border-ink/30 bg-white text-slate-500 hover:border-ink'
                         }`}
                     >
                         Tunai di Kasir
@@ -642,8 +642,8 @@ export default function CheckoutForm() {
                                     type="button"
                                     onClick={() => setPaymentGroup(opt.key)}
                                     className={`rounded-xl border px-2 py-2.5 text-left text-[11px] font-bold transition-all cursor-pointer flex flex-col items-center gap-1 ${paymentGroup === opt.key
-                                        ? 'border-emerald-600 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-500/20'
-                                        : 'border-slate-200 bg-white text-slate-500 hover:border-emerald-300'
+                                        ? 'border-ink bg-lime text-ink shadow-[2px_2px_0_#161616]'
+                                        : 'border-ink/30 bg-white text-slate-500 hover:border-ink'
                                     }`}
                                 >
                                     <Icon className="w-5 h-5" />
@@ -801,7 +801,7 @@ export default function CheckoutForm() {
             )}
 
             {/* RINGKASAN STRUK BELANJA TOTAL */}
-            <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-2 mt-2">
+            <div className="bg-cream rounded-xl p-4 border-2 border-ink shadow-[3px_3px_0_#161616] space-y-2 mt-2">
                 <div className="flex justify-between text-xs text-slate-500">
                     <span>Subtotal Barang:</span>
                     <span className="font-mono font-medium">Rp {cartDetails.subtotal.toLocaleString('id-ID')}</span>
@@ -822,9 +822,9 @@ export default function CheckoutForm() {
                         <span className="font-mono">-Rp {pointsDiscount.toLocaleString('id-ID')}</span>
                     </div>
                 )}
-                <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-dashed border-slate-200">
+                <div className="flex justify-between text-sm font-black text-ink pt-2 border-t-2 border-ink/15">
                     <span>Total Bayar:</span>
-                    <span className="font-mono text-red-600">Rp {finalTotal.toLocaleString('id-ID')}</span>
+                    <span className="font-mono text-coral">Rp {finalTotal.toLocaleString('id-ID')}</span>
                 </div>
             </div>
 
@@ -832,7 +832,7 @@ export default function CheckoutForm() {
             <button
                 type="submit"
                 disabled={loading || cart.length === 0}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
+                className="w-full bg-ink hover:bg-slate-900 text-cream font-black py-3 px-4 rounded-xl border-2 border-ink shadow-[4px_4px_0_#161616] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex justify-center items-center"
             >
                 {loading ? 'Mengunci Stok & Memproses...' : `Bayar Sekarang (Rp ${finalTotal.toLocaleString('id-ID')})`}
             </button>

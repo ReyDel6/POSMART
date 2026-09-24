@@ -107,20 +107,22 @@ export default function OrderSuccess() {
             </div>
         )}
 
-        <div className="max-w-2xl mx-auto my-16 p-6 bg-white border border-slate-100 shadow-xl rounded-2xl text-center">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 animate-bounce" />
-            <h2 className="text-xl font-black text-slate-800">Pesanan Berhasil Dibuat!</h2>
-            <p className="text-sm text-slate-500 mt-1">ID Transaksi Anda: <span className="font-mono font-bold text-slate-700">#{orderId}</span></p>
+        <div className="max-w-2xl mx-auto my-16 p-6 bg-white border-2 border-ink shadow-[8px_8px_0_#161616] rounded-2xl text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-lime border-2 border-ink flex items-center justify-center">
+                <CheckCircle className="w-10 h-10 text-ink" />
+            </div>
+            <h2 className="text-xl font-black text-ink">Pesanan Berhasil Dibuat!</h2>
+            <p className="text-sm text-slate-500 mt-1">ID Transaksi Anda: <span className="font-mono font-black text-ink">#{orderId}</span></p>
 
             {/* BADGE STATUS */}
-            <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold shadow-xs">
-                <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+            <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black shadow-xs">
+                <span className="bg-coral text-white px-3 py-1 rounded-full border-2 border-ink shadow-[2px_2px_0_#161616] flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
                     Menunggu Pembayaran
                 </span>
             </div>
 
-            <hr className="my-6 border-slate-100" />
+            <hr className="my-6 border-ink/15" />
 
             {/* Detail Pesanan */}
 
@@ -128,21 +130,21 @@ export default function OrderSuccess() {
                 <div className="text-left space-y-5">
                     <div className="grid grid-cols-1 md:grid-cols-[1fr_140px] gap-6 items-start">
                         <div className="space-y-3">
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                <h3 className="text-sm font-bold text-slate-900 mb-3">Detail Pesanan</h3>
-                                <p className="text-xs text-slate-500">Order ID: <span className="font-mono text-slate-700">#{orderSummary.order_id}</span></p>
-                                <p className="text-xs text-slate-500">Customer ID: <span className="font-mono text-slate-700">{orderSummary.customer_id ?? '-'}</span></p>
-                                <p className="text-xs text-slate-500">Nama: <span className="text-slate-700">{orderSummary.customer_name}</span></p>
-                                <p className="text-xs text-slate-500">Total: <span className="text-slate-700">Rp {orderSummary.total_price.toLocaleString('id-ID')}</span></p>
+                            <div className="rounded-2xl border-2 border-ink bg-[#EFEFE6] p-4">
+                                <h3 className="text-sm font-black text-ink mb-3">Detail Pesanan</h3>
+                                <p className="text-xs text-slate-500">Order ID: <span className="font-mono text-ink">#{orderSummary.order_id}</span></p>
+                                <p className="text-xs text-slate-500">Customer ID: <span className="font-mono text-ink">{orderSummary.customer_id ?? '-'}</span></p>
+                                <p className="text-xs text-slate-500">Nama: <span className="text-ink">{orderSummary.customer_name}</span></p>
+                                <p className="text-xs text-slate-500">Total: <span className="text-ink">Rp {orderSummary.total_price.toLocaleString('id-ID')}</span></p>
                             </div>
 
                             {/* Item Belanja */}
 
-                            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 space-y-2">
-                                <h3 className="text-sm font-bold text-slate-900">Item Belanja</h3>
+                            <div className="rounded-2xl border-2 border-ink bg-[#EFEFE6] p-4 space-y-2">
+                                <h3 className="text-sm font-black text-ink">Item Belanja</h3>
                                 {orderSummary.items.map((item, index) => (
                                     <div key={index} className="text-xs text-slate-600">
-                                        <span className="font-semibold text-slate-800">{index + 1}. {item.name}</span>
+                                        <span className="font-bold text-ink">{index + 1}. {item.name}</span>
                                         <div className="text-slate-500">
                                             {item.qty} x Rp {item.price.toLocaleString('id-ID')} = Rp {item.total.toLocaleString('id-ID')}
                                         </div>
@@ -153,12 +155,12 @@ export default function OrderSuccess() {
 
                         {/* QR Code Order */}
 
-                        <div className="rounded-2xl border border-slate-200 bg-white p-4 flex flex-col items-center gap-3">
-                            <h3 className="text-sm font-bold text-slate-900">QR Code Order</h3>
+                        <div className="rounded-2xl border-2 border-ink bg-white p-4 flex flex-col items-center gap-3 shadow-[3px_3px_0_#161616]">
+                            <h3 className="text-sm font-black text-ink">QR Code Order</h3>
                             {qrCodeUrl ? (
                                 <img src={qrCodeUrl} alt="QR Code Order" className="w-32 h-32" />
                             ) : (
-                                <div className="w-32 h-32 rounded-2xl bg-slate-100 flex items-center justify-center text-xs text-slate-400">Memuat QR...</div>
+                                <div className="w-32 h-32 rounded-2xl bg-cream flex items-center justify-center text-xs text-slate-500">Memuat QR...</div>
                             )}
                             <p className="text-[11px] text-slate-500 text-center">Scan untuk verifikasi pesanan</p>
                         </div>
@@ -168,21 +170,21 @@ export default function OrderSuccess() {
                         <button
                             onClick={handleDownloadInvoice}
                             disabled={downloadLoading}
-                            className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold py-3 rounded-xl transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                            className="inline-flex items-center justify-center gap-2 bg-ink hover:bg-slate-900 text-cream text-sm font-black py-3 rounded-xl border-2 border-ink shadow-[3px_3px_0_#161616] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             <Download className="w-4 h-4" />
                             {downloadLoading ? 'Membuat PDF...' : 'Download Invoice PDF'}
                         </button>
                         <button
                             onClick={handlePrintInvoice}
-                            className="inline-flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 text-sm font-bold py-3 rounded-xl hover:bg-slate-50 transition-colors"
+                            className="inline-flex items-center justify-center gap-2 bg-white border-2 border-ink text-ink text-sm font-black py-3 rounded-xl hover:bg-lime transition-colors"
                         >
                             <Printer className="w-4 h-4" />
                             Print Invoice
                         </button>
                         <button
                             onClick={() => window.location.href = '/'}
-                            className="text-sm text-slate-600 hover:text-red-600 font-semibold underline transition-colors"
+                            className="text-sm text-ink hover:text-coral font-black underline transition-colors"
                         >
                             Kembali Belanja di Katalog
                         </button>

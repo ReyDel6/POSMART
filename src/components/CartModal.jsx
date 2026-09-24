@@ -61,27 +61,27 @@ export default function CartModal() {
             <div className="absolute inset-0" onClick={handleCloseModal}/>
 
             {/* Modal Area */}
-            <div role="dialog" aria-modal="true" className="relative w-full max-w-md h-full bg-white shadow-2xl flex flex-col z-10 animate-fade-in-left">
+            <div role="dialog" aria-modal="true" className="relative w-full max-w-md h-full bg-white border-l-2 border-ink shadow-[-6px_0_0_#161616] flex flex-col z-10 animate-fade-in-left">
 
                 {/* Header */}
-                <div className="p-4 border-b border-slate100 flex items-center justify-between">
+                <div className="p-4 border-b-2 border-ink flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         {isCheckout && (
                             <button
                                 onClick={() => setIsCheckout(false)}
-                                className="p-1 hover:bg-slate-100 rounded-lg cursor-pointer transition-color mr-1"
+                                className="p-1 hover:bg-lime rounded-lg cursor-pointer transition-color mr-1"
                                 title="Kembali ke keranjang belanja"
                             >
-                                <ArrowLeft className="w-5 h-5 text-slate-600" />
+                                <ArrowLeft className="w-5 h-5 text-ink" />
                             </button>
                         )}
-                        <h2 className="font-extrabold text-lg text-slate-900 tracking-tight">
+                        <h2 className="font-black text-lg text-ink tracking-tight">
                             {isCheckout ? 'Detail Checkout' : 'Keranjang Belanja '}
                         </h2>
                     </div>
                     <button
                         onClick={handleCloseModal}
-                        className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer transition-colors"
+                        className="p-1.5 hover:bg-lime text-ink rounded-lg cursor-pointer transition-colors"
                     >
                         <X className="w-5 h-5" /> 
                     </button>
@@ -94,23 +94,23 @@ export default function CartModal() {
                     ) : (
                         <>
                             {cartDetail.items.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-center py-20 text-amber-600 gap-2">
-                                    <ShoppingBag className="w-12 h-12 opacity-20" />
+                                <div className="h-full flex flex-col items-center justify-center text-center py-20 text-ink gap-2">
+                                    <ShoppingBag className="w-12 h-12 text-ink opacity-20" />
                                     <p>Keranjang belanja anda kosong.</p>
                                 </div>
                             ) : (
                                 cartDetail.items.map((item) => (
-                                    <div key={item.id} className="flex items-center gap-3 p-3 border border-slate-100 rounded-xl bg-slate-50/10">
+                                    <div key={item.id} className="flex items-center gap-3 p-3 border-2 border-ink rounded-xl bg-white shadow-[3px_3px_0_#161616]">
                                         <img 
                                             src={item.image ? (item.image.startsWith('http') || item.image.startsWith('/') ? item.image : `/product/${item.image}`) : 'https://placehold.co/100x100?text=No+Image'} 
                                             alt={item.name} 
-                                            className="w-16 h-16 object-cover rounded-lg bg-white border border-slate-100"
+                                            className="w-16 h-16 object-cover rounded-lg bg-[#EFEFE6] border-2 border-ink"
                                             onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100?text=No+Image'; }}
                                         />
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="text-xs font-bold text-slate-900 truncate">{item.name}</h4>
+                                            <h4 className="text-xs font-black text-ink truncate">{item.name}</h4>
                                             {item.label && (
-                                                <span className="inline-block mt-1 px-1.5 py-0.5 bg-red-50 text-red-600 border border-red-100 rounded text-[9px] font-black tracking-tight">
+                                                <span className="inline-block mt-1 px-1.5 py-0.5 bg-coral text-white border border-ink rounded text-[9px] font-black tracking-tight shadow-[1px_1px_0_#161616]">
                                                     {item.label}
                                                 </span>
                                             )}
@@ -119,12 +119,12 @@ export default function CartModal() {
                                                     <span className="text-[10px] text-slate-400 font-mono line-through">
                                                         Rp {(item.basePrice * item.qty).toLocaleString('id-ID')}
                                                     </span>
-                                                    <span className="text-xs font-mono font-black text-emerald-700">
+                                                    <span className="text-xs font-mono font-black text-ink">
                                                         Rp {item.unitPrice.toLocaleString('id-ID')}
                                                     </span>
                                                 </p>
                                             ) : (
-                                                <p className="text-xs font-mono font-bold text-emerald-700 mt-0.5">
+                                                <p className="text-xs font-mono font-black text-ink mt-0.5">
                                                     Rp {(item.basePrice || 0).toLocaleString('id-ID')}
                                                 </p>
                                             )}
@@ -134,21 +134,21 @@ export default function CartModal() {
                                                 <div className="flex items-center gap-2">
                                                     <button
                                                         onClick={() => handleUpdateQty(item.id, item.qty - 1)}
-                                                        className="w-6 h-6 bg-white border border-slate-300 text-slate-700 font-bold rounded-md text-xs hover:border-emerald-500 cursor-pointer flex items-center justify-center select-none"
+                                                        className="w-6 h-6 bg-white border-2 border-ink text-ink font-black rounded-md text-xs hover:bg-lime cursor-pointer flex items-center justify-center select-none"
                                                     >
                                                         -
                                                     </button>
-                                                    <span className="text-xs font-mono font-bold text-slate-800 w-4 text-center">{item.qty}</span>
+                                                    <span className="text-xs font-mono font-black text-ink w-4 text-center">{item.qty}</span>
                                                     <button
                                                         onClick={() => handleUpdateQty(item.id, item.qty + 1)}
-                                                        className="w-6 h-6 bg-white border border-slate-300 text-slate-700 font-bold rounded-md text-xs hover:border-emerald-500 cursor-pointer flex items-center justify-center select-none"
+                                                        className="w-6 h-6 bg-white border-2 border-ink text-ink font-black rounded-md text-xs hover:bg-lime cursor-pointer flex items-center justify-center select-none"
                                                     >
                                                         +
                                                     </button>
                                                 </div>
                                                 <div className="text-right">
-                                                    <span className="text-[10px] text-slate-400 block uppercase font-bold tracking-tighter">Subtotal</span>
-                                                    <span className="text-xs font-bold text-slate-900">
+                                                    <span className="text-[10px] text-slate-400 block uppercase font-black tracking-tighter">Subtotal</span>
+                                                    <span className="text-xs font-black text-ink">
                                                         Rp {item.subtotal.toLocaleString('id-ID')}
                                                     </span>
                                                 </div>
@@ -156,7 +156,7 @@ export default function CartModal() {
                                         </div>
                                         <button
                                             onClick={() => handleRemoveItem(item.id)}
-                                            className="text-[11px] font-bold text-red-600 hover:text-red-700 px-2 py-1 rounded-md cursor-pointer"
+                                            className="text-[11px] font-black text-coral hover:text-red-700 px-2 py-1 rounded-md cursor-pointer"
                                         >
                                             Hapus
                                         </button>
@@ -169,20 +169,20 @@ export default function CartModal() {
 
                 {/* Footer */}
                 {!isCheckout && cartDetail.items.length > 0 && (
-                    <div className="p-4 border-t border-slate-200 bg-slate-50 space-y-3 shadow-inner">
+                    <div className="p-4 border-t-2 border-ink bg-cream space-y-3">
                         <div className="flex justify-between items-center text-sm">
-                            <span className="font-bold text-slate-500 ">Total Belanja</span>
-                            <span className="text-lg font-mono font-black text-emerald-700">Rp {cartDetail.grandTotal.toLocaleString('id-ID')}</span>
+                            <span className="font-black text-ink">Total Belanja</span>
+                            <span className="text-lg font-mono font-black text-ink">Rp {cartDetail.grandTotal.toLocaleString('id-ID')}</span>
                         </div>
                         {cartDetail.totalDiscount > 0 && (
-                            <div className="flex justify-between items-center text-xs font-semibold text-emerald-600">
+                            <div className="flex justify-between items-center text-xs font-black text-coral">
                                 <span>Kamu hemat</span>
                                 <span className="font-mono">-Rp {cartDetail.totalDiscount.toLocaleString('id-ID')}</span>
                             </div>
                         )}
                         <button
                             onClick={() => setIsCheckout(true)}
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-sm transition-colors shadow-sm cursor-pointer text-center"
+                            className="w-full bg-ink hover:bg-slate-900 text-cream font-black py-3 rounded-xl text-sm border-2 border-ink shadow-[4px_4px_0_#161616] transition-colors cursor-pointer text-center"
                         >
                             Checkout Sekarang
                         </button>
