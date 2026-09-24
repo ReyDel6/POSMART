@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# mockup design lokal
+POSMART*Modern Neo-Bold*.html
