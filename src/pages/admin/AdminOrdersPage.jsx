@@ -106,7 +106,7 @@ export default function AdminOrdersPage() {
         <div className="space-y-6">
             <div className="bg-slate-950 text-white rounded-3xl p-7 relative overflow-hidden">
                 <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
-                    <div><p className="text-emerald-300 text-xs font-black uppercase tracking-[0.2em]">Operational desk</p><h2 className="text-3xl font-black mt-2">Transaksi</h2><p className="text-slate-300 text-sm mt-2">Pantau alur pesanan dan status pembayaran toko.</p></div>
+                    <div><p className="text-emerald-300 text-xs font-black uppercase tracking-[0.2em]">Operational desk</p><h2 className="text-3xl font-black mt-2">Transaksi</h2><p className="text-slate-200 text-sm mt-2">Pantau alur pesanan dan status pembayaran toko.</p></div>
                     <button onClick={() => { setLoading(true); setError(''); fetchOrders(); }} title="Refresh transaksi" className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20"><RefreshCcw className="w-4 h-4" /></button>
                 </div>
                 <div className="absolute -right-12 -bottom-24 w-64 h-64 rounded-full border-[35px] border-emerald-600/20" />

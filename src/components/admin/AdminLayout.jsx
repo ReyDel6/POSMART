@@ -94,7 +94,7 @@ export default function AdminLayout() {
     return (
         <div className="min-h-screen bg-slate-100 flex">
             {/* SIDEBAR */}
-            <aside className={`${isSidebarOpen ? 'w-64' : 'w-0'} bg-slate-900 text-slate-300 flex flex-col shadow-xl transition-all duration-300 overflow-hidden`}>
+            <aside className={`${isSidebarOpen ? 'w-64' : 'w-0'} bg-slate-900 text-slate-400 flex flex-col shadow-xl transition-all duration-300 overflow-hidden`}>
                 {/* Brand / Logo */}
                 <div className="p-6 border-b-2 border-ink flex items-center gap-3 w-64">
                     <div className="p-2.5 bg-lime rounded-xl text-ink shadow-[3px_3px_0_#CBF169]">
@@ -187,7 +187,7 @@ export default function AdminLayout() {
                 <div className="p-4 border-t border-slate-800 w-64">
                     <Link
                         to="/"
-                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm font-semibold transition-colors"
+                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-100 rounded-xl text-sm font-black transition-colors border border-slate-700"
                     >
                         <Store className="w-4 h-4" />
                         Buka Halaman Kasir
