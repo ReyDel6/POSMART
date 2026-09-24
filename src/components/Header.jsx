@@ -1,7 +1,7 @@
 //File: src/components/Header.jsx
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
-import { ChevronDown, LogIn, LogOut, Menu, Search, ShoppingCart, User, X, Clock, TrendingUp, ArrowRight, Check, Trash2 } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { ChevronDown, LogIn, LogOut, Menu, Search, ShoppingCart, User, X, Clock, TrendingUp, ArrowRight, Check, Trash2, ShoppingBag } from "lucide-react";
 import { useCartContext } from "../context/CartContext";
 import api from "../utils/api";
 
@@ -147,8 +147,20 @@ export default function Header() {
     return (
         <header className="bg-white border-b border-slate-100 sticky top-0 z-50 p-4 shadow-xs" style={{ position: 'sticky' }}>
             <div className="max-w-7xl mx-auto flex justify-between items-center">
-                <h1 className="text-xl font-black tracking-tight text-emerald-600 cursor-pointer" onClick={() => window.location.href = '/'} style={{ minWidth: 140 }}>
-                    POS<span className="text-green-600">MART</span>
+                <h1 className="shrink-0" style={{ minWidth: 150 }}>
+                    <Link to="/" className="flex items-center gap-2.5" aria-label="POSMart beranda">
+                        <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/25">
+                            <ShoppingBag className="w-5 h-5" />
+                        </span>
+                        <span className="flex flex-col leading-none">
+                            <span className="text-lg font-black tracking-tight text-slate-900 leading-none">
+                                POS<span className="text-emerald-600">Mart</span>
+                            </span>
+                            <span className="text-[9px] font-bold text-slate-400 tracking-[0.18em] uppercase mt-1">
+                                Minimarket Digital
+                            </span>
+                        </span>
+                    </Link>
                 </h1>
 
                 {/* SEARCH BAR */}
