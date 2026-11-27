@@ -22,6 +22,7 @@ class AdminReportsController extends Controller
                 'daily_sales'        => $data['daily_sales'],
                 'category_sales'     => $data['category_sales'],
                 'low_stock_products' => $data['low_stock_products'],
+                'payment_sales'      => $data['payment_sales'],
             ],
         ]);
     }
@@ -34,9 +35,11 @@ class AdminReportsController extends Controller
             ['--- RINGKASAN PERIODE ---', '', ''],
             ['Periode (hari)', (string) $data['days'], ''],
             ['Total Omzet', (string) $data['summary']['total_revenue'], ''],
+            ['Estimasi Laba Kotor', (string) $data['summary']['estimated_profit'], ''],
             ['Total Transaksi', (string) $data['summary']['total_orders'], ''],
             ['Jumlah Produk', (string) $data['summary']['total_products'], ''],
             ['Stok Menipis', (string) $data['summary']['total_low_stock'], ''],
+            ['Pertumbuhan Omzet (%)', (string) $data['summary']['revenue_growth'], ''],
             ['', '', ''],
             ['--- PENJUALAN HARIAN ---', '', ''],
             ['Tanggal', 'Transaksi', 'Omzet'],
@@ -52,6 +55,13 @@ class AdminReportsController extends Controller
 
         foreach ($data['category_sales'] as $c) {
             $rows[] = [$c['category'], (string) $c['total_qty'], (string) $c['total_sales']];
+        }
+
+        $rows[] = ['', '', ''];
+        $rows[] = ['--- METODE PEMBAYARAN ---', '', ''];
+        $rows[] = ['Metode', 'Transaksi', 'Omzet'];
+        foreach ($data['payment_sales'] as $payment) {
+            $rows[] = [$payment['method'], (string) $payment['orders'], (string) $payment['total_sales']];
         }
 
         $rows[] = ['', '', ''];
@@ -109,24 +119,41 @@ class AdminReportsController extends Controller
 
         $totalRevenue   = (float) Order::where('created_at', '>=', $since)->sum('total_price');
         $totalOrders    = Order::where('created_at', '>=', $since)->count();
+        $previousSince = (clone $since)->subDays($days);
+        $previousRevenue = (float) Order::whereBetween('created_at', [$previousSince, $since])->sum('total_price');
+        $estimatedProfit = (float) DB::table('order_items as oi')
+            ->join('orders as o', 'oi.order_id', '=', 'o.id')
+            ->join('products as p', 'oi.product_id', '=', 'p.id')
+            ->where('o.created_at', '>=', $since)
+            ->selectRaw('COALESCE(SUM(oi.total - (oi.qty * p.purchase_price)), 0) as profit')
+            ->value('profit');
+        $paymentSales = Order::where('created_at', '>=', $since)
+            ->selectRaw("CASE WHEN payment_mode = 'cash' OR payment_mode IS NULL THEN 'Tunai' ELSE 'Cashless' END as method")
+            ->selectRaw('COUNT(*) as orders, COALESCE(SUM(total_price), 0) as total_sales')
+            ->groupBy('method')->get()->map(fn ($row) => [
+                'method' => $row->method, 'orders' => (int) $row->orders, 'total_sales' => (float) $row->total_sales,
+            ])->values()->all();
         $totalLowStock  = Product::where('stock', '<=', 5)->count();
 
         $lowStockProducts = Product::where('stock', '<=', 5)
             ->orderBy('stock', 'asc')
             ->limit(10)
-            ->get(['id', 'barcode', 'name', 'stock', 'price', 'category']);
+            ->get(['product_id', 'barcode', 'name', 'stock', 'price', 'category']);
 
         return [
             'days'               => $days,
             'summary'            => [
                 'total_revenue'   => $totalRevenue,
+                'estimated_profit' => $estimatedProfit,
                 'total_orders'    => $totalOrders,
+                'revenue_growth'  => $previousRevenue > 0 ? (($totalRevenue - $previousRevenue) / $previousRevenue) * 100 : null,
                 'total_products'  => Product::count(),
                 'total_low_stock' => $totalLowStock,
             ],
             'daily_sales'        => $dailySales,
             'category_sales'     => $categorySales->map(fn ($c) => (array) $c),
             'low_stock_products' => $lowStockProducts,
+            'payment_sales'      => $paymentSales,
         ];
     }
 }

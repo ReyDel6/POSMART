@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, BarChart3, CalendarDays, Download, DollarSign, Package, RefreshCcw, ShoppingBag, TrendingUp } from 'lucide-react';
+import { AlertTriangle, BarChart3, CalendarDays, Download, DollarSign, Package, RefreshCcw, ShoppingBag, TrendingUp, Wallet } from 'lucide-react';
 import { ArcElement, CategoryScale, Chart as ChartJS, Filler, Legend, LinearScale, LineElement, PointElement, Tooltip } from 'chart.js';
 import { Doughnut, Line } from 'react-chartjs-2';
 import api from '../../utils/api';
@@ -13,6 +13,7 @@ export default function AdminReportsPage() {
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [exportOpen, setExportOpen] = useState(false);
 
     const fetchReport = useCallback(async () => {
         try {
@@ -60,6 +61,7 @@ export default function AdminReportsPage() {
     const totalOrders = filteredSales.reduce((sum, item) => sum + Number(item.total_orders), 0);
     const averageOrder = totalOrders ? totalRevenue / totalOrders : 0;
     const topCategory = categorySales[0];
+    const revenueGrowth = report?.summary?.revenue_growth;
 
     const exportCsv = async () => {
         try {
@@ -102,12 +104,17 @@ export default function AdminReportsPage() {
         labels: categorySales.map(item => item.category),
         datasets: [{ data: categorySales.map(item => item.total_sales), backgroundColor: ['#059669', '#2563eb', '#f59e0b', '#8b5cf6', '#ec4899', '#0891b2'], borderWidth: 3, borderColor: '#fff' }]
     };
+    const paymentData = {
+        labels: (report?.payment_sales || []).map(item => item.method),
+        datasets: [{ data: (report?.payment_sales || []).map(item => item.total_sales), backgroundColor: ['#059669', '#2563eb'], borderWidth: 3, borderColor: '#fff' }]
+    };
 
     if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><RefreshCcw className="w-8 h-8 text-emerald-600 animate-spin" /></div>;
     if (error) return <div className="bg-rose-50 border border-rose-200 text-rose-700 p-6 rounded-2xl flex flex-col items-center gap-4"><AlertTriangle className="w-10 h-10" /><p className="font-bold">{error}</p><button onClick={() => { setLoading(true); setError(''); fetchReport(); }} className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold text-sm">Coba Lagi</button></div>;
 
     const metrics = [
-        ['Omzet periode', formatRupiah(totalRevenue), 'Pendapatan terakumulasi', DollarSign, 'text-emerald-700 bg-emerald-50'],
+        ['Omzet periode', formatRupiah(totalRevenue), revenueGrowth === null || revenueGrowth === undefined ? 'Pendapatan terakumulasi' : `${revenueGrowth >= 0 ? '+' : ''}${Number(revenueGrowth).toFixed(1)}% vs periode sebelumnya`, DollarSign, 'text-emerald-700 bg-emerald-50'],
+        ['Estimasi laba', formatRupiah(report?.summary?.estimated_profit), 'Omzet dikurangi harga modal', Wallet, 'text-indigo-700 bg-indigo-50'],
         ['Transaksi', totalOrders, 'Struk tercatat', ShoppingBag, 'text-blue-700 bg-blue-50'],
         ['Rata-rata struk', formatRupiah(averageOrder), 'Nilai per transaksi', TrendingUp, 'text-violet-700 bg-violet-50'],
         ['Stok menipis', report?.summary?.total_low_stock || 0, 'Produk perlu dicek', AlertTriangle, 'text-amber-700 bg-amber-50']
@@ -121,7 +128,7 @@ export default function AdminReportsPage() {
                     <div className="flex flex-wrap gap-3">
                         <label className="flex items-center gap-2 bg-white/10 border border-white/15 rounded-xl px-3 text-sm"><CalendarDays className="w-4 h-4 text-emerald-300" /><select value={period} onChange={event => { setLoading(true); setPeriod(event.target.value); }} className="bg-transparent py-2.5 outline-none font-bold text-white"><option className="text-slate-900" value="hari_ini">Hari ini</option><option className="text-slate-900" value="minggu_ini">7 hari terakhir</option><option className="text-slate-900" value="bulan_ini">30 hari terakhir</option><option className="text-slate-900" value="tahun_ini">Tahun ini</option></select></label>
                         <button onClick={() => { setLoading(true); fetchReport(); }} title="Refresh laporan" className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 cursor-pointer"><RefreshCcw className="w-4 h-4" /></button>
-                        <button onClick={exportCsv} title="Export laporan" className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-sm font-bold cursor-pointer"><Download className="w-4 h-4" /> Export</button>
+                        <div className="relative"><button onClick={() => setExportOpen(value => !value)} title="Export laporan" className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-sm font-bold cursor-pointer"><Download className="w-4 h-4" /> Export</button>{exportOpen && <div className="absolute right-0 top-full mt-2 z-10 w-44 rounded-xl bg-white p-2 shadow-xl text-slate-800"><button onClick={() => { setExportOpen(false); exportCsv(); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm font-semibold">Export CSV/Excel</button><button onClick={() => { setExportOpen(false); window.print(); }} className="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-100 text-sm font-semibold">Cetak / PDF</button></div>}</div>
                     </div>
                 </div><div className="absolute -right-12 -bottom-24 w-64 h-64 rounded-full border-[35px] border-emerald-600/20" />
             </header>
@@ -133,9 +140,14 @@ export default function AdminReportsPage() {
                 <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm"><div className="mb-2"><h3 className="font-black text-slate-900">Kontribusi kategori</h3><p className="text-xs text-slate-500 mt-1">Kategori dengan omzet terbesar</p></div><div className="h-64">{categorySales.length ? <Doughnut data={doughnutData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 11 } } } } }} /> : <div className="h-full flex items-center justify-center text-sm text-slate-400">Belum ada data kategori.</div>}</div></div>
             </section>
 
+            <section className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center gap-3 mb-4"><div className="p-2.5 rounded-xl bg-blue-50 text-blue-600"><Wallet className="w-5 h-5" /></div><div><h3 className="font-black text-slate-900">Distribusi pembayaran</h3><p className="text-xs text-slate-500">Omzet tunai dibanding cashless</p></div></div>
+                <div className="h-48 max-w-sm">{(report?.payment_sales || []).length ? <Doughnut data={paymentData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} /> : <p className="text-sm text-slate-400">Belum ada data pembayaran.</p>}</div>
+            </section>
+
             <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm"><div className="flex items-center gap-3 mb-5"><div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-600"><Package className="w-5 h-5" /></div><div><h3 className="font-black text-slate-900">Kategori terkuat</h3><p className="text-xs text-slate-500">Prioritas perhatian pada periode ini</p></div></div><p className="text-3xl font-black text-slate-900">{topCategory?.category || '-'}</p><p className="text-sm text-slate-500 mt-1">{topCategory ? `${formatRupiah(topCategory.total_sales)} kontribusi omzet` : 'Belum ada penjualan'}</p></div>
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm"><div className="flex items-center gap-3 mb-5"><div className="p-2.5 rounded-xl bg-amber-50 text-amber-600"><AlertTriangle className="w-5 h-5" /></div><div><h3 className="font-black text-slate-900">Perlu ditindaklanjuti</h3><p className="text-xs text-slate-500">Stok paling kritis saat ini</p></div></div>{report?.low_stock_products?.slice(0, 3).map(product => <div key={product.id} className="flex justify-between items-center py-2 border-b border-slate-100 last:border-0"><span className="text-sm font-bold text-slate-700 truncate pr-3">{product.name}</span><span className="text-xs font-black text-rose-600">{product.stock} tersisa</span></div>)}{!report?.low_stock_products?.length && <p className="text-sm text-slate-400">Semua stok dalam kondisi aman.</p>}</div>
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm"><div className="flex items-center gap-3 mb-5"><div className="p-2.5 rounded-xl bg-amber-50 text-amber-600"><AlertTriangle className="w-5 h-5" /></div><div><h3 className="font-black text-slate-900">Perlu ditindaklanjuti</h3><p className="text-xs text-slate-500">Stok paling kritis saat ini</p></div></div>{report?.low_stock_products?.slice(0, 3).map(product => <div key={product.id} className="flex justify-between items-center py-2 border-b border-slate-100 last:border-0"><a href={`/admin/products?search=${encodeURIComponent(product.name)}`} className="text-sm font-bold text-sky-700 hover:underline truncate pr-3">{product.name}</a><span className="text-xs font-black text-rose-600">{product.stock} tersisa</span></div>)}{!report?.low_stock_products?.length && <p className="text-sm text-slate-400">Semua stok dalam kondisi aman.</p>}</div>
             </section>
         </div>
     );

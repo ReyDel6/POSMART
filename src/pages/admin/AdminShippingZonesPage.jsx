@@ -1,6 +1,6 @@
 // File: src/pages/admin/AdminShippingZonesPage.jsx
 import { useState, useEffect } from 'react';
-import { Truck, Plus, Pencil, Trash2, Save, X, Loader2, MapPin, AlertTriangle } from 'lucide-react';
+import { Truck, Plus, Pencil, Trash2, Save, X, Loader2, MapPin, AlertTriangle, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import api from '../../utils/api';
 
 const formatIDR = (value) =>
@@ -16,7 +16,7 @@ export default function AdminShippingZonesPage() {
   // Modal add/edit
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState({ name: '', fee: '', is_active: true });
+  const [form, setForm] = useState({ name: '', coverage: '', fee: '', free_shipping_minimum: '', is_active: true });
 
   const fetchZones = async () => {
     setLoading(true);
@@ -41,13 +41,13 @@ export default function AdminShippingZonesPage() {
 
   const openAdd = () => {
     setEditingId(null);
-    setForm({ name: '', fee: '', is_active: true });
+    setForm({ name: '', coverage: '', fee: '', free_shipping_minimum: '', is_active: true });
     setModalOpen(true);
   };
 
   const openEdit = (zone) => {
     setEditingId(zone.id);
-    setForm({ name: zone.name, fee: String(zone.fee), is_active: zone.is_active });
+    setForm({ name: zone.name, coverage: zone.coverage || '', fee: String(zone.fee), free_shipping_minimum: zone.free_shipping_minimum ?? '', is_active: zone.is_active });
     setModalOpen(true);
   };
 
@@ -57,7 +57,7 @@ export default function AdminShippingZonesPage() {
     setError('');
     setNotice('');
     try {
-      const payload = { ...form, fee: Number(form.fee) || 0 };
+      const payload = { ...form, fee: Number(form.fee) || 0, free_shipping_minimum: form.free_shipping_minimum === '' ? null : Number(form.free_shipping_minimum) };
       const response = editingId
         ? await api.put('/admin/shipping_zones.php', { ...payload, id: editingId })
         : await api.post('/admin/shipping_zones.php', payload);
@@ -96,13 +96,31 @@ export default function AdminShippingZonesPage() {
       await api.put('/admin/shipping_zones.php', {
         id: zone.id,
         name: zone.name,
+        coverage: zone.coverage || '',
         fee: zone.fee,
+        free_shipping_minimum: zone.free_shipping_minimum,
         is_active: !zone.is_active,
         sort: zone.sort,
       });
       fetchZones();
     } catch (err) {
       setError(err.response?.data?.message || 'Gagal mengubah status zona.');
+    }
+  };
+
+  const moveZone = async (index, direction) => {
+    const target = index + direction;
+    if (target < 0 || target >= zones.length) return;
+    const next = [...zones];
+    [next[index], next[target]] = [next[target], next[index]];
+    try {
+      await Promise.all(next.map((zone, position) => api.put('/admin/shipping_zones.php', {
+        id: zone.id, name: zone.name, coverage: zone.coverage || '', fee: zone.fee,
+        free_shipping_minimum: zone.free_shipping_minimum, is_active: zone.is_active, sort: position + 1,
+      })));
+      fetchZones();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Gagal mengubah urutan zona.');
     }
   };
 
@@ -133,15 +151,9 @@ export default function AdminShippingZonesPage() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-fit space-y-4">
-          <div>
-            <p className="text-sm text-slate-500">Total zona</p>
-            <p className="text-4xl font-black text-emerald-600">{zones.length}</p>
-          </div>
-          <div className="border-t border-slate-100 pt-4">
-            <p className="text-sm text-slate-500">Zona aktif di checkout</p>
-            <p className="text-4xl font-black text-slate-800">{activeCount}</p>
-          </div>
+        <div className="lg:col-span-4 flex flex-wrap items-center gap-3">
+          <div className="bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-sm"><span className="text-xs text-slate-500">Total zona</span> <strong className="ml-2 text-emerald-600">{zones.length}</strong></div>
+          <div className="bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-sm"><span className="text-xs text-slate-500">Zona aktif</span> <strong className="ml-2 text-slate-800">{activeCount}</strong></div>
           {activeCount === 0 && (
             <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
@@ -150,7 +162,7 @@ export default function AdminShippingZonesPage() {
           )}
         </div>
 
-        <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
           {loading ? (
             <div className="text-center py-10 flex flex-col items-center gap-2">
               <Loader2 className="w-6 h-6 text-emerald-600 animate-spin" />
@@ -161,8 +173,9 @@ export default function AdminShippingZonesPage() {
               <table className="w-full text-left border-collapse">
                 <thead className="bg-slate-50 text-slate-500 text-xs font-bold uppercase border-b border-slate-200">
                   <tr>
-                    <th className="p-4">Zona</th>
+                    <th className="p-4 w-24">Urutan</th><th className="p-4">Zona</th>
                     <th className="p-4">Ongkos Kirim</th>
+                    <th className="p-4">Gratis Ongkir</th>
                     <th className="p-4">Status</th>
                     <th className="p-4 text-right">Aksi</th>
                   </tr>
@@ -170,13 +183,14 @@ export default function AdminShippingZonesPage() {
                 <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
                   {zones.length === 0 ? (
                     <tr>
-                      <td colSpan="4" className="p-4 text-center text-slate-400">
+                      <td colSpan="6" className="p-4 text-center text-slate-400">
                         Belum ada zona pengiriman. Klik "Tambah Zona" untuk membuatnya.
                       </td>
                     </tr>
                   ) : (
                     zones.map((zone, idx) => (
                       <tr key={zone.id} className="hover:bg-emerald-50/40 transition-colors">
+                        <td className="p-4"><div className="flex items-center gap-1"><GripVertical className="w-4 h-4 text-slate-300" /><button onClick={() => moveZone(idx, -1)} disabled={idx === 0} className="disabled:opacity-20"><ChevronUp className="w-4 h-4" /></button><button onClick={() => moveZone(idx, 1)} disabled={idx === zones.length - 1} className="disabled:opacity-20"><ChevronDown className="w-4 h-4" /></button></div></td>
                         <td className="p-4">
                           <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
@@ -185,21 +199,23 @@ export default function AdminShippingZonesPage() {
                             <div>
                               <p className="font-bold text-slate-900">{zone.name}</p>
                               <p className="text-[11px] text-slate-400">Urutan #{(zone.sort || idx + 1)}</p>
+                              <p className="text-xs text-slate-500 mt-1">{zone.coverage || 'Cakupan belum diatur'}</p>
                             </div>
                           </div>
                         </td>
                         <td className="p-4 font-black text-emerald-700">{formatIDR(zone.fee)}</td>
+                        <td className="p-4 text-xs text-slate-500">{zone.free_shipping_minimum ? `Gratis mulai ${formatIDR(zone.free_shipping_minimum)}` : 'Tidak ada syarat'}</td>
                         <td className="p-4">
                           <button
                             onClick={() => handleToggleActive(zone)}
-                            className={`px-3 py-1 rounded-full text-xs font-bold transition-colors cursor-pointer ${
+                            className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer ${
                               zone.is_active
-                                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                              ? 'bg-emerald-600'
+                              : 'bg-slate-300'
                             }`}
                             title={zone.is_active ? 'Aktif - klik untuk nonaktifkan' : 'Nonaktif - klik untuk aktifkan'}
                           >
-                            {zone.is_active ? 'Aktif' : 'Nonaktif'}
+                            <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${zone.is_active ? 'translate-x-6' : 'translate-x-1'}`} />
                           </button>
                         </td>
                         <td className="p-4 text-right">
@@ -244,6 +260,10 @@ export default function AdminShippingZonesPage() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
+                <label htmlFor="zoneCoverage" className="block text-sm font-semibold text-slate-700 mb-1">Cakupan wilayah</label>
+                <input id="zoneCoverage" type="text" value={form.coverage} onChange={(e) => setForm(prev => ({ ...prev, coverage: e.target.value }))} placeholder="Contoh: Radius 0-5 km / Kec. Tebet, Pancoran" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm" />
+              </div>
+              <div>
                 <label htmlFor="zoneName" className="block text-sm font-semibold text-slate-700 mb-1">Nama Zona</label>
                 <input
                   id="zoneName"
@@ -254,6 +274,10 @@ export default function AdminShippingZonesPage() {
                   className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                   required
                 />
+              </div>
+              <div>
+                <label htmlFor="zoneFreeMinimum" className="block text-sm font-semibold text-slate-700 mb-1">Gratis ongkir minimal belanja (Rp)</label>
+                <input id="zoneFreeMinimum" type="number" min="1" value={form.free_shipping_minimum} onChange={(e) => setForm(prev => ({ ...prev, free_shipping_minimum: e.target.value }))} placeholder="Kosongkan jika tidak ada" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm" />
               </div>
               <div>
                 <label htmlFor="zoneFee" className="block text-sm font-semibold text-slate-700 mb-1">Ongkos Kirim (Rp)</label>

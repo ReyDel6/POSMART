@@ -34,6 +34,12 @@ export function useCart() {
         ));
     }, [setCart, handleRemoveItem]);
 
+    const handleUpdateNote = useCallback((id, note) => {
+        setCart((currentCart) => currentCart.map((item) =>
+            item.id === id ? { ...item, note } : item
+        ));
+    }, [setCart]);
+
     const totalCartItemsCount = cart.reduce((total, item) => total + item.qty, 0);
 
     const handleClearCart = useCallback(() => {
@@ -49,6 +55,7 @@ export function useCart() {
         handleAddToCart,
         handleRemoveItem,
         handleUpdateQty,
+        handleUpdateNote,
         handleClearCart,
         totalCartItemsCount
     };

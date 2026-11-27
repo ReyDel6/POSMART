@@ -33,13 +33,16 @@ class OrderController extends Controller
             ? $data['payment_mode']
             : 'online';
         $isWalkIn = $paymentMode === 'cash';
+        $pickupAt = $isWalkIn && !empty($data['pickup_at']) ? \Carbon\Carbon::parse($data['pickup_at']) : null;
 
         if ($isWalkIn) {
             $courier = 'walkin';
             if ($address === '') $address = 'Ambil di toko';
+            if ($customerName === '') $customerName = 'Pelanggan Langsung';
+            if ($phone === '') $phone = '-';
         }
 
-        if ($customerName === '' || $phone === '' || ($address === '' && !$isWalkIn) || empty($cartItems)) {
+        if (($customerName === '' && !$isWalkIn) || ($phone === '' && !$isWalkIn) || ($address === '' && !$isWalkIn) || empty($cartItems)) {
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Data tidak lengkap atau keranjang kosong.',
@@ -64,9 +67,9 @@ class OrderController extends Controller
         }
 
         try {
-            $order = DB::transaction(function () use ($user, $customerName, $phone, $address, $courier, $zone, $shippingFee, $cartItems, $isWalkIn, $paymentMode, $data) {
+            $order = DB::transaction(function () use ($user, $customerName, $phone, $address, $courier, $zone, $shippingFee, $cartItems, $isWalkIn, $paymentMode, $data, $pickupAt) {
                 $order = Order::create([
-                    'user_id'        => $user->id,
+                    'user_id'        => $user?->user_id ?? $user?->id,
                     'customer_name'  => $customerName,
                     'phone'          => $phone,
                     'address'        => $address,
@@ -80,6 +83,8 @@ class OrderController extends Controller
                     'payment_method' => $isWalkIn ? 'cash' : null,
                     'payment_type'   => $isWalkIn ? 'cash' : null,
                     'paid_at'        => $isWalkIn ? now() : null,
+                    'pickup_at'      => $pickupAt,
+                    'pickup_deadline' => $isWalkIn ? now()->addHours(2) : null,
                 ]);
 
                 $grandTotal    = 0;
@@ -88,7 +93,7 @@ class OrderController extends Controller
 
                 foreach ($cartItems as $item) {
                     $bundleId  = (int) ($item['bundle_id'] ?? 0);
-                    $productId = (int) ($item['id'] ?? 0);
+                    $productId = (int) ($item['product_id'] ?? $item['id'] ?? 0);
                     $qtyBuy    = (int) ($item['qty'] ?? 0);
 
                     if ($bundleId > 0) {
@@ -97,17 +102,23 @@ class OrderController extends Controller
                         if (!$bundle) {
                             throw new \Exception('Paket promo tidak ditemukan atau sudah nonaktif.');
                         }
+
+                        $taxMode = (string) \App\Models\Setting::where('key', 'tax_mode')->value('value');
+                        $taxRate = max(0, (float) \App\Models\Setting::where('key', 'tax_rate')->value('value'));
+                        $taxAmount = $taxMode === 'exclusive' ? round($grandTotal * $taxRate / 100) : 0;
+                        $grandTotal += $taxAmount;
                         if ($qtyBuy <= 0) {
                             throw new \Exception('Jumlah pembelian paket tidak valid.');
                         }
+                        $bundle->increment('used_count');
 
                         $components = [];
                         $listTotal  = 0;
                         foreach ((array) $bundle->items as $row) {
-                            $cid  = (int) ($row['product_id'] ?? 0);
+                            $cid  = (int) ($row['product_id'] ?? $row['id'] ?? 0);
                             $cqty = max(1, (int) ($row['qty'] ?? 1)) * $qtyBuy;
 
-                            $prod = Product::where('id', $cid)->lockForUpdate()->first();
+                            $prod = Product::where('product_id', $cid)->lockForUpdate()->first();
                             if (!$prod) {
                                 throw new \Exception("Komponen paket (ID $cid) tidak ditemukan.");
                             }
@@ -125,8 +136,8 @@ class OrderController extends Controller
                             $comp['prod']->decrement('stock', $comp['qty']);
 
                             OrderItem::create([
-                                'order_id'   => $order->id,
-                                'product_id' => $comp['prod']->id,
+                                'order_id'   => $order->order_id ?? $order->id,
+                                'product_id' => $comp['prod']->product_id ?? $comp['prod']->id,
                                 'qty'        => $comp['qty'],
                                 'price'      => (int) $comp['prod']->price,
                                 'total'      => (int) $comp['prod']->price * $comp['qty'],
@@ -142,7 +153,7 @@ class OrderController extends Controller
                         throw new \Exception('Terdapat item dengan ID atau jumlah pembelian tidak valid.');
                     }
 
-                    $product = Product::where('id', $productId)->lockForUpdate()->first();
+                    $product = Product::where('product_id', $productId)->lockForUpdate()->first();
 
                     if (!$product) {
                         throw new \Exception("Produk dengan ID $productId tidak ditemukan.");
@@ -155,12 +166,15 @@ class OrderController extends Controller
                     // Harga otentik dari DB + promo aktif (block/b1g1/persen produk).
                     $promoId = isset($item['promo_id']) ? (int) $item['promo_id'] : null;
                     $deal    = $promoService->resolveDeal($promoId, $productId);
+                    if ($deal) {
+                        $deal->increment('used_count');
+                    }
                     $price   = $promoService->pricing($product, $qtyBuy, $deal);
 
                     $product->decrement('stock', $qtyBuy);
 
                     OrderItem::create([
-                        'order_id'   => $order->id,
+                        'order_id'   => $order->order_id ?? $order->id,
                         'product_id' => $productId,
                         'qty'        => $qtyBuy,
                         'price'      => $price['unit'],
@@ -172,6 +186,11 @@ class OrderController extends Controller
                 }
 
                 // Tukar poin member menjadi potongan harga (server-side validated).
+                if ($zone && $zone->free_shipping_minimum !== null
+                    && $grandTotal >= (int) $zone->free_shipping_minimum) {
+                    $shippingFee = 0;
+                    $order->update(['shipping_fee' => 0]);
+                }
                 $pointsUsed    = max(0, (int) ($data['points_used'] ?? 0));
                 $pointsDiscount = 0;
 
@@ -183,11 +202,11 @@ class OrderController extends Controller
                         $user->decrement('points', $pointsUsed);
 
                         \App\Models\UserPoint::create([
-                            'user_id'     => $user->id,
-                            'order_id'    => $order->id,
+                            'user_id'     => $user->user_id ?? $user->id,
+                            'order_id'    => $order->order_id ?? $order->id,
                             'amount'      => -$pointsUsed,
                             'type'        => 'redeem',
-                            'description' => 'Tukar poin untuk pesanan #' . $order->id,
+                            'description' => 'Tukar poin untuk pesanan #' . ($order->order_id ?? $order->id),
                             'created_at'  => now(),
                         ]);
                     }
@@ -218,7 +237,7 @@ class OrderController extends Controller
             return response()->json([
                 'status'       => 'success',
                 'message'      => $isWalkIn ? 'Pembayaran tunai selesai. Stok telah dikunci.' : 'Checkout berhasil! Stok telah diamankan.',
-                'order_id'     => $order->id,
+                'order_id'     => $order->order_id ?? $order->id,
                 'total_price'  => (int) $order->total_price,
                 'discount'     => (int) $order->discount,
                 'points_used'  => (int) $order->points_used,
@@ -246,7 +265,7 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $order = Order::where('id', $orderId)->where('user_id', $user->id)->first();
+        $order = Order::where('order_id', $orderId)->where('user_id', $user->user_id ?? $user->id)->first();
         if (!$order) {
             return response()->json([
                 'status'  => 'error',
@@ -312,6 +331,30 @@ class OrderController extends Controller
             ];
         }
 
+        if ((int) $order->discount > 0) {
+            $items[] = [
+                'id'       => 'DISCOUNT',
+                'price'    => -((int) $order->discount),
+                'quantity' => 1,
+                'name'     => 'Diskon Promo',
+            ];
+        }
+
+        if ((int) $order->points_discount > 0) {
+            $items[] = [
+                'id'       => 'POINTS',
+                'price'    => -((int) $order->points_discount),
+                'quantity' => 1,
+                'name'     => 'Diskon Poin',
+            ];
+        }
+
+        // Pastikan total item_details persis sama dengan gross_amount
+        $itemsTotal = array_sum(array_map(fn($it) => $it['price'] * $it['quantity'], $items));
+        if ($itemsTotal !== (int) $order->total_price) {
+            $items = null;
+        }
+
         $midtransOrderId = config('midtrans.order_prefix') . '-' . $order->id;
         $notificationUrl = rtrim(config('app.url'), '/') . '/midtrans/webhook.php';
 
@@ -326,7 +369,6 @@ class OrderController extends Controller
                 'order_id'     => $midtransOrderId,
                 'gross_amount' => (int) $order->total_price,
             ],
-            'item_details'          => $items,
             'customer_details'      => [
                 'first_name' => mb_substr($order->customer_name, 0, 49),
                 'phone'      => $order->phone,
@@ -338,6 +380,10 @@ class OrderController extends Controller
                 'finish' => "{$frontendUrl}/OrderSuccess?order_id={$order->id}",
             ],
         ];
+
+        if ($items !== null) {
+            $snapPayload['item_details'] = $items;
+        }
 
         // Batasi ke grup metode yang dipilih customer di checkout.
         if ($enabled !== null) {
@@ -393,7 +439,7 @@ class OrderController extends Controller
             ]);
         }
 
-        $order = Order::where('id', $orderId)->where('user_id', $user->id)->first();
+        $order = Order::where('order_id', $orderId)->where('user_id', $user->user_id ?? $user->id)->first();
         if (!$order) {
             return response()->json([
                 'status'  => 'error',
@@ -495,7 +541,7 @@ class OrderController extends Controller
         $user    = $request->user();
         $orderId = (int) ($request->input('order_id') ?? 0);
 
-        $order = Order::where('id', $orderId)->where('user_id', $user->id)->first();
+        $order = Order::where('order_id', $orderId)->where('user_id', $user->user_id ?? $user->id)->first();
         if (!$order) {
             return response()->json([
                 'status'  => 'error',
@@ -551,6 +597,7 @@ class OrderController extends Controller
             'payment_status'      => $order->payment_status,
             'transaction_status'  => $status['transaction_status'] ?? null,
             'paid'                => $paid,
+            'expiry_time'         => $status['expiry_time'] ?? null,
         ]);
     }
 }

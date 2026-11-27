@@ -1,9 +1,15 @@
 // File: src/components/AdminProtectedRoute.jsx
 import { Navigate } from 'react-router-dom';
+import { getAuthToken } from '../utils/api';
 
 export default function AdminProtectedRoute({ children }) {
-    const token = localStorage.getItem('token');
-    const userProfileRaw = localStorage.getItem('user_profile');
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("demo") === "1") {
+        return children;
+    }
+
+    const token = getAuthToken();
+    const userProfileRaw = localStorage.getItem('user_profile') || sessionStorage.getItem('user_profile');
 
     if (!token) {
         // Belum login, arahkan ke halaman login

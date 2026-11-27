@@ -21,7 +21,7 @@ export function CartProvider({ children }) {
             (p) => Number(p.id) === Number(item.id)
         );
         return product
-            ? { ...product, qty: item.qty }
+            ? { ...product, ...item, qty: item.qty }
             : {
                 ...item,
                 qty: item.qty,

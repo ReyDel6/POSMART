@@ -28,16 +28,17 @@ class AdminStatsController extends Controller
         $lowStockProducts = Product::where('stock', '<=', 5)
             ->orderBy('stock', 'asc')
             ->limit(10)
-            ->get(['id', 'barcode', 'name', 'stock', 'price', 'category']);
+            ->get(['product_id', 'barcode', 'name', 'stock', 'price', 'category']);
 
         // 6. Transaksi Terbaru (5 terakhir)
-        $recentOrders = Order::with('user:id,name')
+        $recentOrders = Order::with('user:user_id,name')
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get()
             ->map(function ($o) {
                 return [
-                    'id'            => $o->id,
+                    'id'            => $o->order_id,
+                    'order_id'      => $o->order_id,
                     'customer_name' => $o->customer_name,
                     'total_price'   => $o->total_price,
                     'status'        => $o->status,

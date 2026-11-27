@@ -1,10 +1,10 @@
 //File: components/ProductCard.jsx
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ShoppingBag, Star, X, ZoomIn, MessageCircle } from "lucide-react";
+import { ShoppingBag, Star, X, ZoomIn } from "lucide-react";
 import { useCartContext } from "../context/CartContext";
 import useDialog from "../hooks/useDialog";
-import api from "../utils/api";
+import api, { getAuthToken } from "../utils/api";
 
 export default function ProductCard({ product, storeSettings }) {
   const { handleAddToCart } = useCartContext();
@@ -100,7 +100,7 @@ export default function ProductCard({ product, storeSettings }) {
     }
   };
 
-  const isLoggedIn = !!localStorage.getItem('token');
+  const isLoggedIn = !!getAuthToken();
   const ratingDisplay = Number(item.rating) || reviewMeta.rating || 0;
 
   return (
@@ -340,19 +340,6 @@ export default function ProductCard({ product, storeSettings }) {
               {isOutOfStock ? "Stok habis" : "Tambah ke keranjang"}
             </button>
 
-            {!isOutOfStock && storeSettings?.whatsapp && (
-              <a
-                href={`https://wa.me/${storeSettings.whatsapp}?text=${encodeURIComponent(
-                  `Halo, saya ingin memesan produk *${item.name}* seharga ${formatIDR(currentPrice)}.`
-                )}`}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full py-2 rounded-lg text-xs font-black flex items-center justify-center gap-2 border-2 border-ink text-ink bg-white hover:bg-lime transition-all"
-              >
-                <MessageCircle className="w-3.5 h-3.5" />
-                Pesan via WA
-              </a>
-            )}
           </div>
         </div>
       </div>

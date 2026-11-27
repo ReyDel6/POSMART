@@ -16,6 +16,7 @@ export default function LoginForm({ onLoginSuccess }) {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [rememberMe, setRememberMe] = useState(true);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -31,8 +32,12 @@ export default function LoginForm({ onLoginSuccess }) {
             const response = await api.post('/user/login.php', formData);
 
             if (response.data.status === 'success') {
-                localStorage.setItem('token', response.data.token);
-                localStorage.setItem('user_profile', JSON.stringify(response.data.user));
+                const storage = rememberMe ? localStorage : sessionStorage;
+                const otherStorage = rememberMe ? sessionStorage : localStorage;
+                otherStorage.removeItem('token');
+                otherStorage.removeItem('user_profile');
+                storage.setItem('token', response.data.token);
+                storage.setItem('user_profile', JSON.stringify(response.data.user));
                 setAuthTokenHeader(response.data.token);
 
                 if (onLoginSuccess) onLoginSuccess(response.data.user);
@@ -48,7 +53,8 @@ export default function LoginForm({ onLoginSuccess }) {
         }
     };
 
-    const inputClass = "w-full text-sm pl-11 pr-11 py-3 border-2 border-ink/30 rounded-xl focus:outline-none focus:border-ink focus:ring-2 focus:ring-lime transition-all bg-cream/50";
+    const inputClass = "w-full text-sm pl-11 pr-11 py-3 border-2 rounded-xl focus:outline-none focus:border-ink focus:ring-2 focus:ring-lime transition-all bg-cream/50";
+    const inputStateClass = error ? "border-red-500 focus:border-red-600 focus:ring-red-200" : "border-ink/30";
 
     return (
         <form onSubmit={handleFormSubmit} className="space-y-4">
@@ -71,7 +77,7 @@ export default function LoginForm({ onLoginSuccess }) {
                         required
                         autoComplete="email"
                         placeholder="nama@email.com"
-                        className={inputClass}
+                        className={`${inputClass} ${inputStateClass}`}
                     />
                 </div>
             </div>
@@ -79,7 +85,7 @@ export default function LoginForm({ onLoginSuccess }) {
             <div className="space-y-1">
                 <div className="flex items-center justify-between">
                 <label htmlFor="password" className="text-xs font-bold text-slate-600">Password</label>
-                <Link to="/forgot-password" className="text-xs font-black text-coral hover:underline transition-colors cursor-pointer">
+                <Link to="/forgot-password" className="text-xs font-black text-ink underline underline-offset-2 hover:text-slate-600 transition-colors cursor-pointer">
                     Lupa password?
                 </Link>
             </div>
@@ -94,7 +100,7 @@ export default function LoginForm({ onLoginSuccess }) {
                         required
                         autoComplete="current-password"
                         placeholder="••••••••"
-                        className={inputClass}
+                        className={`${inputClass} ${inputStateClass}`}
                     />
                     <button
                         type="button"
@@ -107,22 +113,33 @@ export default function LoginForm({ onLoginSuccess }) {
                 </div>
             </div>
 
-            <div className="flex gap-2 pt-1">
+            <label className="flex items-center gap-2 pt-1 text-xs font-bold text-slate-600 cursor-pointer">
+                <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 accent-lime cursor-pointer"
+                />
+                Ingat saya
+            </label>
+
+            {error && <p className="text-xs font-bold text-red-600">Email atau password salah. Periksa kembali data Anda.</p>}
+
+            <div className="pt-1">
                 <button
                     type="submit"
                     disabled={loading}
-                    className="flex-[2] py-3 bg-ink hover:bg-slate-900 disabled:bg-slate-400 text-cream font-black text-sm rounded-xl border-2 border-ink shadow-[3px_3px_0_#161616] transition-colors cursor-pointer flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-ink hover:bg-slate-900 disabled:bg-slate-400 text-cream font-black text-sm rounded-xl border-2 border-ink shadow-[3px_3px_0_#161616] transition-colors cursor-pointer flex items-center justify-center gap-2"
                 >
                     <LogIn className="w-4 h-4 text-lime" />
                     {loading ? "Memproses..." : "Masuk Akun"}
                 </button>
-                <Link
-                    to="/register"
-                    className="flex-1 flex items-center justify-center py-3 px-4 border-2 border-coral text-coral font-black text-sm rounded-xl hover:bg-lime transition-colors cursor-pointer"
-                >
-                    Daftar
-                </Link>
             </div>
+
+            <p className="text-center text-xs text-slate-500">
+                Belum punya akun?{' '}
+                <Link to="/register" className="font-black text-ink underline underline-offset-2 hover:text-slate-600">Daftar di sini</Link>
+            </p>
 
             <div className="rounded-xl bg-[#EFEFE6] p-3 text-xs text-slate-500 border-2 border-ink">
                 <p className="font-black text-ink mb-2">Akun demo — klik untuk mengisi otomatis:</p>

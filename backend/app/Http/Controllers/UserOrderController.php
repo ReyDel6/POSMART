@@ -13,8 +13,8 @@ class UserOrderController extends Controller
         $filters = ['pending', 'paid', 'processing', 'completed', 'cancelled', 'expired'];
         $status  = trim($request->input('status', ''));
 
-        $orders = Order::where('user_id', $user->id)
-            ->with('items.product:id,name,image,price')
+        $orders = Order::where('user_id', $user->user_id ?? $user->id)
+            ->with('items.product:product_id,name,image,price')
             ->when($status !== '' && in_array($status, $filters, true), function ($q) use ($status) {
                 // "expired" = order yang payment_status-nya expire/cancel/deny.
                 if ($status === 'expired') {
@@ -26,8 +26,10 @@ class UserOrderController extends Controller
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($o) {
+                $orderId = (int) ($o->order_id ?? $o->id);
                 return [
-                    'id'             => (int) $o->id,
+                    'id'             => $orderId,
+                    'order_id'       => $orderId,
                     'customer_name'  => $o->customer_name,
                     'phone'          => $o->phone,
                     'address'        => $o->address,
@@ -42,6 +44,8 @@ class UserOrderController extends Controller
                     'payment_mode'   => $o->payment_mode,
                     'payment_method' => $o->payment_method,
                     'paid_at'        => $o->paid_at,
+                    'pickup_at'      => $o->pickup_at,
+                    'pickup_deadline' => $o->pickup_deadline,
                     'created_at'     => $o->created_at,
                     'items_count'    => $o->items->count(),
                     'items'          => $o->items->map(function ($i) {
@@ -77,9 +81,9 @@ class UserOrderController extends Controller
             ], 422);
         }
 
-        $order = Order::where('id', $orderId)
-            ->where('user_id', $user->id)
-            ->with('items.product:id,name,image,price')
+        $order = Order::where('order_id', $orderId)
+            ->where('user_id', $user->user_id ?? $user->id)
+            ->with('items.product:product_id,name,image,price')
             ->first();
 
         if (!$order) {
@@ -92,7 +96,7 @@ class UserOrderController extends Controller
         return response()->json([
             'status' => 'success',
             'data'   => [
-                'id'             => (int) $order->id,
+                'id'             => (int) ($order->order_id ?? $order->id),
                 'customer_name'  => $order->customer_name,
                 'phone'          => $order->phone,
                 'address'        => $order->address,
@@ -107,6 +111,8 @@ class UserOrderController extends Controller
                 'payment_mode'   => $order->payment_mode,
                 'payment_method' => $order->payment_method,
                 'paid_at'        => $order->paid_at,
+                'pickup_at'      => $order->pickup_at,
+                'pickup_deadline' => $order->pickup_deadline,
                 'created_at'     => $order->created_at,
                 'items'          => $order->items->map(function ($i) {
                     return [

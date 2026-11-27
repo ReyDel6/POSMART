@@ -17,8 +17,8 @@ class PaymentMethods
     public static function codes(string $group): ?array
     {
         $map = [
-            'qris'     => ['qris'],
-            'ewallet'  => ['gopay', 'shopeepay', 'ovo', 'dana'],
+            'qris'     => ['qris', 'gopay', 'shopeepay'],
+            'ewallet'  => ['gopay', 'shopeepay'],
             'transfer' => ['bank_transfer', 'echannel', 'bca_va', 'bni_va', 'bri_va', 'permata_va', 'other_va'],
             'snap'     => null,
         ];

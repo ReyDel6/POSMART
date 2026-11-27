@@ -2,8 +2,10 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, Phone, MapPin, CheckCircle } from "lucide-react";
+import { useGoogleLogin } from "@react-oauth/google";
 import api from '../utils/api';
 import AuthLayout from '../components/AuthLayout';
+import GoogleIcon from '../components/GoogleIcon';
 
 export default function RegisterPage() {
     const navigate = useNavigate();
@@ -20,6 +22,7 @@ export default function RegisterPage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
+    const [agreeToTerms, setAgreeToTerms] = useState(false);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -31,13 +34,18 @@ export default function RegisterPage() {
         setError('');
         setSuccess('');
 
+        if (!agreeToTerms) {
+            setError("Setujui Syarat & Ketentuan serta Kebijakan Privasi terlebih dahulu.");
+            return;
+        }
+
         if (formData.password !== formData.confirmPassword) {
             setError("Konfirmasi password tidak cocok.");
             return;
         }
 
-        if (formData.password.length < 6) {
-            setError("Password minimal harus 6 karakter.");
+        if (formData.password.length < 8 || !/[A-Za-z]/.test(formData.password) || !/\d/.test(formData.password)) {
+            setError("Password minimal 8 karakter dan harus mengandung huruf serta angka.");
             return;
         }
 
@@ -75,6 +83,31 @@ export default function RegisterPage() {
             setLoading(false);
         }
     };
+
+    const handleGoogleSignup = async (tokenResponse) => {
+        setError('');
+        setLoading(true);
+        try {
+            const response = await api.post('/user/googleauth.php', { code: tokenResponse.code });
+            if (response.data?.status === 'success') {
+                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('user_profile', JSON.stringify(response.data.user));
+                navigate('/');
+            } else {
+                setError(response.data?.message || 'Pendaftaran dengan Google gagal.');
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'Pendaftaran dengan Google gagal.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const registerWithGoogle = useGoogleLogin({
+        onSuccess: handleGoogleSignup,
+        onError: () => setError('Pendaftaran dengan Google dibatalkan atau gagal.'),
+        flow: 'auth-code'
+    });
 
     const inputClass = "w-full text-sm pl-11 pr-3 py-2.5 border-2 border-ink/30 rounded-xl focus:outline-none focus:border-ink focus:ring-2 focus:ring-lime transition-all bg-cream/50";
     const passwordInputClass = "w-full text-sm pl-11 pr-11 py-2.5 border-2 border-ink/30 rounded-xl focus:outline-none focus:border-ink focus:ring-2 focus:ring-lime transition-all bg-cream/50";
@@ -115,7 +148,7 @@ export default function RegisterPage() {
                     </div>
 
                     <div className="space-y-1">
-                        <label htmlFor="email" className="text-xs font-bold text-slate-600">e-Mail</label>
+                        <label htmlFor="email" className="text-xs font-bold text-slate-600">Email</label>
                         <div className="relative">
                             <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
                             <input
@@ -184,6 +217,7 @@ export default function RegisterPage() {
                                 </button>
                             </div>
                         </div>
+                        <p className="text-[11px] text-slate-400">Minimal 8 karakter, mengandung huruf dan angka.</p>
                     </div>
 
                     <div className="space-y-1">
@@ -220,6 +254,23 @@ export default function RegisterPage() {
                         </div>
                     </div>
 
+                    <label className="flex items-start gap-2 text-xs text-slate-600 leading-relaxed cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={agreeToTerms}
+                            onChange={(e) => setAgreeToTerms(e.target.checked)}
+                            required
+                            className="mt-0.5 h-4 w-4 shrink-0 accent-lime cursor-pointer"
+                        />
+                        <span>
+                            Saya setuju dengan{' '}
+                            <a href="/terms" className="font-black text-ink underline underline-offset-2">Syarat &amp; Ketentuan</a>
+                            {' '}serta{' '}
+                            <a href="/privacy" className="font-black text-ink underline underline-offset-2">Kebijakan Privasi</a>
+                            {' '}POSMart.
+                        </span>
+                    </label>
+
                     <button
                         type="submit"
                         disabled={loading}
@@ -227,11 +278,27 @@ export default function RegisterPage() {
                     >
                         {loading ? "Mendaftarkan..." : "Daftar Sekarang"}
                     </button>
+
+                    <div className="flex items-center gap-3">
+                        <span className="h-px flex-1 bg-ink/20" />
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">atau</span>
+                        <span className="h-px flex-1 bg-ink/20" />
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => registerWithGoogle()}
+                        disabled={loading}
+                        className="w-full bg-white border-2 border-ink hover:bg-lime disabled:opacity-60 text-ink font-black py-3 px-4 rounded-xl flex items-center justify-center gap-2.5 transition-colors shadow-[3px_3px_0_#161616] cursor-pointer text-sm"
+                    >
+                        <GoogleIcon className="w-5 h-5" />
+                        Daftar dengan Google
+                    </button>
                 </form>
 
                 <p className="mt-6 text-center text-sm text-slate-500">
                     Sudah punya akun?{" "}
-                    <Link to="/login" className="text-coral font-black hover:underline">Masuk di sini</Link>
+                    <Link to="/login" className="text-ink font-black underline underline-offset-2 hover:text-slate-600">Masuk di sini</Link>
                 </p>
             </div>
         </AuthLayout>

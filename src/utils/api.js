@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: '/api',
-    timeout: 10000,
+    timeout: 20000,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -14,11 +14,21 @@ const api = axios.create({
 
 });
 
+export const getAuthToken = () =>
+    localStorage.getItem('token') || sessionStorage.getItem('token');
+
+export const clearAuthStorage = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user_profile');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user_profile');
+};
+
 // Interceptor Request: DIJALANKAN SETIAP KALI REACT MENEMBAK API
 api.interceptors.request.use(
     (config) => {
         // AMBIL TOKEN SECARA DINAMIS DI SINI
-        const token = localStorage.getItem('token');
+        const token = getAuthToken();
 
         if (token) {
             // Pasang header Authorization & X-Authorization (anti-blokir Apache CGI/cPanel)
@@ -49,8 +59,7 @@ api.interceptors.response.use(
         // validateStatus menerima semua status < 600 sebagai "response",
         // jadi 401 yang lolos di sini memang perlu ditangani sebagai token tidak valid.
         if (response.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user_profile');
+            clearAuthStorage();
 
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login';
@@ -61,8 +70,7 @@ api.interceptors.response.use(
     (error) => {
         // Jalur ini hanya untuk kegagalan jaringan/timeout (bukan status HTTP).
         if (error.response && error.response.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user_profile');
+            clearAuthStorage();
 
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login';

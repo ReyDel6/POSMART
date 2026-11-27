@@ -1,0 +1,11 @@
+node_modules
+dist
+screenshots
+*.docx
+*.doc
+*.ps1
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/vendor
+.vscode

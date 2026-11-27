@@ -8,6 +8,15 @@ class Order extends Model
 {
     const UPDATED_AT = null;
 
+    protected $primaryKey = 'order_id';
+
+    protected $appends = ['id'];
+
+    public function getIdAttribute()
+    {
+        return $this->attributes['order_id'] ?? null;
+    }
+
     protected $fillable = [
         'user_id',
         'customer_name',
@@ -30,6 +39,8 @@ class Order extends Model
         'payment_method',
         'payment_type',
         'paid_at',
+        'pickup_at',
+        'pickup_deadline',
         'stock_released_at',
     ];
 
@@ -42,6 +53,8 @@ class Order extends Model
             'points_used'       => 'integer',
             'points_discount'   => 'integer',
             'paid_at'           => 'datetime',
+            'pickup_at'         => 'datetime',
+            'pickup_deadline'   => 'datetime',
             'stock_released_at' => 'datetime',
         ];
     }
@@ -64,7 +77,7 @@ class Order extends Model
 
         foreach ($this->items as $item) {
             if ($item->product_id > 0 && $item->qty > 0) {
-                Product::where('id', $item->product_id)->increment('stock', $item->qty);
+                Product::where('product_id', $item->product_id)->increment('stock', $item->qty);
             }
         }
 
@@ -75,11 +88,11 @@ class Order extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'user_id', 'user_id');
     }
 
     public function items()
     {
-        return $this->hasMany(OrderItem::class, 'order_id');
+        return $this->hasMany(OrderItem::class, 'order_id', 'order_id');
     }
 }

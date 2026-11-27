@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminPromotionController;
 use App\Http\Controllers\Admin\AdminReportsController;
 use App\Http\Controllers\Admin\AdminSettingController;
 use App\Http\Controllers\Admin\AdminShippingZoneController;
+use App\Http\Controllers\Admin\AdminSpkSmartController;
 use App\Http\Controllers\Admin\AdminStatsController;
 use App\Http\Controllers\Admin\AdminUploadController;
 use App\Http\Controllers\Admin\AdminUserController;
@@ -88,6 +89,7 @@ Route::middleware('auth:sanctum')->group(function () {
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     // Orders
     Route::get('/admin/orders.php', [AdminOrderController::class, 'index']);
+    Route::get('/admin/orders/detail.php', [AdminOrderController::class, 'show']);
     Route::put('/admin/orders.php', [AdminOrderController::class, 'update']);
 
     // Stats / Dashboard
@@ -97,6 +99,10 @@ Route::middleware(['auth:sanctum', 'admin'])->group(function () {
 Route::get('/admin/reports.php', [AdminReportsController::class, 'index']);
 Route::get('/admin/reports/export.php', [AdminReportsController::class, 'export']);
 Route::get('/admin/analytics.php', [AdminAnalyticsController::class, 'index']);
+
+// SPK SMART (Sistem Pendukung Keputusan Pengadaan Barang)
+Route::get('/admin/spk-smart.php', [AdminSpkSmartController::class, 'index']);
+Route::post('/admin/spk-smart/weights.php', [AdminSpkSmartController::class, 'updateWeights']);
 });
 
 // =========================================================================
@@ -107,19 +113,25 @@ Route::middleware(['auth:sanctum', 'manager'])->group(function () {
     Route::get('/admin/products.php', [AdminProductController::class, 'index']);
     Route::post('/admin/products.php', [AdminProductController::class, 'store']);
     Route::put('/admin/products.php', [AdminProductController::class, 'update']);
+    Route::post('/admin/products/restock.php', [AdminProductController::class, 'restock']);
     Route::delete('/admin/products.php', [AdminProductController::class, 'destroy']);
 
     // Upload product image
     Route::post('/admin/upload_product_image.php', [AdminUploadController::class, 'store']);
+    Route::post('/admin/upload_store_logo.php', [AdminUploadController::class, 'logo']);
 
     // Users & Staff management
     Route::get('/admin/users.php', [AdminUserController::class, 'index']);
     Route::post('/admin/users.php', [AdminUserController::class, 'store']);
     Route::put('/admin/users.php', [AdminUserController::class, 'update']);
+    Route::post('/admin/users/toggle-active.php', [AdminUserController::class, 'toggleActive']);
     Route::delete('/admin/users.php', [AdminUserController::class, 'destroy']);
 
     // Category
     Route::get('/admin/categories.php', [AdminCategoryController::class, 'index']);
+    Route::post('/admin/categories.php', [AdminCategoryController::class, 'store']);
+    Route::put('/admin/categories.php/{id}', [AdminCategoryController::class, 'update']);
+    Route::delete('/admin/categories.php/{id}', [AdminCategoryController::class, 'destroy']);
 
     // Promotions (diskon blok / B1G1 / bundle)
     Route::get('/admin/promos.php', [AdminPromotionController::class, 'index']);
@@ -136,4 +148,11 @@ Route::middleware(['auth:sanctum', 'manager'])->group(function () {
     // Store settings
     Route::get('/admin/settings.php', [AdminSettingController::class, 'index']);
     Route::put('/admin/settings.php', [AdminSettingController::class, 'update']);
+});
+// Cashier routes
+use App\Http\Controllers\Cashier\CashierOrderController;
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/cashier/orders.php', [CashierOrderController::class, 'index']);
+    Route::put('/cashier/orders.php', [CashierOrderController::class, 'update']);
+    Route::get('/cashier/orders/count.php', [CashierOrderController::class, 'count']);
 });

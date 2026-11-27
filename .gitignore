@@ -25,3 +25,12 @@ dist-ssr
 
 # mockup design lokal
 POSMART*Modern Neo-Bold*.html
+
+# Local env
+.env
+*.docx
+*.doc
+screenshots/
+PRD.md
+addcashier.ps1
+patch.cjs

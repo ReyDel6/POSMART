@@ -17,7 +17,9 @@ class AdminShippingZoneController extends Controller
                 return [
                     'id'        => (int) $z->id,
                     'name'      => $z->name,
+                    'coverage'  => $z->coverage,
                     'fee'       => (int) $z->fee,
+                    'free_shipping_minimum' => $z->free_shipping_minimum !== null ? (int) $z->free_shipping_minimum : null,
                     'is_active' => (bool) $z->is_active,
                     'sort'      => (int) $z->sort,
                 ];
@@ -33,6 +35,7 @@ class AdminShippingZoneController extends Controller
     {
         $name = trim((string) $request->input('name', ''));
         $fee  = max(0, (int) $request->input('fee', 0));
+        $minimum = trim((string) $request->input('free_shipping_minimum', ''));
 
         if ($name === '') {
             return response()->json([
@@ -43,7 +46,9 @@ class AdminShippingZoneController extends Controller
 
         $zone = ShippingZone::create([
             'name'      => $name,
+            'coverage'  => trim((string) $request->input('coverage', '')),
             'fee'       => $fee,
+            'free_shipping_minimum' => $minimum !== '' ? max(1, (int) $minimum) : null,
             'is_active' => $request->boolean('is_active', true),
             'sort'      => max(0, (int) $request->input('sort', 0)),
         ]);
@@ -77,7 +82,9 @@ class AdminShippingZoneController extends Controller
 
         $zone->update([
             'name'      => $name,
+            'coverage'  => trim((string) $request->input('coverage', '')),
             'fee'       => max(0, (int) $request->input('fee', 0)),
+            'free_shipping_minimum' => ($request->input('free_shipping_minimum') !== null && $request->input('free_shipping_minimum') !== '') ? max(1, (int) $request->input('free_shipping_minimum')) : null,
             'is_active' => $request->boolean('is_active', $zone->is_active),
             'sort'      => max(0, (int) $request->input('sort', 0)),
         ]);

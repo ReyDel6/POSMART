@@ -87,4 +87,38 @@ class AdminUploadController extends Controller
             'image_url'  => '/product/' . $newFileName,
         ]);
     }
+
+    public function logo(Request $request)
+    {
+        if (!$request->hasFile('logo') || !$request->file('logo')->isValid()) {
+            return response()->json(['status' => 'error', 'message' => 'File logo tidak valid.'], 400);
+        }
+        $file = $request->file('logo');
+        $mime = strtolower((string) $file->getMimeType());
+        $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        if (!isset($extensions[$mime]) || $file->getSize() > 2 * 1024 * 1024) {
+            return response()->json(['status' => 'error', 'message' => 'Logo harus JPG, PNG, atau WEBP maksimal 2MB.'], 400);
+        }
+        $name = 'store_logo_' . time() . '_' . uniqid() . '.' . $extensions[$mime];
+        $dir = dirname(base_path()) . '/public/store';
+        if (!is_dir($dir)) mkdir($dir, 0755, true);
+        try {
+            $file->move($dir, $name);
+        } catch (\Throwable $e) {
+            return response()->json(['status' => 'error', 'message' => 'Gagal menyimpan logo.'], 500);
+        }
+
+        // Duplikasi ke dist/store jika folder dist ada (untuk lingkungan produksi)
+        $distDir = dirname(base_path()) . '/dist/store';
+        if (is_dir(dirname($distDir))) {
+            if (!is_dir($distDir)) {
+                mkdir($distDir, 0755, true);
+            }
+            copy($dir . '/' . $name, $distDir . '/' . $name);
+        }
+
+        $url = '/store/' . $name;
+        \App\Models\Setting::updateOrCreate(['key' => 'store_logo'], ['value' => $url]);
+        return response()->json(['status' => 'success', 'image_url' => $url]);
+    }
 }

@@ -12,7 +12,9 @@ class ShippingZone extends Model
 
     protected $fillable = [
         'name',
+        'coverage',
         'fee',
+        'free_shipping_minimum',
         'is_active',
         'sort',
     ];
@@ -21,6 +23,7 @@ class ShippingZone extends Model
     {
         return [
             'fee'       => 'integer',
+            'free_shipping_minimum' => 'integer',
             'is_active' => 'boolean',
             'sort'      => 'integer',
         ];

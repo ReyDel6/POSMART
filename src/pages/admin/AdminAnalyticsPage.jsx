@@ -13,6 +13,7 @@ import {
     CalendarClock,
     FireExtinguisher,
     Loader2,
+    X,
 } from 'lucide-react';
 import {
     BarElement,
@@ -55,6 +56,9 @@ export default function AdminAnalyticsPage() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [restockItem, setRestockItem] = useState(null);
+    const [restockQty, setRestockQty] = useState('');
+    const [restocking, setRestocking] = useState(false);
 
     const fetchData = useCallback((d) => {
         setLoading(true);
@@ -92,7 +96,7 @@ export default function AdminAnalyticsPage() {
     );
 
     const hourlyData = data && {
-        labels: data.hourly.map(h => String(h.hour).padStart(2, '0')),
+        labels: data.hourly.map(h => `${String(h.hour).padStart(2, '0')}:00`),
         datasets: [{ label: 'Omzet', data: data.hourly.map(h => h.total_sales), backgroundColor: '#059669', borderRadius: 4 }],
     };
 
@@ -146,8 +150,8 @@ export default function AdminAnalyticsPage() {
                     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
                         {kpi(<Wallet className="w-4 h-4" />, 'Omzet', formatRupiah(data.summary.revenue), delta(data.summary.revenue_pct))}
                         {kpi(<ReceiptText className="w-4 h-4" />, 'Transaksi', data.summary.orders.toLocaleString('id-ID'), delta(data.summary.orders_pct))}
-                        {kpi(<Boxes className="w-4 h-4" />, 'Qty Terjual', data.summary.items_sold.toLocaleString('id-ID'), null)}
-                        {kpi(<ShoppingBag className="w-4 h-4" />, 'Rata-rata / order', formatRupiah(data.summary.aov), null)}
+                        {kpi(<Boxes className="w-4 h-4" />, 'Qty Terjual', data.summary.items_sold.toLocaleString('id-ID'), data.summary.items_pct === null ? <span className="text-[10px] text-slate-400">Data sebelumnya tidak tersedia</span> : delta(data.summary.items_pct))}
+                        {kpi(<ShoppingBag className="w-4 h-4" />, 'Rata-rata / order', formatRupiah(data.summary.aov), data.summary.aov_pct === null ? <span className="text-[10px] text-slate-400">Data sebelumnya tidak tersedia</span> : delta(data.summary.aov_pct))}
                         {kpi(<CalendarClock className="w-4 h-4" />, 'Proyeksi bulan ini', formatRupiah(data.summary.projected), <p className="text-[10px] text-slate-400">dari {data.period.days} hari terakhir</p>)}
                     </div>
 
@@ -197,6 +201,7 @@ export default function AdminAnalyticsPage() {
                                             <th className="px-4 py-3 text-right">Sisa hari</th>
                                             <th className="px-4 py-3 text-center">Status</th>
                                             <th className="px-6 py-3 text-right">Usul Restock</th>
+                                            <th className="px-6 py-3 text-right">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-50">
@@ -231,6 +236,9 @@ export default function AdminAnalyticsPage() {
                                                             <span className="text-xs text-slate-300 font-bold">–</span>
                                                         )}
                                                     </td>
+                                                    <td className="px-6 py-3 text-right">
+                                                        {r.recommended > 0 && <button onClick={() => { setRestockItem(r); setRestockQty(String(r.recommended)); }} className="px-2.5 py-1.5 rounded-lg bg-sky-50 border border-sky-200 text-sky-700 text-[10px] font-black hover:bg-sky-600 hover:text-white">Restock Sekarang</button>}
+                                                    </td>
                                                 </tr>
                                             );
                                         })}
@@ -247,18 +255,36 @@ export default function AdminAnalyticsPage() {
                                 <PackageX className="w-4 h-4 text-orange-500" /> Barang Tidur (<span className="text-orange-600">{data.dead_stock.length}</span>)
                             </h4>
                             <p className="text-[11px] text-slate-400 mt-0.5 mb-4">Produk punya stok tapi tak ada penjualan dalam periode — pertimbangkan promo/diskon atau pelajari ulang.</p>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                                 {data.dead_stock.map((d) => (
-                                    <span key={d.id} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50/70 border border-orange-100 text-xs text-slate-600">
-                                        <span className="font-bold">{d.name}</span>
-                                        <span className="text-slate-400">· {d.category}</span>
-                                        <span className="text-orange-600 font-black">stok {d.stock}</span>
-                                    </span>
+                                    <div key={d.id} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-orange-50/70 border border-orange-100 text-xs text-slate-600">
+                                        <div className="min-w-0"><p className="font-bold truncate">{d.name}</p><p className="text-slate-400">{d.category} · <span className="text-orange-600 font-black">stok {d.stock}</span></p></div>
+                                        <a href={`/admin/promos?product_id=${d.id}`} className="shrink-0 px-2 py-1 rounded-lg bg-white border border-orange-200 text-orange-700 font-black hover:bg-orange-500 hover:text-white">Buat Promo</a>
+                                    </div>
                                 ))}
                             </div>
                         </div>
                     )}
                 </>
+            )}
+            {restockItem && (
+                <div className="fixed inset-0 z-50 bg-slate-950/60 p-4 flex items-center justify-center">
+                    <form onSubmit={async (event) => {
+                        event.preventDefault();
+                        setRestocking(true);
+                        try {
+                            await api.post('/admin/products/restock.php', { id: restockItem.id, quantity: Number(restockQty) });
+                            setRestockItem(null);
+                            fetchData(days);
+                        } catch (err) {
+                            setError(err.response?.data?.message || 'Gagal menambah stok.');
+                        } finally { setRestocking(false); }
+                    }} className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+                        <div className="flex items-start justify-between mb-5"><div><p className="text-xs font-bold text-slate-400">RESTOCK PRODUK</p><h3 className="text-xl font-black text-slate-900">{restockItem.name}</h3></div><button type="button" onClick={() => setRestockItem(null)}><X className="w-5 h-5" /></button></div>
+                        <label className="block text-sm font-bold text-slate-700">Jumlah tambahan (pcs)<input type="number" min="1" value={restockQty} onChange={(event) => setRestockQty(event.target.value)} className="mt-2 w-full px-3 py-2.5 border border-slate-300 rounded-xl" required /></label>
+                        <button disabled={restocking} className="mt-5 w-full py-2.5 rounded-xl bg-emerald-600 text-white font-black disabled:opacity-50">{restocking ? 'Menyimpan...' : 'Simpan Restock'}</button>
+                    </form>
+                </div>
             )}
         </div>
     );

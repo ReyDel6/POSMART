@@ -35,7 +35,7 @@ export default function CheckoutForm() {
             try {
                 const user = JSON.parse(savedProfile);
                 name = user.name || '';
-                phone = user.phone || '';
+                phone = String(user.phone || '').replace(/\D/g, '').replace(/^0+/, '').replace(/^62/, '');
                 address = user.address || '';
                 customerId = user.id || '';
             } catch (e) {
@@ -56,6 +56,7 @@ export default function CheckoutForm() {
 
     // Pilih metode bayar: 'online' (Midtrans/WA) atau 'cash' (tunai di kasir/walk-in)
     const [paymentMode, setPaymentMode] = useState('online');
+    const [pickupAt, setPickupAt] = useState('');
 
     // Grup metode online (M3): qris / ewallet / transfer
     const [paymentGroup, setPaymentGroup] = useState('qris');
@@ -71,7 +72,7 @@ export default function CheckoutForm() {
     const [errors, setErrors] = useState({});
 
     // Informasi toko publik (nama + WA toko) untuk notifikasi pesanan
-    const [storeSettings, setStoreSettings] = useState({});
+    const [storeSettings, setStoreSettings] = useState({ tax_mode: 'inclusive', tax_rate: '11' });
 
     // Zona pengiriman aktif (dari backend)
     const [shippingZones, setShippingZones] = useState([]);
@@ -96,7 +97,10 @@ export default function CheckoutForm() {
                     const zones = res.data.data || [];
                     setShippingZones(zones);
                     // Default: pilih zona pertama
-                    setFormData(prev => ({ ...prev, shippingZoneId: zones.length ? String(zones[0].id) : '' }));
+                    setFormData(prev => ({
+                        ...prev,
+                        shippingZoneId: zones.length ? String(zones[0].id) : ''
+                    }));
                 }
             })
             .catch(() => {});
@@ -113,7 +117,28 @@ export default function CheckoutForm() {
         return () => { active = false; };
     }, []);
 
+    useEffect(() => {
+        if (paymentMode === 'cash') {
+            setFormData(prev => ({ ...prev, shippingZoneId: '' }));
+        } else if (shippingZones.length > 0) {
+            setFormData(prev => prev.shippingZoneId ? prev : ({ ...prev, shippingZoneId: String(shippingZones[0].id) }));
+        }
+    }, [paymentMode, shippingZones]);
+
     const storeName = storeSettings.store_name || 'POSMart';
+    const pickupSlots = useMemo(() => {
+        const slots = [];
+        const now = new Date();
+        now.setMinutes(Math.ceil((now.getMinutes() + 15) / 30) * 30, 0, 0);
+        for (let i = 0; i < 8; i += 1) {
+            const slot = new Date(now.getTime() + i * 30 * 60 * 1000);
+            slots.push({
+                value: slot.toISOString(),
+                label: slot.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false })
+            });
+        }
+        return slots;
+    }, []);
 
     const promotions = usePromotions();
 
@@ -142,6 +167,7 @@ export default function CheckoutForm() {
                     total: lp.total,
                     discount: lp.discount,
                     label: lp.label,
+                    note: cartItem.note || '',
                 };
             }
 
@@ -157,6 +183,7 @@ export default function CheckoutForm() {
                 discount: lp.discount,
                 label: lp.label,
                 promo_id: deal?.id || 0,
+                note: cartItem.note || '',
             };
         });
 
@@ -167,11 +194,15 @@ export default function CheckoutForm() {
         // C. Hitung ongkir berdasarkan zona pengiriman (0 bila bayar tunai di kasir / walk-in)
         const shippingFee = paymentMode === 'cash'
             ? 0
-            : (selectedZone ? (Number(selectedZone.fee) || 0) : (formData.courier === 'express' ? 20000 : 10000));
+            : (selectedZone
+                ? (selectedZone.free_shipping_minimum && subtotal >= Number(selectedZone.free_shipping_minimum) ? 0 : (Number(selectedZone.fee) || 0))
+                : (formData.courier === 'express' ? 20000 : 10000));
         const grandTotal = subtotal + shippingFee;
-
-        return { itemsReport, subtotal, shippingFee, grandTotal, promoDiscount };
-    }, [cart, paymentMode, selectedZone, formData.courier, promotions]);
+        const taxAmount = storeSettings.tax_mode === 'exclusive'
+            ? Math.round((subtotal * (Number(storeSettings.tax_rate) || 0)) / 100)
+            : 0;
+        return { itemsReport, subtotal, shippingFee, taxAmount, grandTotal: grandTotal + taxAmount, promoDiscount };
+    }, [cart, paymentMode, selectedZone, formData.courier, promotions, storeSettings]);
 
     // Poin member: hitung potongan & total akhir setelah tukar poin.
     const redeemRate = Number(storeSettings.point_redeem_rate) || 0;
@@ -356,6 +387,7 @@ export default function CheckoutForm() {
         if (!formData.address.trim() && paymentMode !== 'cash') newErrors.address = 'Alamat pengiriman wajib diisi';
 
         if (paymentMode !== 'cash' && !formData.shippingZoneId) newErrors.shippingZoneId = 'Pilih zona pengiriman terlebih dahulu';
+        if (paymentMode === 'cash' && !pickupAt) newErrors.pickupAt = 'Pilih waktu pengambilan';
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0; // Return true jika tidak ada eror
@@ -383,7 +415,7 @@ export default function CheckoutForm() {
         // Ambil token dari localStorage sebelum kirim
         const tokenJWT = localStorage.getItem('token');
 
-        const whatsappFormattedPhone = `62${formData.phone}`;
+        const whatsappFormattedPhone = `62${formData.phone.replace(/^0+/, '').replace(/^62/, '')}`;
 
         const effectiveCourier = paymentMode === 'cash'
             ? 'walkin'
@@ -404,6 +436,7 @@ export default function CheckoutForm() {
             cart: formattedCart,
             access_token: tokenJWT,
             customer_id: formData.customerId
+            ,pickup_at: paymentMode === 'cash' ? pickupAt : null
         };
 
         try {
@@ -452,35 +485,11 @@ export default function CheckoutForm() {
                     }
 
                     // =============================================================
-                    // M3: QRIS -> charge Core API, QR tampil di aplikasi + polling.
+                    // Pembayaran Online via Midtrans Snap
                     // =============================================================
-                    if (paymentGroup === 'qris') {
-                        try {
-                            const chargeRes = await api.post('/cart/midtrans_charge.php', { order_id: orderId, group: 'qris' });
-                            if (chargeRes.data && chargeRes.data.status === 'success') {
-                                setQrisData({
-                                    order_id: orderId,
-                                    qr_string: chargeRes.data.qr_string,
-                                    total_price: chargeRes.data.total_price,
-                                    expiry: chargeRes.data.expiry_minutes,
-                                });
-                                setLoading(false);
-                                setQrisBusy(false);
-                                if (setIsCartOpen) setIsCartOpen(false);
-                                startQrisPolling(orderId);
-                                return;
-                            }
-                            // disabled / use_snap / error -> lanjut ke Snap (grup qris).
-                            console.warn('[QRIS]', chargeRes.data?.message || 'QRIS tidak tersedia, pakai Snap.');
-                        } catch (chargeErr) {
-                            console.error('[QRIS Charge Error]', chargeErr);
-                        }
-                    }
-
                     try {
                         const snapRes = await api.post('/cart/midtrans_snap.php', { order_id: orderId, group: paymentGroup });
 
-                        // Pembayaran online nonaktif (key belum diisi) -> alur lama.
                         if (!snapRes.data || snapRes.data.status !== 'success') {
                             console.warn('[Midtrans]', snapRes.data?.message || 'Midtrans response not successful');
                             proceedLegacyFor(orderId);
@@ -488,53 +497,51 @@ export default function CheckoutForm() {
                             return;
                         }
 
-                        // Muat skrip snap.js dengan client key dari backend.
-                        const snapScript = new Promise((resolve, reject) => {
-                            if (window.snap) { resolve(); return; }
-                            const script = document.createElement('script');
-                            script.src = snapRes.data.snap_js_url;
-                            script.setAttribute('data-client-key', snapRes.data.client_key);
-                            script.onload = () => resolve();
-                            script.onerror = () => reject(new Error('Gagal memuat pembayaran Snap'));
-                            document.body.appendChild(script);
-                        });
-
-                        await snapScript;
-
                         // Tutup modal keranjang sebelum popup Snap muncul
                         if (setIsCartOpen) setIsCartOpen(false);
 
-                        window.snap.pay(snapRes.data.snap_token, {
-                            onSuccess: async (result) => {
-                                try {
-                                    await api.post('/cart/midtrans_check_status.php', { order_id: orderId });
-                                } catch { /* tetap lanjut, webhook akan sinkron */ }
-                                proceedLegacyFor(orderId);
-                                finishCheckoutFor(orderId);
-                            },
-                            onPending: async () => {
-                                // Tunggu konfirmasi pembayaran (maks ±30 detik).
-                                let paid = false;
-                                for (let i = 0; i < 8; i++) {
-                                    await new Promise(r => setTimeout(r, 4000));
+                        // Muat skrip snap jika belum ada di window
+                        if (!window.snap && snapRes.data.snap_js_url) {
+                            await new Promise((resolve) => {
+                                const script = document.createElement('script');
+                                script.src = snapRes.data.snap_js_url;
+                                script.setAttribute('data-client-key', snapRes.data.client_key);
+                                script.onload = () => resolve();
+                                script.onerror = () => resolve();
+                                document.body.appendChild(script);
+                            });
+                        }
+
+                        if (window.snap && window.snap.pay) {
+                            window.snap.pay(snapRes.data.snap_token, {
+                                onSuccess: async () => {
                                     try {
-                                        const check = await api.post('/cart/midtrans_check_status.php', { order_id: orderId });
-                                        if (check.data && check.data.paid) { paid = true; break; }
-                                    } catch { /* lanjut polling */ }
-                                }
-                                if (paid) proceedLegacyFor(orderId);
-                                finishCheckoutFor(orderId);
-                            },
-                            onError: (err) => {
-                                console.error('[Midtrans Payment Error]', err);
-                                finishCheckoutFor(orderId);
-                            },
-                            onClose: () => {
-                                finishCheckoutFor(orderId);
-                            },
-                        });
+                                        await api.post('/cart/midtrans_check_status.php', { order_id: orderId });
+                                    } catch { /* webhook akan sinkron */ }
+                                    proceedLegacyFor(orderId);
+                                    finishCheckoutFor(orderId);
+                                },
+                                onPending: async () => {
+                                    try {
+                                        await api.post('/cart/midtrans_check_status.php', { order_id: orderId });
+                                    } catch { /* lanjut */ }
+                                    finishCheckoutFor(orderId);
+                                },
+                                onError: (err) => {
+                                    console.error('[Midtrans Payment Error]', err);
+                                    finishCheckoutFor(orderId);
+                                },
+                                onClose: () => {
+                                    finishCheckoutFor(orderId);
+                                },
+                            });
+                        } else if (snapRes.data.redirect_url) {
+                            // Fallback jika popup dicegah oleh browser
+                            window.location.href = snapRes.data.redirect_url;
+                        } else {
+                            finishCheckoutFor(orderId);
+                        }
                     } catch (snapErr) {
-                        // Snap gagal dimuat/dijalankan -> alur lama agar pesanan tetap tertangani.
                         console.error('[Midtrans Snap Load/Run Error]', snapErr);
                         proceedLegacyFor(orderId);
                         finishCheckoutFor(orderId);
@@ -623,8 +630,8 @@ export default function CheckoutForm() {
                             : 'border-ink/30 bg-white text-slate-500 hover:border-ink'
                         }`}
                     >
-                        Tunai di Kasir
-                        <span className="block font-medium text-[10px] text-slate-400 mt-0.5">Walk-in / ambil di toko</span>
+                        Bayar di Kasir
+                        <span className="block font-medium text-[10px] text-slate-400 mt-0.5">Tunai, QRIS, atau Kartu</span>
                     </button>
                 </div>
             </div>
@@ -678,19 +685,15 @@ export default function CheckoutForm() {
             <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide">Nomor WhatsApp</label>
                 <div className="relative">
-                    <Phone className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none select-none">
-                        {/* <span className="text-sm font-semibold text-slate-500 border-r border-slate-200 pr-2">
-                            +62
-                        </span> */}
-                    </div>
-                    <input
+                <Phone className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                <span className="absolute left-9 top-2.5 border-r border-ink/30 pr-2 text-sm font-black text-slate-600">+62</span>
+                <input
                         type="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleInputChange}
                         placeholder="8123456789"
-                        className={`w-full text-sm pl-10 pr-3 py-2 border rounded-lg focus:outline-hidden transition-colors ${errors.phone ? 'border-red-500 focus:border-red-500 bg-red-50/30' : 'border-slate-200 focus:border-red-500'
+                        className={`w-full text-sm pl-20 pr-3 py-2 border-2 border-ink rounded-lg focus:outline-hidden focus:shadow-[3px_3px_0_#161616] transition-all ${errors.phone ? 'border-red-500 bg-red-50/30' : 'focus:border-ink'
                             }`}
                     />
                 </div>
@@ -708,8 +711,8 @@ export default function CheckoutForm() {
                         value={formData.address}
                         onChange={handleInputChange}
                         rows="3"
-                        placeholder="Nama jalan, nomor rumah, RT/RW, Kecamatan..."
-                        className={`w-full text-sm pl-10 pr-3 py-2 border rounded-lg focus:outline-hidden transition-colors resize-none ${errors.address ? 'border-red-500 focus:border-red-500 bg-red-50/30' : 'border-slate-200 focus:border-red-500'
+                        placeholder="Nama jalan, nomor rumah, RT/RW, Kecamatan. Patokan: pagar hitam depan masjid..."
+                        className={`w-full text-sm pl-10 pr-3 py-2 border-2 border-ink rounded-lg focus:outline-hidden focus:shadow-[3px_3px_0_#161616] transition-all resize-none ${errors.address ? 'border-red-500 bg-red-50/30' : ''
                             }`}
                     />
                 </div>
@@ -747,10 +750,61 @@ export default function CheckoutForm() {
             </div>
             )}
 
+            {/* PICKUP TIME & INFO WALK-IN */}
             {paymentMode === 'cash' && (
-                <div className="flex items-start gap-2 p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-xs text-emerald-700">
-                    <ShoppingBag className="w-4 h-4 shrink-0 mt-0.5" />
-                    <p className="leading-relaxed">Pesanan walk-in: bayar tunai langsung di kasir toko, bebas ongkir. Cukup isi nama & nomor WhatsApp agar transaksi tercatat baik.</p>
+                <div className="space-y-3">
+                    {/* 1. Dropdown pilih jam ambil */}
+                    <div className="space-y-1">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide">
+                            🕐 Waktu Pengambilan
+                        </label>
+                        <select
+                            value={pickupAt}
+                            onChange={(e) => setPickupAt(e.target.value)}
+                            className={`w-full rounded-xl border-2 bg-white px-3 py-2.5 text-sm font-bold focus:outline-hidden focus:shadow-[3px_3px_0_#161616] transition-all cursor-pointer ${
+                                errors.pickupAt ? 'border-red-500 bg-red-50/30' : 'border-ink'
+                            }`}
+                        >
+                            <option value="">— Pilih jam pengambilan —</option>
+                            {pickupSlots.map((slot) => (
+                                <option key={slot.value} value={slot.value}>
+                                    Ambil jam {slot.label}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.pickupAt && (
+                            <p className="text-[11px] text-red-600 font-medium">⚠️ {errors.pickupAt}</p>
+                        )}
+                        <p className="text-[11px] text-slate-400">
+                            Slot tersedia mulai 15 menit dari sekarang, setiap 30 menit.
+                        </p>
+                    </div>
+
+                    {/* 2. Info lokasi + kebijakan batas waktu */}
+                    <div className="rounded-xl border-2 border-emerald-400 bg-emerald-50 shadow-[3px_3px_0_#34d399] overflow-hidden">
+                        <div className="bg-emerald-400 px-3 py-1.5 flex items-center gap-1.5">
+                            <ShoppingBag className="w-3.5 h-3.5 text-white" />
+                            <span className="text-[11px] font-black text-white uppercase tracking-wide">Info Pengambilan</span>
+                        </div>
+                        <div className="px-3 py-2.5 space-y-1.5 text-xs text-emerald-800">
+                            <p className="font-black text-sm">
+                                📍 Ambil di: {storeName}
+                            </p>
+                            {storeSettings.store_address && (
+                                <p className="text-emerald-700">{storeSettings.store_address}</p>
+                            )}
+                            <div className="border-t border-emerald-200 pt-1.5 space-y-1">
+                                <p className="flex items-start gap-1">
+                                    <span className="text-emerald-500 mt-0.5">✓</span>
+                                    Pesanan siap diambil dalam <strong>&nbsp;±15 menit</strong> setelah dibuat.
+                                </p>
+                                <p className="flex items-start gap-1 text-amber-700 font-semibold">
+                                    <span className="mt-0.5">⏳</span>
+                                    Pesanan <strong>&nbsp;otomatis dibatalkan&nbsp;</strong> jika tidak diambil & dibayar dalam <strong>&nbsp;2 jam</strong>.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -813,9 +867,20 @@ export default function CheckoutForm() {
                     </div>
                 )}
                 <div className="flex justify-between text-xs text-slate-500">
-                    <span>{paymentMode === 'cash' ? 'Tunai di Kasir (Walk-in):' : `Ongkos Kirim (${selectedZone ? selectedZone.name : 'Reguler'}):`}</span>
+                    <span>{paymentMode === 'cash' ? 'Walk-in (Ambil Sendiri):' : `Ongkos Kirim (${selectedZone ? selectedZone.name : 'Reguler'}):`}</span>
                     <span className="font-mono font-medium">Rp {cartDetails.shippingFee.toLocaleString('id-ID')}</span>
                 </div>
+                {paymentMode !== 'cash' && selectedZone?.coverage && (
+                  <p className="text-xs text-slate-500 mt-1">Cakupan: {selectedZone.coverage}</p>
+                )}
+                {paymentMode !== 'cash' && selectedZone?.free_shipping_minimum && (
+                  <p className="text-xs text-emerald-600 mt-1">
+                    Gratis ongkir untuk belanja minimal Rp {Number(selectedZone.free_shipping_minimum).toLocaleString('id-ID')}
+                  </p>
+                )}
+                {cartDetails.taxAmount > 0 && (
+                  <div className="flex justify-between text-sm mt-1"><span>Pajak ({storeSettings.tax_rate}%)</span><span className="font-mono font-medium">Rp {cartDetails.taxAmount.toLocaleString('id-ID')}</span></div>
+                )}
                 {pointsDiscount > 0 && (
                     <div className="flex justify-between text-xs font-semibold text-amber-600">
                         <span>Potongan Poin ({pointsUsed.toLocaleString('id-ID')} poin):</span>
@@ -834,7 +899,7 @@ export default function CheckoutForm() {
                 disabled={loading || cart.length === 0}
                 className="w-full bg-ink hover:bg-slate-900 text-cream font-black py-3 px-4 rounded-xl border-2 border-ink shadow-[4px_4px_0_#161616] transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none flex justify-center items-center"
             >
-                {loading ? 'Mengunci Stok & Memproses...' : `Bayar Sekarang (Rp ${finalTotal.toLocaleString('id-ID')})`}
+                {loading ? 'Mengunci Stok & Memproses...' : paymentMode === 'cash' ? `Buat Pesanan & Ambil di Toko (Rp ${finalTotal.toLocaleString('id-ID')})` : `Bayar Sekarang (Rp ${finalTotal.toLocaleString('id-ID')})`}
             </button>
         </form>
     );

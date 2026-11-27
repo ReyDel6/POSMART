@@ -1,6 +1,6 @@
 // File: src/pages/admin/AdminUsersPage.jsx
 import { useState, useEffect, useCallback } from 'react';
-import { Users, UserPlus, ShieldCheck, UserCheck, Mail, Pencil, Trash2, X, RefreshCcw } from 'lucide-react';
+import { Users, UserPlus, ShieldCheck, UserCheck, Mail, Pencil, Trash2, X, RefreshCcw, Search, UserRoundCheck, Ban } from 'lucide-react';
 import api from '../../utils/api';
 import useDialog from '../../hooks/useDialog';
 
@@ -12,8 +12,9 @@ const ROLE_STYLE = {
     cashier: 'bg-emerald-100 text-emerald-700',
     user: 'bg-slate-100 text-slate-600',
 };
+const formatRupiah = (value) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value) || 0);
 
-export default function AdminUsersPage() {
+export default function AdminUsersPage({ customerMode = false }) {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -22,12 +23,17 @@ export default function AdminUsersPage() {
     const [form, setForm] = useState(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
+    const [search, setSearch] = useState('');
+    const [roleFilter, setRoleFilter] = useState(customerMode ? 'user' : 'staff');
+    const [statusFilter, setStatusFilter] = useState('all');
+    let currentUserId = null;
+    try { currentUserId = JSON.parse(localStorage.getItem('user_profile') || '{}').id; } catch { currentUserId = null; }
 
     useDialog(modalOpen, () => setModalOpen(false));
 
     const fetchUsers = useCallback(async () => {
         try {
-            const response = await api.get('/admin/users.php');
+            const response = await api.get('/admin/users.php', { params: { search, role: roleFilter === 'staff' ? '' : roleFilter, status: customerMode ? statusFilter : '' } });
             if (response.data && response.data.status === 'success') {
                 setUsers(response.data.data);
             } else {
@@ -39,11 +45,11 @@ export default function AdminUsersPage() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [search, roleFilter, statusFilter, customerMode]);
 
     useEffect(() => {
         let ignore = false;
-        api.get('/admin/users.php')
+        api.get('/admin/users.php', { params: { search, role: roleFilter === 'staff' ? '' : roleFilter, status: customerMode ? statusFilter : '' } })
             .then(response => {
                 if (ignore) return;
                 if (response.data && response.data.status === 'success') {
@@ -59,7 +65,7 @@ export default function AdminUsersPage() {
             })
             .finally(() => { if (!ignore) setLoading(false); });
         return () => { ignore = true; };
-    }, []);
+    }, [search, roleFilter, statusFilter, customerMode]);
 
     const openAdd = () => {
         setEditing(null);
@@ -116,17 +122,34 @@ export default function AdminUsersPage() {
         }
     };
 
+    const handleToggleActive = async (u) => {
+        try {
+            const response = await api.post('/admin/users/toggle-active.php', { id: u.id });
+            if (response.data?.status === 'success') setUsers(prev => prev.map(item => item.id === u.id ? { ...item, is_active: response.data.is_active } : item));
+            else setError(response.data?.message || 'Gagal mengubah status akun.');
+        } catch (err) {
+            setError(err.response?.data?.message || 'Gagal mengubah status akun.');
+        }
+    };
+
+    const formatPhone = (value) => {
+        const digits = String(value || '').replace(/\D/g, '');
+        if (!digits) return '-';
+        const normalized = digits.startsWith('62') ? `0${digits.slice(2)}` : digits;
+        return normalized.replace(/(\d{4})(?=\d)/, '$1-').replace(/(\d{4})(?=\d)/, '$1-').replace(/(\d{4})(?=\d)/, '$1-');
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <div>
                     <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <Users className="w-6 h-6 text-emerald-600" /> Kelola Pengguna & Kasir
+                        {customerMode ? <UserRoundCheck className="w-6 h-6 text-emerald-600" /> : <Users className="w-6 h-6 text-emerald-600" />} {customerMode ? 'Data Pelanggan' : 'Kelola Staf & Kasir'}
                     </h2>
-                    <p className="text-xs text-slate-500 mt-1">Daftar staf, kasir, dan administrator akses POSMart</p>
+                    <p className="text-xs text-slate-500 mt-1">{customerMode ? 'Data pelanggan, status akun, dan kontak pelanggan POSMart' : 'Daftar staf, kasir, dan administrator akses POSMart'}</p>
                 </div>
                 <button onClick={openAdd} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-colors shadow-sm">
-                    <UserPlus className="w-4 h-4" /> Tambah Staf Baru
+                    <UserPlus className="w-4 h-4" /> {customerMode ? 'Tambah Pelanggan' : 'Tambah Staf Baru'}
                 </button>
             </div>
 
@@ -145,57 +168,64 @@ export default function AdminUsersPage() {
                 </div>
             ) : (
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6">
+                    <div className="flex flex-col sm:flex-row gap-3 mb-5">
+                        <label className="relative flex-1"><Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" /><input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama atau email..." className="w-full pl-9 pr-3 py-2.5 border border-slate-300 rounded-xl text-sm" /></label>
+                        {customerMode && <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="px-3 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold"><option value="all">Semua Status</option><option value="active">Aktif</option><option value="inactive">Nonaktif</option></select>}
+                        {!customerMode && <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)} className="px-3 py-2.5 border border-slate-300 rounded-xl text-sm font-semibold"><option value="staff">Semua staf</option><option value="admin">Admin</option><option value="cashier">Kasir</option><option value="owner">Pemilik</option></select>}
+                    </div>
                     <table className="w-full text-left border-collapse">
                         <thead className="bg-slate-50 text-slate-500 text-xs font-bold uppercase border-b border-slate-200">
                             <tr>
-                                <th className="p-4">Nama Staf</th>
-                                <th className="p-4">Email</th>
+                                <th className="p-4">{customerMode ? 'Nama / Kontak Pelanggan' : 'Nama / Kontak'}</th>
                                 <th className="p-4">Telepon</th>
-                                <th className="p-4">Hak Akses (Role)</th>
+                                {customerMode ? <th className="p-4">Nilai Pelanggan</th> : <th className="p-4">Hak Akses (Role)</th>}
                                 <th className="p-4 text-right">Aksi</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
                             {users.length === 0 ? (
                                 <tr>
-                                    <td colSpan="5" className="p-8 text-center text-slate-400">Belum ada staf terdaftar.</td>
+                                    <td colSpan="5" className="p-8 text-center text-slate-400">{customerMode ? 'Belum ada pelanggan terdaftar.' : 'Belum ada staf terdaftar.'}</td>
                                 </tr>
                             ) : (
                                 users.map(u => (
                                     <tr key={u.id} className="hover:bg-slate-50/80 transition-colors">
-                                        <td className="p-4 font-bold text-slate-900 flex items-center gap-3">
+                                        <td className="p-4 font-bold text-slate-900">
+                                          <div className="flex items-center gap-3">
                                             <div className={`w-9 h-9 rounded-full text-white font-bold flex items-center justify-center text-xs ${u.role === 'admin' ? 'bg-blue-500' : u.role === 'owner' ? 'bg-violet-500' : 'bg-slate-400'}`}>
                                                 {(u.name || '?').charAt(0).toUpperCase()}
                                             </div>
-                                            {u.name}
+                                            <div><p>{u.name}</p><p className="text-xs text-slate-500 font-normal flex items-center gap-1"><Mail className="w-3 h-3" />{u.email}</p></div>
+                                          </div>
                                         </td>
-                                        <td className="p-4 text-slate-600 flex items-center gap-1.5 pt-6">
-                                            <Mail className="w-3.5 h-3.5 text-slate-400" /> {u.email}
-                                        </td>
-                                        <td className="p-4 font-mono text-xs text-slate-500">{u.phone || '-'}</td>
+                                        <td className="p-4 font-mono text-xs text-slate-500">{formatPhone(u.phone)}</td>
                                         <td className="p-4">
+                                          {customerMode ? <div className="space-y-1"><p className="font-bold text-slate-700">{formatRupiah(u.total_spent)} <span className="text-[10px] font-normal text-slate-400">total belanja</span></p><p className="text-xs text-amber-600 font-bold">{Number(u.points || 0).toLocaleString('id-ID')} Poin tersedia</p></div> : <>
                                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${ROLE_STYLE[u.role] || ROLE_STYLE.user}`}>
                                                 {u.role === 'admin' ? <ShieldCheck className="w-3.5 h-3.5" /> : u.role === 'owner' ? <ShieldCheck className="w-3.5 h-3.5" /> : <UserCheck className="w-3.5 h-3.5" />}
                                                 {(ROLE_LABELS[u.role] || u.role).toUpperCase()}
                                             </span>
+                                            <span className={`ml-2 px-2 py-1 rounded-full text-[10px] font-bold ${u.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{u.is_active ? 'Aktif' : 'Nonaktif'}</span>
+                                          </>}
                                         </td>
                                         <td className="p-4 text-right">
                                             <div className="inline-flex items-center gap-2">
                                                 <button
                                                     onClick={() => openEdit(u)}
                                                     title="Ubah data staf"
-                                                    className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
+                                                    className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
                                                 >
                                                     <Pencil className="w-4 h-4" />
                                                 </button>
-                                                <button
+                                                {u.role !== 'owner' && u.id !== currentUserId && <button onClick={() => handleToggleActive(u)} title={u.is_active ? 'Nonaktifkan akun' : 'Aktifkan akun'} aria-label={u.is_active ? 'Nonaktifkan akun' : 'Aktifkan akun'} className={`p-2 rounded-lg border ${u.is_active ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}><Ban className="w-4 h-4" /></button>}
+                                                {!customerMode && <button
                                                     onClick={() => handleDelete(u)}
                                                     disabled={deletingId === u.id || u.role === 'owner'}
                                                     title={u.role === 'owner' ? 'Akun pemilik tidak dapat dihapus' : 'Hapus staf'}
                                                     className="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
-                                                </button>
+                                                </button>}
                                             </div>
                                         </td>
                                     </tr>
@@ -235,10 +265,11 @@ export default function AdminUsersPage() {
                                 <div>
                                     <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Hak Akses *</label>
                                     <select name="role" value={form.role} onChange={handleChange} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer">
-                                        <option value="owner">Pemilik Toko (Owner)</option>
-                                        <option value="admin">Admin</option>
-                                        <option value="cashier">Kasir</option>
-                                        <option value="user">Pelanggan</option>
+                                        {customerMode ? <option value="user">Pelanggan</option> : <>
+                                            <option value="owner">Pemilik Toko (Owner)</option>
+                                            <option value="admin">Admin</option>
+                                            <option value="cashier">Kasir</option>
+                                        </>}
                                     </select>
                                 </div>
                             </div>

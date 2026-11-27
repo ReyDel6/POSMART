@@ -22,6 +22,10 @@ class AdminAnalyticsController extends Controller
 
         $current = $this->paidTotals($since);
         $previous = $this->paidTotals($prevSince, $prevEnd);
+        $monthStart = now()->startOfMonth();
+        $monthRevenue = (float) Order::where('payment_status', 'paid')->where('created_at', '>=', $monthStart)->sum('total_price');
+        $monthDays = max(1, now()->day);
+        $daysInMonth = now()->daysInMonth;
 
         $hourly   = $this->hourlySales($since);
         $weekday  = $this->weekdaySales($since);
@@ -31,7 +35,7 @@ class AdminAnalyticsController extends Controller
 
         $pct = function ($now, $prev) {
             if ($prev <= 0) {
-                return $now > 0 ? 100.0 : 0.0;
+                return $now > 0 ? 100.0 : null;
             }
             return round((($now - $prev) / $prev) * 100, 1);
         };
@@ -48,10 +52,15 @@ class AdminAnalyticsController extends Controller
                     'revenue'      => round($current['revenue']),
                     'orders'       => $current['orders'],
                     'items_sold'   => $current['items'],
+                    'items_pct'    => $pct($current['items'], $previous['items']),
                     'aov'          => $current['orders'] > 0 ? round($current['revenue'] / $current['orders']) : 0,
+                    'aov_pct'      => $pct(
+                        $current['orders'] > 0 ? $current['revenue'] / $current['orders'] : 0,
+                        $previous['orders'] > 0 ? $previous['revenue'] / $previous['orders'] : 0
+                    ),
                     'revenue_pct'  => $pct($current['revenue'], $previous['revenue']),
                     'orders_pct'   => $pct($current['orders'], $previous['orders']),
-                    'projected'    => round($current['revenue'] / $days * 30),
+                    'projected'    => round($monthRevenue / $monthDays * $daysInMonth),
                 ],
                 'hourly'       => $hourly,
                 'weekday'      => $weekday,
@@ -208,11 +217,12 @@ class AdminAnalyticsController extends Controller
     {
         $rows = DB::table('order_items as oi')
             ->join('orders as o', 'oi.order_id', '=', 'o.id')
-            ->join('products as p', 'oi.product_id', '=', 'p.id')
+            ->join('products as p', 'oi.product_id', '=', 'p.product_id')
             ->where('o.payment_status', 'paid')
             ->where('o.created_at', '>=', $since)
             ->select(
-                'p.id',
+                'p.product_id',
+                'p.product_id as id',
                 'p.name',
                 'p.image',
                 'p.category',
@@ -221,7 +231,7 @@ class AdminAnalyticsController extends Controller
                 DB::raw('IFNULL(SUM(oi.qty), 0) as qty_sold'),
                 DB::raw('IFNULL(SUM(oi.total), 0) as revenue')
             )
-            ->groupBy('p.id', 'p.name', 'p.image', 'p.category', 'p.price', 'p.stock')
+            ->groupBy('p.product_id', 'p.name', 'p.image', 'p.category', 'p.price', 'p.stock')
             ->get();
 
         $items = $rows->map(function ($r) use ($days) {
@@ -288,17 +298,18 @@ class AdminAnalyticsController extends Controller
             ->all();
 
         return Product::where('stock', '>', 0)
-            ->whereNotIn('id', $productIds)
+            ->whereNotIn('product_id', $productIds)
             ->orderBy('price', 'desc')
             ->limit(15)
-            ->get(['id', 'barcode', 'name', 'category', 'price', 'stock'])
+            ->get(['product_id', 'barcode', 'name', 'category', 'price', 'stock'])
             ->map(fn ($p) => [
-                'id'       => (int) $p->id,
-                'barcode'  => $p->barcode,
-                'name'     => $p->name,
-                'category' => $p->category,
-                'price'    => (int) $p->price,
-                'stock'    => (int) $p->stock,
+                'id'         => (int) $p->product_id,
+                'product_id' => (int) $p->product_id,
+                'barcode'    => $p->barcode,
+                'name'       => $p->name,
+                'category'   => $p->category,
+                'price'      => (int) $p->price,
+                'stock'      => (int) $p->stock,
             ])
             ->values()
             ->all();

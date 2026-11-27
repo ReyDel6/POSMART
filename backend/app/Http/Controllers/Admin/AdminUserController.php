@@ -10,11 +10,25 @@ class AdminUserController extends Controller
 {
     private const ROLES = ['user', 'cashier', 'admin', 'owner'];
 
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::select('id', 'name', 'email', 'phone', 'address', 'role', 'created_at')
+        $role = $request->input('role');
+        $users = User::select('user_id', 'name', 'email', 'phone', 'address', 'role', 'is_active', 'points', 'created_at')
+            ->selectSub(function ($q) {
+                $q->from('orders')->selectRaw('COALESCE(SUM(total_price), 0)')
+                    ->whereColumn('orders.user_id', 'users.user_id')
+                    ->where('orders.payment_status', 'paid');
+            }, 'total_spent')
+            ->when($role === 'staff', fn ($q) => $q->whereIn('role', ['owner', 'admin', 'cashier']))
+            ->when(in_array($role, self::ROLES, true), fn ($q) => $q->where('role', $role))
+            ->when($request->input('status') === 'active', fn ($q) => $q->where('is_active', true))
+            ->when($request->input('status') === 'inactive', fn ($q) => $q->where('is_active', false))
+            ->when($request->filled('search'), function ($q) use ($request) {
+                $term = trim((string) $request->input('search'));
+                $q->where(fn ($inner) => $inner->where('name', 'like', '%' . $term . '%')->orWhere('email', 'like', '%' . $term . '%'));
+            })
             ->orderByRaw("FIELD(role, 'owner', 'admin', 'cashier', 'user')")
-            ->orderBy('id', 'asc')
+            ->orderBy('user_id', 'asc')
             ->get();
 
         return response()->json([
@@ -73,6 +87,7 @@ class AdminUserController extends Controller
             'phone'   => trim($data['phone'] ?? ''),
             'address' => trim($data['address'] ?? ''),
             'role'    => $role,
+            'is_active' => true,
         ]);
 
         return response()->json([
@@ -85,7 +100,7 @@ class AdminUserController extends Controller
     public function update(Request $request)
     {
         $data = $request->all();
-        $id   = (int) ($data['id'] ?? 0);
+        $id   = (int) ($data['user_id'] ?? $data['id'] ?? 0);
 
         $user = User::find($id);
         if (!$user) {
@@ -126,6 +141,9 @@ class AdminUserController extends Controller
             'address' => trim($data['address'] ?? $user->address ?? ''),
             'role'    => $role,
         ];
+        if ($request->has('is_active')) {
+            $payload['is_active'] = $request->boolean('is_active');
+        }
 
         if (isset($data['email']) && strtolower(trim($data['email'])) !== $user->email) {
             $email = strtolower(trim($data['email']));
@@ -135,7 +153,7 @@ class AdminUserController extends Controller
                     'message' => 'Format e-Mail tidak valid.',
                 ], 422);
             }
-            if (User::where('email', $email)->where('id', '!=', $id)->exists()) {
+            if (User::where('email', $email)->where('user_id', '!=', $id)->exists()) {
                 return response()->json([
                     'status'  => 'error',
                     'message' => 'e-Mail sudah terdaftar.',
@@ -181,6 +199,10 @@ class AdminUserController extends Controller
             ], 403);
         }
 
+        if ($user->role === 'owner') {
+            return response()->json(['status' => 'error', 'message' => 'Akun pemilik tidak dapat dihapus.'], 403);
+        }
+
         if ($user->role === 'admin' && User::where('role', 'admin')->count() <= 1) {
             return response()->json([
                 'status'  => 'error',
@@ -208,5 +230,16 @@ class AdminUserController extends Controller
             'status'  => 'success',
             'message' => 'Staf berhasil dihapus.',
         ]);
+    }
+
+    public function toggleActive(Request $request)
+    {
+        $user = User::find((int) $request->input('id'));
+        if (!$user) return response()->json(['status' => 'error', 'message' => 'Pengguna tidak ditemukan.'], 404);
+        if ($user->id === $request->user()->id || $user->role === 'owner') {
+            return response()->json(['status' => 'error', 'message' => 'Akun sendiri dan pemilik tidak dapat dinonaktifkan dari sini.'], 403);
+        }
+        $user->update(['is_active' => !$user->is_active]);
+        return response()->json(['status' => 'success', 'is_active' => (bool) $user->is_active]);
     }
 }

@@ -18,7 +18,7 @@ class PromotionController extends Controller
 
         $deals = $svc->activeDeals()->map(function ($d) use ($svc) {
             /** @var \App\Models\Promotion $d */
-            $product = \App\Models\Product::where('id', $d->product_id)->first();
+            $product = \App\Models\Product::where('product_id', $d->product_id)->first();
 
             return [
                 'id'           => (int) $d->id,

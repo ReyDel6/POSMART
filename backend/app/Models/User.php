@@ -13,6 +13,15 @@ class User extends Authenticatable
 
     const UPDATED_AT = null;
 
+    protected $primaryKey = 'user_id';
+
+    protected $appends = ['id'];
+
+    public function getIdAttribute()
+    {
+        return $this->attributes['user_id'] ?? null;
+    }
+
     protected $fillable = [
         'google_id',
         'name',
@@ -21,6 +30,7 @@ class User extends Authenticatable
         'phone',
         'address',
         'role',
+        'is_active',
         'points',
     ];
 
@@ -33,16 +43,17 @@ class User extends Authenticatable
         return [
             'password' => 'hashed',
             'points'   => 'integer',
+            'is_active' => 'boolean',
         ];
     }
 
     public function orders()
     {
-        return $this->hasMany(Order::class, 'user_id');
+        return $this->hasMany(Order::class, 'user_id', 'user_id');
     }
 
     public function points()
     {
-        return $this->hasMany(UserPoint::class, 'user_id');
+        return $this->hasMany(UserPoint::class, 'user_id', 'user_id');
     }
 }

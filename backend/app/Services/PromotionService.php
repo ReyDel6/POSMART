@@ -31,6 +31,9 @@ class PromotionService
             })
             ->where(function ($q) {
                 $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('usage_limit')->orWhereColumn('used_count', '<', 'usage_limit');
             });
     }
 
@@ -84,15 +87,9 @@ class PromotionService
 
     public function resolveBundle(int $bundleId): ?Promotion
     {
-        return Promotion::where('id', $bundleId)
+        return $this->activeQuery()
+            ->where('id', $bundleId)
             ->where('type', 'bundle')
-            ->where('active', true)
-            ->where(function ($q) {
-                $q->whereNull('starts_at')->orWhere('starts_at', '<=', now());
-            })
-            ->where(function ($q) {
-                $q->whereNull('ends_at')->orWhere('ends_at', '>=', now());
-            })
             ->first();
     }
 

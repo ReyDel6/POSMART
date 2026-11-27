@@ -1,9 +1,10 @@
 //File: components/CartModal.jsx
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useCartContext } from "../context/CartContext";
 import { usePromotions } from "../hooks/usePromotions";
 import { linePrice, bundleLinePrice } from "../utils/pricing";
-import { ArrowLeft, ShoppingBag, X } from "lucide-react";
+import { ArrowLeft, ShoppingBag, X, Trash2, Pencil, Truck } from "lucide-react";
+import api from "../utils/api";
 import CheckoutForm from "./CheckoutForm";
 import useDialog from "../hooks/useDialog";
 
@@ -12,10 +13,23 @@ export default function CartModal() {
         isCartOpen,
         setIsCartOpen,
         handleRemoveItem,
-        handleUpdateQty } = useCartContext();
+        handleUpdateQty,
+        handleUpdateNote } = useCartContext();
 
     const { byProduct: dealMap, byBundleId: bundleMap } = usePromotions();
     const [isCheckout, setIsCheckout] = useState(false);
+    const [freeShippingMinimum, setFreeShippingMinimum] = useState(0);
+    const [editingNote, setEditingNote] = useState(null);
+
+    useEffect(() => {
+        api.get('/shipping_zones.php')
+            .then(({ data }) => {
+                const zones = Array.isArray(data?.data) ? data.data : [];
+                const minimums = zones.map((zone) => Number(zone.free_shipping_minimum) || 0).filter(Boolean);
+                setFreeShippingMinimum(minimums.length ? Math.min(...minimums) : 0);
+            })
+            .catch(() => setFreeShippingMinimum(0));
+    }, []);
 
     const cartDetail = useMemo(() => {
         const items = cart.map(
@@ -45,6 +59,9 @@ export default function CartModal() {
 
         return {items, grandTotal, totalDiscount};
     }, [cart, dealMap, bundleMap]);
+
+    const remainingForFreeShipping = Math.max(0, freeShippingMinimum - cartDetail.grandTotal);
+    const shippingProgress = freeShippingMinimum > 0 ? Math.min(100, (cartDetail.grandTotal / freeShippingMinimum) * 100) : 0;
 
     const handleCloseModal = () => {
         setIsCartOpen(false);
@@ -99,7 +116,14 @@ export default function CartModal() {
                                     <p>Keranjang belanja anda kosong.</p>
                                 </div>
                             ) : (
-                                cartDetail.items.map((item) => (
+                                <>
+                                {freeShippingMinimum > 0 && (
+                                    <div className="rounded-xl border-2 border-ink bg-lime/40 p-3 shadow-[2px_2px_0_#161616]">
+                                        <div className="flex items-center gap-2 text-xs font-black text-ink"><Truck className="h-4 w-4" />{remainingForFreeShipping > 0 ? <>Tambah <strong>Rp {remainingForFreeShipping.toLocaleString('id-ID')}</strong> lagi untuk gratis ongkir!</> : 'Selamat, kamu mendapatkan gratis ongkir!'}</div>
+                                        <div className="mt-2 h-2 overflow-hidden rounded-full border border-ink bg-white"><div className="h-full bg-emerald-600 transition-all" style={{ width: `${shippingProgress}%` }} /></div>
+                                    </div>
+                                )}
+                                {cartDetail.items.map((item) => (
                                     <div key={item.id} className="flex items-center gap-3 p-3 border-2 border-ink rounded-xl bg-white shadow-[3px_3px_0_#161616]">
                                         <img 
                                             src={item.image ? (item.image.startsWith('http') || item.image.startsWith('/') ? item.image : `/product/${item.image}`) : 'https://placehold.co/100x100?text=No+Image'} 
@@ -114,6 +138,8 @@ export default function CartModal() {
                                                     {item.label}
                                                 </span>
                                             )}
+                                            <button type="button" onClick={() => setEditingNote(editingNote === item.id ? null : item.id)} className="mt-1 flex items-center gap-1 text-[10px] font-bold text-slate-500 hover:text-ink"><Pencil className="h-3 w-3" />{item.note ? 'Edit catatan' : 'Tulis catatan'}</button>
+                                            {editingNote === item.id && <textarea value={item.note || ''} onChange={(event) => handleUpdateNote(item.id, event.target.value)} placeholder="Contoh: pilihkan tanggal kedaluwarsa paling lama" maxLength={200} rows={2} className="mt-1 w-full resize-none rounded-lg border border-slate-300 px-2 py-1 text-[11px]" />}
                                             {item.discount > 0 ? (
                                                 <p className="flex items-center gap-1.5 mt-0.5">
                                                     <span className="text-[10px] text-slate-400 font-mono line-through">
@@ -138,7 +164,17 @@ export default function CartModal() {
                                                     >
                                                         -
                                                     </button>
-                                                    <span className="text-xs font-mono font-black text-ink w-4 text-center">{item.qty}</span>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={item.qty}
+                                                        onChange={(event) => {
+                                                            const value = Number(event.target.value);
+                                                            if (Number.isFinite(value) && value >= 1) handleUpdateQty(item.id, Math.floor(value));
+                                                        }}
+                                                        aria-label={`Jumlah ${item.name}`}
+                                                        className="h-6 w-12 rounded-md border-2 border-ink bg-white text-center text-xs font-mono font-black text-ink"
+                                                    />
                                                     <button
                                                         onClick={() => handleUpdateQty(item.id, item.qty + 1)}
                                                         className="w-6 h-6 bg-white border-2 border-ink text-ink font-black rounded-md text-xs hover:bg-lime cursor-pointer flex items-center justify-center select-none"
@@ -156,12 +192,15 @@ export default function CartModal() {
                                         </div>
                                         <button
                                             onClick={() => handleRemoveItem(item.id)}
-                                            className="text-[11px] font-black text-coral hover:text-red-700 px-2 py-1 rounded-md cursor-pointer"
+                                            aria-label={`Hapus ${item.name}`}
+                                            title="Hapus produk"
+                                            className="self-start rounded-lg border-2 border-coral p-1.5 text-coral hover:bg-red-50 cursor-pointer"
                                         >
-                                            Hapus
+                                            <Trash2 className="h-4 w-4" />
                                         </button>
                                     </div>
-                                ))
+                                ))}
+                                </>
                             )}
                         </>
                     )}
@@ -174,6 +213,7 @@ export default function CartModal() {
                             <span className="font-black text-ink">Total Belanja</span>
                             <span className="text-lg font-mono font-black text-ink">Rp {cartDetail.grandTotal.toLocaleString('id-ID')}</span>
                         </div>
+                        <p className="text-[11px] text-slate-500">Belum termasuk ongkir &amp; biaya layanan</p>
                         {cartDetail.totalDiscount > 0 && (
                             <div className="flex justify-between items-center text-xs font-black text-coral">
                                 <span>Kamu hemat</span>

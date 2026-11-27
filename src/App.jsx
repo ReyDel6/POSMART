@@ -1,12 +1,15 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import LandingPage from './pages/LandingPage'
 import CatalogPage from './pages/CatalogPage'
 import ProductDetailPage from './pages/ProductDetailPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import NotFoundPage from './pages/NotFoundPage';
+import LegalPage from './pages/LegalPage';
 import AdminLayout from './components/admin/AdminLayout';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
+import PosRegisterPage from './pages/PosRegisterPage';
 
 const OrderSuccess = lazy(() => import('./pages/OrderSuccess'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
@@ -19,10 +22,13 @@ const AdminCategoriesPage = lazy(() => import('./pages/admin/AdminCategoriesPage
 const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage'));
 const AdminReportsPage = lazy(() => import('./pages/admin/AdminReportsPage'));
 const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
+const AdminCustomersPage = lazy(() => import('./pages/admin/AdminCustomersPage'));
 const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'));
 const AdminShippingZonesPage = lazy(() => import('./pages/admin/AdminShippingZonesPage'));
 const AdminPromosPage = lazy(() => import('./pages/admin/AdminPromosPage'));
 const AdminAnalyticsPage = lazy(() => import('./pages/admin/AdminAnalyticsPage'));
+const AdminSpkSmartPage = lazy(() => import('./pages/admin/AdminSpkSmartPage'));
+const CashierPage = lazy(() => import('./pages/CashierPage'));
 
 function PageLoader() {
   return (
@@ -33,15 +39,20 @@ function PageLoader() {
 }
 
 const router = createBrowserRouter([
-  { path: '/', element: <CatalogPage /> },
+  { path: '/',        element: <LandingPage /> },
+  { path: '/catalog', element: <CatalogPage /> },
   { path: '/product/:id', element: <ProductDetailPage /> },
   { path: '/login', element: <LoginPage /> },
   { path: '/register', element: <RegisterPage /> },
   { path: '/OrderSuccess', element: <OrderSuccess /> },
   { path: '/profile', element: <ProfilePage /> },
   { path: '/orders', element: <OrdersPage /> },
+  { path: '/cashier', element: <CashierPage /> },
+  { path: '/pos', element: <PosRegisterPage /> },
   { path: '/forgot-password', element: <ForgotPasswordPage /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
+  { path: '/terms', element: <LegalPage /> },
+  { path: '/privacy', element: <LegalPage /> },
   {
     path: '/admin',
     element: <AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>,
@@ -52,10 +63,12 @@ const router = createBrowserRouter([
       { path: 'orders', element: <AdminOrdersPage /> },
       { path: 'reports', element: <AdminReportsPage /> },
       { path: 'users', element: <AdminUsersPage /> },
+      { path: 'customers', element: <AdminCustomersPage /> },
       { path: 'settings', element: <AdminSettingsPage /> },
       { path: 'shipping-zones', element: <AdminShippingZonesPage /> },
       { path: 'promos', element: <AdminPromosPage /> },
-      { path: 'analytics', element: <AdminAnalyticsPage /> }
+      { path: 'analytics', element: <AdminAnalyticsPage /> },
+      { path: 'spk-smart', element: <AdminSpkSmartPage /> }
     ]
   },
   { path: '*', element: <NotFoundPage /> },

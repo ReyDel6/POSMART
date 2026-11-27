@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, Download, Package, RefreshCcw, ShoppingBag } from 'lucide-react';
 import api from '../utils/api';
+import { getAuthToken } from '../utils/api';
 import { generateInvoicePdf } from '../utils/pdfGenerator';
 
 const STATUS_TABS = [
@@ -52,7 +53,7 @@ export default function OrdersPage() {
     const [storeName, setStoreName] = useState('POSMart');
 
     useEffect(() => {
-        if (!localStorage.getItem('token')) {
+        if (!getAuthToken()) {
             navigate('/login', { replace: true });
         }
     }, [navigate]);

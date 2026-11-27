@@ -20,12 +20,16 @@ import {
     Package,
     SearchCheck,
     ChevronRight as ChevronRightIcon,
+    ChevronDown,
     Star,
     X,
     History,
     Zap,
     Truck,
     ShieldCheck,
+    CupSoda,
+    SprayCan,
+    Wrench,
 } from "lucide-react";
 import { useProduct } from "../hooks/useProduct";
 import { usePromotions } from "../hooks/usePromotions";
@@ -36,18 +40,18 @@ const STEP_VALUE = 500;
 
 // Ikon kategori (nuansa alfamart grocery)
 const CATEGORY_ICONS = {
-    'Food': { icon: '🍚', color: 'bg-orange-100' },
-    'Beverage': { icon: '🧋', color: 'bg-sky-100' },
-    'Personal Care': { icon: '🧴', color: 'bg-rose-100' },
-    'Household': { icon: '🧹', color: 'bg-violet-100' },
-    'Snack': { icon: '🍪', color: 'bg-amber-100' },
-    'Frozen': { icon: '🧊', color: 'bg-cyan-100' },
-    'Milk': { icon: '🥛', color: 'bg-emerald-100' },
-    'Baby': { icon: '🍼', color: 'bg-pink-100' },
-    'Pets': { icon: '🐾', color: 'bg-lime-100' },
-    'Tobacco': { icon: '🚬', color: 'bg-stone-100' },
+    'Food': { icon: Package, color: 'bg-orange-100' },
+    'Beverage': { icon: CupSoda, color: 'bg-sky-100' },
+    'Personal Care': { icon: SprayCan, color: 'bg-rose-100' },
+    'Household': { icon: Wrench, color: 'bg-violet-100' },
+    'Snack': { icon: Package, color: 'bg-amber-100' },
+    'Frozen': { icon: Package, color: 'bg-cyan-100' },
+    'Milk': { icon: CupSoda, color: 'bg-emerald-100' },
+    'Baby': { icon: Package, color: 'bg-pink-100' },
+    'Pets': { icon: Package, color: 'bg-lime-100' },
+    'Tobacco': { icon: Package, color: 'bg-stone-100' },
 };
-const FALLBACK_ICON = { icon: '📦', color: 'bg-slate-100' };
+const FALLBACK_ICON = { icon: Package, color: 'bg-slate-100' };
 
 const categoryLookup = (name) => CATEGORY_ICONS[name] || FALLBACK_ICON;
 
@@ -57,7 +61,7 @@ const formatIDR = (value) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
 
 // Foto cadangan untuk banner carousel agar tetap tampil premium walau tanpa gambar produk
-const BANNER_IMG_FALLBACK = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80';
+const BANNER_IMG_FALLBACK = '/product/beras_5_kg.jpeg';
 
 export default function CatalogPage() {
 
@@ -129,7 +133,8 @@ export default function CatalogPage() {
 
     const { MIN_PRICE_LIMIT } = useMemo(() => {
         const allPrices = products ? products.map(p => p.price) : [];
-        return { MIN_PRICE_LIMIT: Math.floor((allPrices.length > 0 ? Math.min(...allPrices) : 0) / STEP_VALUE) };
+        const minimum = allPrices.length > 0 ? Math.min(...allPrices) : 1000;
+        return { MIN_PRICE_LIMIT: Math.max(STEP_VALUE, Math.floor(minimum / STEP_VALUE) * STEP_VALUE) };
     }, [products]);
 
     const currentMaxLimit = useMemo(() => {
@@ -230,6 +235,15 @@ export default function CatalogPage() {
         setUserMaxPrice(null);
     };
 
+    const scrollToCatalog = useCallback((event) => {
+        event?.preventDefault();
+        const catalog = document.getElementById('katalog-produk');
+        if (catalog) {
+            catalog.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            window.history.replaceState(null, '', '#katalog-produk');
+        }
+    }, []);
+
     // Auto-scroll ke hasil saat user mulai mengetik di header
     const prevSearch = useRef(currentSearch);
     useEffect(() => {
@@ -245,7 +259,7 @@ export default function CatalogPage() {
         return [
             { name: 'Belanja Sembako Segar', subtitle: 'Harga grosir langsung dari toko terdekat', color: 'from-emerald-700 via-emerald-600 to-teal-700', image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80' },
             { name: 'Produk Fresh Setiap Hari', subtitle: 'Dicek kualitasnya setiap pagi', color: 'from-amber-600 via-orange-600 to-red-500', image: 'https://images.unsplash.com/photo-1540331547168-8b63109225b7?auto=format&fit=crop&w=600&q=80' },
-            { name: 'Antar Cepat Sampai Tujuan', subtitle: 'Pengiriman sesuai zona ongkir', color: 'from-sky-700 via-blue-600 to-indigo-700', image: 'https://images.unsplash.com/photo-1583845112203-29329902332e?auto=format&fit=crop&w=600&q=80' },
+            { name: 'Antar Cepat Sampai Tujuan', subtitle: 'Pengiriman kebutuhan harian sampai ke depan rumah', color: 'from-sky-700 via-blue-600 to-indigo-700', image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80' },
         ];
     }, [promoProducts]);
 
@@ -262,7 +276,11 @@ export default function CatalogPage() {
     const goBanner = (i) => setBannerIndex(((i % banners.length) + banners.length) % banners.length);
 
     const bannerIsProduct = !!banners[0]?.id;
-    const activeBanner = banners[bannerIndex] || banners[0];
+    const activeBanner = banners[bannerIndex] || banners[0] || {
+        name: 'Produk Fresh Setiap Hari',
+        subtitle: 'Kebutuhan harian lengkap dari POSMart',
+        image: BANNER_IMG_FALLBACK,
+    };
     const promoPrice = activeBanner?.is_promo ? Math.round(activeBanner.price - activeBanner.price * (activeBanner.promo / 100)) : 0;
 
     // ===== Countdown flash sale =====
@@ -285,11 +303,24 @@ export default function CatalogPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-cream gap-3">
-                <div className="w-10 h-10 border-2 border-ink border-t-lime rounded-full animate-spin"></div>
-                <p className="text-sm font-black text-ink tracking-wide animate-pulse">
-                    Menghubungkan ke database posmart....
-                </p>
+            <div className="min-h-screen flex items-center justify-center bg-cream px-6" role="status" aria-live="polite">
+                <div className="flex flex-col items-center text-center">
+                    <div className="relative w-24 h-24 mb-6">
+                        <div className="absolute inset-0 rounded-[2rem] border-2 border-ink/15" />
+                        <div className="absolute inset-0 rounded-[2rem] border-2 border-transparent border-t-ink border-r-lime animate-spin" />
+                        <div className="absolute inset-2 rounded-[1.5rem] bg-ink shadow-[4px_4px_0_#CBF169] flex items-center justify-center">
+                            <img src="/logo-icon.png?v=2" alt="" className="w-12 h-12 object-contain animate-pulse" />
+                        </div>
+                        <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-lime border-2 border-ink animate-bounce" />
+                    </div>
+                    <p className="text-base font-black text-ink tracking-tight">Menyiapkan POSMart</p>
+                    <div className="flex items-center gap-1 mt-2" aria-hidden="true">
+                        <span className="w-1.5 h-1.5 rounded-full bg-ink animate-bounce [animation-delay:-0.3s]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-ink animate-bounce [animation-delay:-0.15s]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-ink animate-bounce" />
+                    </div>
+                    <p className="mt-3 text-xs font-medium text-slate-500">Memuat data toko untuk kamu</p>
+                </div>
             </div>
         );
     }
@@ -327,7 +358,10 @@ export default function CatalogPage() {
     const productScroller = (list, loadingState) => (
         <div className={loadingState ? "flex items-center justify-center py-16" : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"}>
             {loadingState ? (
-                <div className="w-8 h-8 border-emerald-600 border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                <span className="w-5 h-5 rounded-full border-2 border-ink/20 border-t-lime animate-spin" />
+                Memuat produk...
+            </div>
             ) : list.length === 0 ? (
                 <p className="text-sm text-slate-400 text-center py-8 col-span-full">Belum ada produk.</p>
             ) : (
@@ -345,18 +379,16 @@ export default function CatalogPage() {
             {/* ===== BAR LOKASI TOKO ===== */}
             <div className="bg-ink text-white sticky top-[65px] z-40 border-y-2 border-ink">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between">
-                    <button onClick={() => window.location.hash = '#katalog-produk'} className="flex items-center gap-2 text-left cursor-pointer hover:opacity-80 transition-opacity">
+                    <button onClick={scrollToCatalog} className="flex items-center gap-2 text-left cursor-pointer hover:opacity-80 transition-opacity">
                         <MapPin className="w-4 h-4 shrink-0 text-coral" />
                         <div className="min-w-0">
                             <p className="text-[10px] font-black text-lime uppercase tracking-wide">Kirim ke</p>
                             <p className="text-xs font-bold truncate max-w-70 sm:max-w-100 text-white">
                                 {storeSettings.store_name || 'POSMart'} · {storeSettings.store_address || 'Alamat toko belum diatur'}
+                                <ChevronDown className="ml-1 inline-block h-3 w-3 text-lime" />
                             </p>
                         </div>
                     </button>
-                    <Link to="/#katalog-produk" className="text-[11px] font-black bg-lime hover:bg-lime/80 text-ink px-4 py-1.5 rounded-full border-2 border-ink flex items-center gap-1 shrink-0 shadow-[3px_3px_0_#CBF169]">
-                        Belanja Sekarang
-                    </Link>
                 </div>
             </div>
 
@@ -412,6 +444,7 @@ export default function CatalogPage() {
                                 <div className="flex flex-wrap items-center gap-3 pt-1">
                                     <a
                                         href="#katalog-produk"
+                                        onClick={scrollToCatalog}
                                         className="inline-flex neo-press items-center gap-2 bg-ink text-cream font-black text-sm px-6 py-3 rounded-lg border-2 border-ink shadow-[4px_4px_0_#161616] transition-all"
                                     >
                                         Belanja Sekarang
@@ -440,6 +473,20 @@ export default function CatalogPage() {
                                             />
                                         </Link>
                                     </div>
+                                    <button
+                                        onClick={() => goBanner(bannerIndex - 1)}
+                                        aria-label="Banner sebelumnya"
+                                        className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/95 border-2 border-ink text-ink flex items-center justify-center shadow-[3px_3px_0_#161616] hover:bg-lime transition-colors cursor-pointer"
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <button
+                                        onClick={() => goBanner(bannerIndex + 1)}
+                                        aria-label="Banner berikutnya"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/95 border-2 border-ink text-ink flex items-center justify-center shadow-[3px_3px_0_#161616] hover:bg-lime transition-colors cursor-pointer"
+                                    >
+                                        <ChevronRight className="w-5 h-5" />
+                                    </button>
 
                                     {/* Sticker cor */}
                                     <div className="absolute -top-5 -right-3 w-24 h-24 rounded-full bg-coral border-2 border-ink text-white flex flex-col items-center justify-center text-center rotate-[-8deg] shadow-[3px_3px_0_#161616]">
@@ -448,29 +495,13 @@ export default function CatalogPage() {
 
                                     {/* Price tag */}
                                     <div className="absolute -bottom-4 -left-3 bg-white border-2 border-ink rounded-lg px-4 py-2 shadow-[4px_4px_0_#161616] text-[11px] font-bold text-slate-600">
-                                        {bannerIsProduct ? 'Harga sekarang' : 'Mulai dari'}
+                                        {bannerIsProduct ? 'Harga sekarang' : 'Ongkir mulai dari'}
                                         <b className="block text-base font-black text-ink">{formatIDR(bannerIsProduct ? promoPrice : (activeBanner.price || 8000))}</b>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    {/* arrows */}
-                    <button
-                        onClick={() => goBanner(bannerIndex - 1)}
-                        aria-label="Banner sebelumnya"
-                        className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white border-2 border-ink text-ink flex items-center justify-center shadow-[3px_3px_0_#161616] hover:bg-lime transition-colors cursor-pointer"
-                    >
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <button
-                        onClick={() => goBanner(bannerIndex + 1)}
-                        aria-label="Banner berikutnya"
-                        className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white border-2 border-ink text-ink flex items-center justify-center shadow-[3px_3px_0_#161616] hover:bg-lime transition-colors cursor-pointer"
-                    >
-                        <ChevronRight className="w-5 h-5" />
-                    </button>
 
                     {/* dots */}
                     <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
@@ -525,6 +556,7 @@ export default function CatalogPage() {
                         <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3">
                             {categories.filter(c => c !== 'All').map((cat, ci) => {
                                 const meta = categoryLookup(cat);
+                                const CategoryIcon = meta.icon;
                                 const tileColor = ['bg-lime', 'bg-white', 'bg-[#FFD9CC]', 'bg-[#D9E1FF]', 'bg-[#FFE4D8]'][ci % 5];
                                 return (
                                     <button
@@ -532,7 +564,9 @@ export default function CatalogPage() {
                                         onClick={() => handleCategoryChange(cat)}
                                         className={`flex flex-col items-stretch justify-between gap-4 px-4 py-4 min-h-[120px] rounded-xl border-2 border-ink ${tileColor} shadow-[4px_4px_0_#161616] transition-transform duration-150 group hover:-translate-y-1 cursor-pointer`}
                                     >
-                                        <span className="text-[24px] leading-none">{meta.icon}</span>
+                                        <span className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-ink bg-white text-ink shadow-[2px_2px_0_#161616]">
+                                            <CategoryIcon className="h-7 w-7 stroke-[2.5]" />
+                                        </span>
                                         <span className="text-[13px] font-black text-ink uppercase text-left leading-tight">
                                             {cat}
                                         </span>
@@ -564,7 +598,7 @@ export default function CatalogPage() {
             )}
 
             {/* ===== PROMO HARI INI ===== */}
-            <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-9">
+            {promoProducts.length > 0 && <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-9">
                 <div className="bg-ink border-2 border-ink rounded-xl p-5 sm:p-6 shadow-[6px_6px_0_#161616]">
                     <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
                         <div className="flex items-center gap-3">
@@ -584,17 +618,13 @@ export default function CatalogPage() {
                         </div>
                     </div>
 
-                    {promoProducts.length === 0 ? (
-                        <p className="text-sm text-slate-400 text-center py-6">Belum ada produk promo saat ini, silakan cek kembali.</p>
-                    ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {promoProducts.slice(0, 8).map((product) => (
-                                <ProductCard key={product.id} product={product} storeSettings={storeSettings} />
-                            ))}
-                        </div>
-                    )}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {promoProducts.slice(0, 8).map((product) => (
+                            <ProductCard key={product.id} product={product} storeSettings={storeSettings} />
+                        ))}
+                    </div>
                 </div>
-            </section>
+            </section>}
 
             {/* ===== PAKET HEMAT (BUNDLE) ===== */}
             {bundles.length > 0 && (

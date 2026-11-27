@@ -19,7 +19,7 @@ class AuthController extends Controller
         $this->validate($request, [
             'name'     => 'required|string',
             'email'    => 'required|email|unique:users,email',
-            'password' => 'required|min:6',
+            'password' => ['required', 'min:8', 'regex:/[A-Za-z]/', 'regex:/\d/'],
             'phone'    => 'nullable|string',
             'address'  => 'nullable|string',
         ], [
@@ -28,7 +28,8 @@ class AuthController extends Controller
             'email.email'        => 'e-Mail tidak valid atau kosong.',
             'email.unique'       => 'e-Mail sudah terdaftar.',
             'password.required'  => 'Password wajib diisi.',
-            'password.min'       => 'Password minimal harus 6 karakter.',
+            'password.min'        => 'Password minimal harus 8 karakter.',
+            'password.regex'      => 'Password harus mengandung huruf dan angka.',
         ]);
 
         $phone = trim($request->input('phone', ''));
@@ -79,6 +80,13 @@ class AuthController extends Controller
                 'status'  => 'error',
                 'message' => 'e-Mail tidak terdaftar.',
             ], 401);
+        }
+
+        if (!$user->is_active) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Akun ini sedang dinonaktifkan. Hubungi administrator.',
+            ], 403);
         }
 
         if (!$user->password || !Hash::check($password, $user->password)) {
@@ -188,9 +196,16 @@ class AuthController extends Controller
                     'name'      => $name,
                     'email'     => $email,
                     'password'  => Hash::make(Str::random(32)),
-                    'role'      => 'cashier',
+                    'role'      => 'user',
                 ]);
             }
+        }
+
+        if (!$user->is_active) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Akun ini sedang dinonaktifkan. Hubungi administrator.',
+            ], 403);
         }
 
         // Tahap 4: Terbitkan token

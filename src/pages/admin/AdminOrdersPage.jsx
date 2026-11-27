@@ -1,21 +1,31 @@
 // File: src/pages/admin/AdminOrdersPage.jsx
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../../utils/api';
-import { Search, RefreshCcw, AlertTriangle } from 'lucide-react';
+import { Search, RefreshCcw, AlertTriangle, Eye, X, ChevronLeft, ChevronRight, Printer, MessageCircle, Wallet } from 'lucide-react';
 
 export default function AdminOrdersPage() {
     const [orders, setOrders] = useState([]);
+    const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0, revenue: 0, completed: 0, pending: 0 });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [dateFrom, setDateFrom] = useState('');
+    const [dateTo, setDateTo] = useState('');
+    const [page, setPage] = useState(1);
     const [savingId, setSavingId] = useState(null);
+    const [detail, setDetail] = useState(null);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [paymentOrder, setPaymentOrder] = useState(null);
+    const [paymentMethod, setPaymentMethod] = useState('cash');
+    const [cashReceived, setCashReceived] = useState('');
 
     const fetchOrders = useCallback(async () => {
         try {
-            const response = await api.get('/admin/orders.php');
+            const response = await api.get('/admin/orders.php', { params: { search, status: statusFilter, date_from: dateFrom, date_to: dateTo, page, per_page: 20 } });
             if (response.data && response.data.status === 'success') {
-                setOrders(response.data.data);
+                setOrders(response.data.data || []);
+                setMeta(response.data.meta || { current_page: page, last_page: 1, total: 0, revenue: 0, completed: 0, pending: 0 });
             }
         } catch (err) {
             console.error("Gagal mengambil daftar transaksi:", err);
@@ -23,35 +33,23 @@ export default function AdminOrdersPage() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [search, statusFilter, dateFrom, dateTo, page]);
 
     useEffect(() => {
         let ignore = false;
-        api.get('/admin/orders.php')
-            .then(response => {
-                if (ignore) return;
-                if (response.data && response.data.status === 'success') {
-                    setOrders(response.data.data);
-                }
-            })
-            .catch(err => {
-                if (ignore) return;
-                console.error("Gagal mengambil daftar transaksi:", err);
-                setError(err.response?.data?.message || "Terjadi kesalahan saat memuat daftar transaksi.");
-            })
-            .finally(() => { if (!ignore) setLoading(false); });
+        fetchOrders().finally(() => { if (!ignore) setLoading(false); });
         return () => { ignore = true; };
-    }, []);
+    }, [fetchOrders]);
 
     const formatRupiah = (number) => {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(number);
     };
 
-    const updateOrderStatus = async (orderId, status) => {
+    const updateOrderStatus = async (orderId, status, payment = {}) => {
         setSavingId(orderId);
         setError('');
         try {
-            const response = await api.put('/admin/orders.php', { id: orderId, status });
+            const response = await api.put('/admin/orders.php', { id: orderId, status, ...payment });
             if (response.data && response.data.status === 'success') {
                 const patch = response.data.order || { status };
                 setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...patch } : o));
@@ -65,16 +63,40 @@ export default function AdminOrdersPage() {
         }
     };
 
-    const visibleOrders = useMemo(() => orders.filter(order => {
-        const query = search.toLowerCase();
-        const matchesSearch = !query || String(order.id).includes(query) || order.customer_name?.toLowerCase().includes(query);
-        const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-        return matchesSearch && matchesStatus;
-    }), [orders, search, statusFilter]);
+    const openPayment = (order) => {
+        setPaymentOrder(order);
+        setPaymentMethod('cash');
+        setCashReceived(String(order.total_price || ''));
+    };
 
-    const totalRevenue = orders.reduce((total, order) => total + Number(order.total_price || 0), 0);
-    const completedCount = orders.filter(order => order.status === 'completed').length;
-    const pendingCount = orders.filter(order => order.status === 'pending').length;
+    const submitPayment = async (event) => {
+        event.preventDefault();
+        const total = Number(paymentOrder.total_price) || 0;
+        const received = Number(cashReceived) || 0;
+        if (paymentMethod === 'cash' && received < total) {
+            setError('Uang diterima belum mencukupi total transaksi.');
+            return;
+        }
+        await updateOrderStatus(paymentOrder.id, 'paid', { payment_method: paymentMethod, cash_received: received });
+        setPaymentOrder(null);
+    };
+
+    const openDetail = async (orderId) => {
+        setDetailLoading(true);
+        try {
+            const response = await api.get('/admin/orders/detail.php', { params: { id: orderId } });
+            if (response.data?.status === 'success') setDetail(response.data.data);
+        } catch (err) {
+            setError(err.response?.data?.message || 'Gagal memuat detail pesanan.');
+        } finally {
+            setDetailLoading(false);
+        }
+    };
+
+    const formatDate = (value) => value ? new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(value)) : '-';
+    const totalRevenue = meta.revenue || 0;
+    const completedCount = meta.completed || 0;
+    const pendingCount = meta.pending || 0;
 
     if (loading) {
         return (
@@ -103,6 +125,7 @@ export default function AdminOrdersPage() {
     }
 
     return (
+        <>
         <div className="space-y-6">
             <div className="bg-slate-950 text-white rounded-3xl p-7 relative overflow-hidden">
                 <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -120,10 +143,12 @@ export default function AdminOrdersPage() {
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
-                <div><h3 className="text-lg font-black text-slate-900">Daftar order</h3><p className="text-xs text-slate-500 mt-1">{visibleOrders.length} transaksi ditampilkan</p></div>
+                <div><h3 className="text-lg font-black text-slate-900">Daftar order</h3><p className="text-xs text-slate-500 mt-1">{meta.total} transaksi ditemukan</p></div>
                 <div className="flex flex-col sm:flex-row gap-3">
-                    <label className="relative"><Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Cari ID atau pelanggan" className="pl-9 pr-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></label>
-                    <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)} className="px-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold"><option value="all">Semua status</option><option value="pending">Menunggu</option><option value="processing">Diproses</option><option value="paid">Lunas</option><option value="completed">Selesai</option><option value="cancelled">Dibatalkan</option></select>
+                    <label className="relative"><Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" /><input value={search} onChange={event => { setSearch(event.target.value); setPage(1); }} placeholder="Cari ID atau pelanggan" className="pl-9 pr-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" /></label>
+                    <select value={statusFilter} onChange={event => { setStatusFilter(event.target.value); setPage(1); }} className="px-3 py-2 border border-slate-300 rounded-xl text-sm font-semibold"><option value="all">Semua status</option><option value="pending">Menunggu</option><option value="processing">Diproses</option><option value="paid">Lunas</option><option value="completed">Selesai</option><option value="cancelled">Dibatalkan</option></select>
+                    <input type="date" value={dateFrom} onChange={event => { setDateFrom(event.target.value); setPage(1); }} className="px-3 py-2 border border-slate-300 rounded-xl text-sm" title="Tanggal mulai" />
+                    <input type="date" value={dateTo} onChange={event => { setDateTo(event.target.value); setPage(1); }} className="px-3 py-2 border border-slate-300 rounded-xl text-sm" title="Tanggal akhir" />
                 </div>
             </div>
 
@@ -138,19 +163,20 @@ export default function AdminOrdersPage() {
                             <th className="py-3 px-4">Pembayaran</th>
                             <th className="py-3 px-4">Status</th>
                             <th className="py-3 px-6">Tanggal</th>
+                            <th className="py-3 px-6 text-right">Aksi</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-sm">
-                        {visibleOrders.length === 0 ? (
+                        {orders.length === 0 ? (
                             <tr>
-                                <td colSpan="7" className="py-8 text-center text-slate-400 font-medium">
+                                <td colSpan="8" className="py-8 text-center text-slate-400 font-medium">
                                     Belum ada transaksi terekam.
                                 </td>
                             </tr>
                         ) : (
-                            visibleOrders.map((order) => (
+                            orders.map((order) => (
                                 <tr key={order.id} className="hover:bg-slate-50/60 transition-colors">
-                                    <td className="py-3.5 px-6 font-semibold text-slate-800">#{order.id}</td>
+                                    <td className="py-3.5 px-6"><button onClick={() => openDetail(order.id)} className="font-bold text-sky-700 hover:text-sky-900 hover:underline cursor-pointer">#{order.id}</button></td>
                                     <td className="py-3.5 px-4 text-slate-600 font-medium">{order.customer_name}</td>
                                     <td className="py-3.5 px-4 text-slate-600 font-medium">{order.cashier_name}</td>
                                     <td className="py-3.5 px-4 font-bold text-emerald-600">{formatRupiah(order.total_price)}</td>
@@ -173,16 +199,6 @@ export default function AdminOrdersPage() {
                                                             {order.payment_mode === 'cash' ? 'Tunai/walk-in' : 'Online'}
                                                         </span>
                                                         {order.payment_method && <span className="text-[10px] font-semibold text-slate-400 uppercase">{order.payment_method}</span>}
-                                                        {ps !== 'paid' && !['expire', 'cancel', 'deny'].includes(ps) && ['pending', 'processing'].includes(order.status) && (
-                                                            <button
-                                                                onClick={() => updateOrderStatus(order.id, 'paid')}
-                                                                disabled={savingId === order.id}
-                                                                title="Umumkan pembayaran transaksi ini lunas (manual)"
-                                                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-600 hover:text-white transition-colors cursor-pointer disabled:opacity-50"
-                                                            >
-                                                                {savingId === order.id ? '...' : 'Umumkan Lunas'}
-                                                            </button>
-                                                        )}
                                                     </div>
                                                 </div>
                                             );
@@ -209,14 +225,53 @@ export default function AdminOrdersPage() {
                                         </select>
                                         {savingId === order.id && <span className="ml-2 text-[10px] text-slate-400">menyimpan...</span>}
                                     </td>
-                                    <td className="py-3.5 px-6 text-xs text-slate-500">{order.created_at}</td>
+                                    <td className="py-3.5 px-6 text-xs text-slate-500 whitespace-nowrap">{formatDate(order.created_at)}</td>
+                                    <td className="py-3.5 px-6 text-right">
+                                        <div className="flex justify-end gap-2">
+                                            <button onClick={() => openDetail(order.id)} className="p-2 rounded-lg bg-slate-100 hover:bg-sky-100 text-slate-600 hover:text-sky-700" title="Lihat detail"><Eye className="w-4 h-4" /></button>
+                                            {order.payment_status !== 'paid' && ['pending', 'processing'].includes(order.status) && (
+                                                <button onClick={() => openPayment(order)} disabled={savingId === order.id} className="px-2 py-1 rounded-lg bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-600 hover:text-white text-[10px] font-bold disabled:opacity-50">Terima Pembayaran</button>
+                                            )}
+                                        </div>
+                                    </td>
                                 </tr>
                             ))
                         )}
                     </tbody>
                 </table>
             </div>
+            <div className="flex items-center justify-between mt-5 text-sm">
+                <span className="text-slate-500">Halaman {meta.current_page} dari {meta.last_page}</span>
+                <div className="flex gap-2">
+                    <button disabled={page <= 1} onClick={() => setPage(current => current - 1)} className="flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 disabled:opacity-40"><ChevronLeft className="w-4 h-4" /> Sebelumnya</button>
+                    <button disabled={page >= meta.last_page} onClick={() => setPage(current => current + 1)} className="flex items-center gap-1 px-3 py-2 rounded-lg border border-slate-200 disabled:opacity-40">Selanjutnya <ChevronRight className="w-4 h-4" /></button>
+                </div>
+            </div>
         </div>
         </div>
+        {detail && (
+            <div className="fixed inset-0 z-50 bg-slate-950/60 p-4 flex items-center justify-center">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
+                    <div className="flex justify-between items-start mb-5"><div><p className="text-xs font-bold text-slate-400">STRUK PESANAN</p><h3 className="text-2xl font-black text-slate-900">#{detail.id}</h3></div><button onClick={() => setDetail(null)} className="p-2 rounded-lg bg-slate-100"><X className="w-5 h-5" /></button></div>
+                    <div className="grid grid-cols-2 gap-3 text-sm mb-5"><div><p className="text-slate-400">Pelanggan</p><p className="font-bold">{detail.customer_name}</p>{detail.phone && <a href={`https://wa.me/${String(detail.phone).replace(/\D/g, '').replace(/^0/, '62')}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-emerald-700 hover:underline text-xs mt-1"><MessageCircle className="w-3 h-3" /> WhatsApp</a>}</div><div><p className="text-slate-400">Tanggal</p><p className="font-bold">{formatDate(detail.created_at)}</p></div></div>
+                    <div className="border-y border-slate-200 divide-y divide-slate-100">
+                        {detailLoading ? <p className="py-6 text-center text-slate-400">Memuat detail...</p> : detail.items.map((item, index) => <div key={`${item.name}-${index}`} className="py-3 flex justify-between gap-3 text-sm"><div><p className="font-semibold">{item.name}</p><p className="text-xs text-slate-500">{item.qty} x {formatRupiah(item.price)}</p></div><p className="font-bold">{formatRupiah(item.total)}</p></div>)}
+                    </div>
+                    <div className="space-y-2 mt-4 text-sm"><div className="flex justify-between"><span>Ongkos kirim</span><span>{formatRupiah(detail.shipping_fee)}</span></div><div className="flex justify-between text-lg font-black"><span>Total</span><span className="text-emerald-600">{formatRupiah(detail.total_price)}</span></div></div>
+                    <button onClick={() => window.print()} className="mt-5 w-full flex justify-center items-center gap-2 py-2.5 rounded-xl bg-slate-900 text-white font-bold"><Printer className="w-4 h-4" /> Cetak Struk</button>
+                </div>
+            </div>
+        )}
+        {paymentOrder && (
+            <div className="fixed inset-0 z-50 bg-slate-950/60 p-4 flex items-center justify-center">
+                <form onSubmit={submitPayment} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+                    <div className="flex items-start justify-between mb-5"><div><p className="text-xs font-bold text-slate-400">PEMBAYARAN ORDER #{paymentOrder.id}</p><h3 className="text-2xl font-black text-slate-900">{formatRupiah(paymentOrder.total_price)}</h3></div><button type="button" onClick={() => setPaymentOrder(null)}><X className="w-5 h-5" /></button></div>
+                    <div className="grid grid-cols-3 gap-2 mb-4">{[['cash', 'Tunai'], ['qris', 'QRIS'], ['debit', 'Debit']].map(([value, label]) => <button type="button" key={value} onClick={() => setPaymentMethod(value)} className={`py-2 rounded-xl border text-sm font-bold ${paymentMethod === value ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-200'}`}><Wallet className="w-4 h-4 inline mr-1" />{label}</button>)}</div>
+                    {paymentMethod === 'cash' && <><label className="block text-sm font-bold text-slate-700">Uang diterima<input type="number" min={paymentOrder.total_price} value={cashReceived} onChange={event => setCashReceived(event.target.value)} className="mt-2 w-full px-3 py-2.5 border border-slate-300 rounded-xl text-lg font-bold" required /></label><p className="mt-3 text-center text-sm text-slate-500">Kembalian <strong className="block text-2xl text-emerald-600">{formatRupiah(Math.max(0, Number(cashReceived) - Number(paymentOrder.total_price)))}</strong></p></>}
+                    <button className="mt-5 w-full py-2.5 rounded-xl bg-emerald-600 text-white font-black disabled:opacity-50" disabled={savingId === paymentOrder.id}>{savingId === paymentOrder.id ? 'Menyimpan...' : 'Konfirmasi Pembayaran'}</button>
+                </form>
+            </div>
+        )}
+        </>
     );
 }

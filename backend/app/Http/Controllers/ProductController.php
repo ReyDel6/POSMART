@@ -43,12 +43,22 @@ class ProductController extends Controller
         if ($search !== '') {
             $query->where(function ($w) use ($search) {
                 $w->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('barcode', 'LIKE', "%{$search}%")
                     ->orWhere('description', 'LIKE', "%{$search}%")
                     ->orWhere('category', 'LIKE', "%{$search}%");
             });
         }
         if ($category !== '' && $category !== 'All') {
-            $query->where('category', $category);
+            if (is_numeric($category)) {
+                $query->where('category_id', (int) $category);
+            } else {
+                $query->where(function ($q) use ($category) {
+                    $q->where('category', $category)
+                      ->orWhereHas('categoryRef', function ($c) use ($category) {
+                          $c->where('name', $category);
+                      });
+                });
+            }
         }
 
         $total = (clone $query)->count();
@@ -65,7 +75,7 @@ class ProductController extends Controller
                         ->select(\Illuminate\Support\Facades\DB::raw('coalesce(sum(qty), 0)'));
                 }])
                 ->orderBy('sold_count', 'desc')
-                ->orderBy('id', 'desc');
+                ->orderBy('product_id', 'desc');
         } else {
             $pageQuery->orderBy('created_at', 'desc');
         }
@@ -113,7 +123,7 @@ class ProductController extends Controller
 
         $products = (clone $query)
             ->orderBy('sold_count', 'desc')
-            ->orderBy('id', 'desc')
+            ->orderBy('product_id', 'desc')
             ->take($limit)
             ->get()
             ->map(function ($p) {
@@ -180,13 +190,16 @@ class ProductController extends Controller
 
     private function cardPayload(Product $p): array
     {
-        $deal = $this->promo()->dealFor((int) $p->id);
+        $productId = (int) ($p->product_id ?? $p->id);
+        $deal = $this->promo()->dealFor($productId);
 
         return [
-            'id'            => (int) $p->id,
+            'id'            => $productId,
+            'product_id'    => $productId,
             'barcode'       => $p->barcode,
             'name'          => $p->name,
             'price'         => (int) $p->price,
+            'category_id'   => $p->category_id ? (int) $p->category_id : null,
             'category'      => $p->category,
             'rating'        => (float) $p->rating,
             'stock'         => (int) $p->stock,
@@ -194,6 +207,7 @@ class ProductController extends Controller
             'promo'         => (int) $p->promo,
             'image'         => '/product/' . $p->image,
             'reviews_count' => (int) $p->reviews_count,
+            'weight'        => $p->weight ? (int) $p->weight : null,
             'deal'          => $deal ? [
                 'id'    => (int) $deal->id,
                 'type'  => $deal->type,

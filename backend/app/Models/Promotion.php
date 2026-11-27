@@ -19,6 +19,8 @@ class Promotion extends Model
         'items',
         'bundle_price',
         'active',
+        'usage_limit',
+        'used_count',
         'starts_at',
         'ends_at',
     ];
@@ -27,6 +29,8 @@ class Promotion extends Model
         'tiers'       => 'array',
         'items'       => 'array',
         'active'      => 'boolean',
+        'usage_limit'  => 'integer',
+        'used_count'   => 'integer',
         'product_id'  => 'integer',
         'buy_qty'     => 'integer',
         'free_qty'    => 'integer',

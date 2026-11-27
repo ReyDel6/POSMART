@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
-import { Store, LayoutDashboard, Package, ShoppingBag, LogOut, UserCheck, Menu, X, Tags, BarChart3, Users, Settings, ChevronDown, ChevronRight, Truck, Percent, Radar } from 'lucide-react';
+import { Store, LayoutDashboard, Package, ShoppingBag, LogOut, UserCheck, Menu, X, Tags, BarChart3, Users, Settings, ChevronDown, ChevronRight, Truck, Percent, Radar, Plus, Monitor, Sparkles } from 'lucide-react';
 
 export default function AdminLayout() {
     const navigate = useNavigate();
@@ -41,10 +41,12 @@ export default function AdminLayout() {
         '/admin/orders': { title: 'Daftar Transaksi', parent: 'Transaksi & Laporan' },
         '/admin/reports': { title: 'Laporan Penjualan', parent: 'Transaksi & Laporan' },
         '/admin/users': { title: 'Kelola Staf & Kasir', parent: 'Pengaturan & Staf' },
+        '/admin/customers': { title: 'Data Pelanggan', parent: 'Pengaturan & Staf' },
         '/admin/settings': { title: 'Pengaturan Toko', parent: 'Pengaturan & Staf' },
         '/admin/shipping-zones': { title: 'Zona Pengiriman', parent: 'Manajemen Produk' },
         '/admin/promos': { title: 'Kelola Promo', parent: 'Manajemen Produk' },
         '/admin/analytics': { title: 'Analitik & Restock', parent: 'Transaksi & Laporan' },
+        '/admin/spk-smart': { title: 'SPK SMART (Pengadaan)', parent: 'Keputusan & Analitik' },
     };
 
     const currentRouteInfo = routeTitles[location.pathname] || { title: 'Admin Panel', parent: 'POS' };
@@ -77,6 +79,7 @@ export default function AdminLayout() {
                 { path: '/admin/orders', label: 'Daftar Transaksi', icon: ShoppingBag },
                 { path: '/admin/reports', label: 'Laporan Penjualan', icon: BarChart3 },
                 { path: '/admin/analytics', label: 'Analitik & Restock', icon: Radar },
+                { path: '/admin/spk-smart', label: 'Modul SPK SMART', icon: Sparkles },
             ]
         },
         ...(!isOwner ? [{
@@ -86,6 +89,7 @@ export default function AdminLayout() {
             icon: Settings,
             children: [
                 { path: '/admin/users', label: 'Kelola Kasir & User', icon: Users },
+                { path: '/admin/customers', label: 'Data Pelanggan', icon: UserCheck },
                 { path: '/admin/settings', label: 'Pengaturan Toko', icon: Settings },
             ]
         }] : []),
@@ -97,9 +101,7 @@ export default function AdminLayout() {
             <aside className={`${isSidebarOpen ? 'w-64' : 'w-0'} bg-slate-900 text-slate-400 flex flex-col shadow-xl transition-all duration-300 overflow-hidden`}>
                 {/* Brand / Logo */}
                 <div className="p-6 border-b-2 border-ink flex items-center gap-3 w-64">
-                    <div className="p-2.5 bg-lime rounded-xl text-ink shadow-[3px_3px_0_#CBF169]">
-                        <Store className="w-6 h-6" />
-                    </div>
+                    <img src="/logo-icon.png?v=2" alt="POSMart" className="w-11 h-11 object-contain rounded-xl shadow-[2px_2px_0_#CBF169]" />
                     <div>
                         <h1 className="font-black text-white text-lg tracking-tight">
                             POS <span className="text-lime">Mart</span>
@@ -198,26 +200,38 @@ export default function AdminLayout() {
             {/* MAIN CONTENT WRAPPER */}
             <div className="flex-1 flex flex-col min-w-0">
                 {/* TOPBAR */}
-                <header className="bg-white h-20 border-b-2 border-ink px-8 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                <header className="bg-white min-h-[4.5rem] py-3.5 border-b-2 border-ink px-4 sm:px-8 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                         <button 
                             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                            className="p-2 hover:bg-lime rounded-lg text-ink cursor-pointer"
+                            className="p-2 hover:bg-lime rounded-lg text-ink cursor-pointer shrink-0"
                         >
                             {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                         </button>
-                        <div>
-                            <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-0.5">
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-0.5 truncate">
                                 <span>Admin</span>
                                 <span>/</span>
                                 <span>{currentRouteInfo.parent}</span>
                                 <span>/</span>
-                                <span className="text-slate-600 font-black">{currentRouteInfo.title}</span>
+                                <span className="text-slate-600 font-black truncate">{currentRouteInfo.title}</span>
                             </div>
-                            <h2 className="text-xl font-black text-ink tracking-tight">{currentRouteInfo.title}</h2>
+                            <h2 className="text-lg sm:text-xl font-black text-ink tracking-tight truncate">{currentRouteInfo.title}</h2>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
+                        <Link
+                            to="/pos"
+                            className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-lime text-ink border-2 border-ink rounded-xl shadow-[3px_3px_0_#161616] text-xs font-black hover:-translate-y-0.5 transition-transform"
+                        >
+                            <Monitor className="w-4 h-4" /> Layar Kasir (POS)
+                        </Link>
+                        <Link
+                            to="/cashier"
+                            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2.5 bg-white text-ink border-2 border-ink rounded-xl shadow-[3px_3px_0_#161616] text-xs font-bold hover:bg-slate-50 transition-colors"
+                        >
+                            <Store className="w-4 h-4" /> Pesanan Online
+                        </Link>
                         <div className="flex items-center gap-3 pl-4 border-l-2 border-ink">
                             <div className="w-10 h-10 rounded-full bg-lime text-ink border-2 border-ink font-black flex items-center justify-center text-sm">
                                 {user.name ? user.name.charAt(0).toUpperCase() : 'A'}

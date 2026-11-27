@@ -116,6 +116,28 @@ export default function AdminDashboardPage() {
         return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
     };
 
+    const formatDateTime = (dateStr) => {
+        if (!dateStr) return '-';
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        return `${date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}, ${date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false })} WIB`;
+    };
+
+    const dailySalesWithGaps = (() => {
+        if (dailySales.length < 2) return dailySales;
+        const byDate = new Map(dailySales.map(item => [String(item.date).slice(0, 10), item]));
+        const dates = dailySales.map(item => new Date(item.date)).filter(date => !isNaN(date.getTime()));
+        if (!dates.length) return dailySales;
+        const start = new Date(Math.min(...dates));
+        const end = new Date(Math.max(...dates));
+        const result = [];
+        for (const date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+            const key = date.toISOString().slice(0, 10);
+            result.push(byDate.get(key) || { date: key, total_sales: 0, total_orders: 0 });
+        }
+        return result;
+    })();
+
     // Filter dates for Pie Chart dropdown
     const availableDates = Array.from(
         new Set([
@@ -130,11 +152,11 @@ export default function AdminDashboardPage() {
 
     // Chart Data Configs
     const lineChartData = {
-        labels: dailySales.map(item => formatDateLabel(item.date)),
+        labels: dailySalesWithGaps.map(item => formatDateLabel(item.date)),
         datasets: [
             {
                 label: 'Total Penjualan (Rp)',
-                data: dailySales.map(item => Number(item.total_sales)),
+                data: dailySalesWithGaps.map(item => Number(item.total_sales)),
                 borderColor: '#059669',
                 backgroundColor: 'rgba(5, 150, 105, 0.12)',
                 fill: true,
@@ -212,7 +234,32 @@ export default function AdminDashboardPage() {
                         return ` ${label}: ${formatRupiah(val)}`;
                     }
                 }
-            }
+            },
+        }
+    };
+
+    const piePercentageLabels = {
+        id: 'piePercentageLabels',
+        afterDatasetsDraw(chart) {
+            const { ctx } = chart;
+            const dataset = chart.data.datasets[0];
+            const total = dataset?.data.reduce((sum, value) => sum + Number(value), 0) || 0;
+            if (!total) return;
+            ctx.save();
+            ctx.font = '700 11px Inter, sans-serif';
+            ctx.fillStyle = '#161616';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            chart.getDatasetMeta(0).data.forEach((arc, index) => {
+                const value = Number(dataset.data[index]);
+                if (!value || value / total < 0.04) return;
+                const angle = (arc.startAngle + arc.endAngle) / 2;
+                const radius = (arc.innerRadius + arc.outerRadius) / 2;
+                const x = arc.x + Math.cos(angle) * radius;
+                const y = arc.y + Math.sin(angle) * radius;
+                ctx.fillText(`${Math.round((value / total) * 100)}%`, x, y);
+            });
+            ctx.restore();
         }
     };
 
@@ -275,7 +322,10 @@ export default function AdminDashboardPage() {
                         <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                             <DollarSign className="w-5 h-5" />
                         </div>
-                        {trendBadge(revenueTrend)}
+                        <div className="flex flex-col items-end gap-1">
+                            {trendBadge(revenueTrend)}
+                            <span className="text-[10px] text-slate-400">vs hari sebelumnya</span>
+                        </div>
                     </div>
                     <div className="mt-4">
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Penjualan</p>
@@ -290,7 +340,10 @@ export default function AdminDashboardPage() {
                         <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
                             <ShoppingBag className="w-5 h-5" />
                         </div>
-                        {trendBadge(orderTrend)}
+                        <div className="flex flex-col items-end gap-1">
+                            {trendBadge(orderTrend)}
+                            <span className="text-[10px] text-slate-400">vs hari sebelumnya</span>
+                        </div>
                     </div>
                     <div className="mt-4">
                         <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Transaksi</p>
@@ -345,7 +398,7 @@ export default function AdminDashboardPage() {
                             </div>
                         </div>
                         <span className="text-xs font-semibold px-3 py-1 bg-slate-100 text-slate-600 rounded-full">
-                            {dailySales.length} Hari Aktif
+                            {dailySales.length} Hari Aktif · celah = 0
                         </span>
                     </div>
 
@@ -393,13 +446,13 @@ export default function AdminDashboardPage() {
                         </div>
                     </div>
 
-                    <div className="h-56 w-full flex items-center justify-center relative">
+                    <div className="h-48 w-full flex items-center justify-center relative">
                         {currentPieData.length === 0 ? (
                             <div className="text-center text-slate-400 text-sm">
                                 Tidak ada data kategori untuk tanggal ini.
                             </div>
                         ) : (
-                            <Pie data={pieChartData} options={pieChartOptions} />
+                            <Pie data={pieChartData} options={pieChartOptions} plugins={[piePercentageLabels]} />
                         )}
                     </div>
                 </div>
@@ -438,12 +491,12 @@ export default function AdminDashboardPage() {
                                     </tr>
                                 ) : (
                                     lowStockProducts.map((p) => (
-                                        <tr key={p.id} className="hover:bg-slate-50/60 transition-colors">
+                                        <tr key={p.id} className={`${Number(p.stock) === 0 ? 'bg-red-50/80' : ''} hover:bg-slate-50/60 transition-colors`}>
                                             <td className="py-3.5 px-6 font-semibold text-slate-800">{p.name}</td>
                                             <td className="py-3.5 px-4 text-slate-500">{p.category}</td>
                                             <td className="py-3.5 px-4 text-center">
-                                                <span className="px-2.5 py-1 bg-rose-100 text-rose-700 font-bold text-xs rounded-lg">
-                                                    {p.stock}
+                                                <span className={`px-2.5 py-1 font-bold text-xs rounded-lg ${Number(p.stock) === 0 ? 'bg-red-200 text-red-800' : 'bg-rose-100 text-rose-700'}`}>
+                                                {Number(p.stock) === 0 ? 'Habis' : p.stock}
                                                 </span>
                                             </td>
                                             <td className="py-3.5 px-6 text-right font-bold text-slate-700">{formatRupiah(p.price)}</td>
@@ -492,7 +545,7 @@ export default function AdminDashboardPage() {
                                                 <span className="block text-xs font-normal text-slate-400">ID: #{o.id}</span>
                                             </td>
                                             <td className="py-3.5 px-4 text-slate-600 font-medium">{o.cashier_name}</td>
-                                            <td className="py-3.5 px-4 text-xs text-slate-500">{o.created_at}</td>
+                                            <td className="py-3.5 px-4 text-xs text-slate-500">{formatDateTime(o.created_at)}</td>
                                             <td className="py-3.5 px-6 text-right font-bold text-emerald-600">{formatRupiah(o.total_price)}</td>
                                         </tr>
                                     ))

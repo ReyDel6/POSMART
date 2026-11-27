@@ -1,5 +1,5 @@
 // File: hooks/useProduct.js
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import  api  from "../utils/api";
 
 /**
@@ -10,6 +10,7 @@ export function useProduct() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const requestId = useRef(0);
     const [pagination, setPagination] = useState({
         current_page: 1,
         total_page: 1,
@@ -17,16 +18,31 @@ export function useProduct() {
     });
 
     const fetchProducts = useCallback(async (filters = {}) => {
+        const currentRequest = ++requestId.current;
         setLoading(true);
         setError(null);
         try {
             const page = filters.page || 1;
             const search = filters.search || '';
             const category = filters.category || 'All';
+            const perPage = filters.per_page || 6;
+            const sort = filters.sort || 'newest';
 
-            const response = await api.get(
-                `/get.product.php?page=${page}&search=${encodeURIComponent(search)}&category=${category}`
-            );
+            let response;
+            let lastError;
+            for (let attempt = 0; attempt < 2; attempt += 1) {
+                try {
+                    response = await api.get(
+                        `/get.product.php?page=${page}&per_page=${perPage}&sort=${sort}&search=${encodeURIComponent(search)}&category=${encodeURIComponent(category)}`
+                    );
+                    if (response.status < 500) break;
+                } catch (requestError) {
+                    lastError = requestError;
+                    if (attempt === 0) await new Promise((resolve) => setTimeout(resolve, 500));
+                }
+            }
+            if (!response && lastError) throw lastError;
+            if (currentRequest !== requestId.current) return;
 
             if (response.data && response.data.status === 'success') {
                 setProducts(response.data.data);
@@ -40,10 +56,12 @@ export function useProduct() {
             }
 
         } catch (err) {
+            if (currentRequest !== requestId.current) return;
             console.error('Gagal memuat produk:', err);
-            setError('Gagal terhubung ke database posmart. Coba lagi nanti.');
+            const serverMessage = err.response?.data?.message;
+            setError(serverMessage || 'Server sedang sibuk atau tidak terhubung. Coba lagi.');
         } finally {
-            setLoading(false);
+            if (currentRequest === requestId.current) setLoading(false);
         }
     }, []);
 

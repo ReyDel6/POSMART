@@ -21,6 +21,8 @@ export default function LoginPage() {
 
                 if (response.data.user.role === 'admin' || response.data.user.role === 'owner') {
                     navigate('/admin');
+                } else if (response.data.user.role === 'cashier') {
+                    navigate('/cashier');
                 } else {
                     navigate('/');
                 }
@@ -39,6 +41,8 @@ export default function LoginPage() {
     const handleLoginSuccess = (user) => {
         if (user.role === 'admin' || user.role === 'owner') {
             navigate('/admin');
+        } else if (user.role === 'cashier') {
+            navigate('/cashier');
         } else {
             navigate('/');
         }

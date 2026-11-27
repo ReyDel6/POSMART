@@ -30,6 +30,8 @@ class AdminPromotionController extends Controller
                 'items'        => array_values((array) $p->items),
                 'bundle_price' => (int) $p->bundle_price,
                 'active'       => (bool) $p->active,
+                'usage_limit'  => $p->usage_limit !== null ? (int) $p->usage_limit : null,
+                'used_count'   => (int) $p->used_count,
                 'starts_at'    => $p->starts_at?->format('Y-m-d\\TH:i'),
                 'ends_at'      => $p->ends_at?->format('Y-m-d\\TH:i'),
                 'created_at'   => $p->created_at?->format('Y-m-d H:i'),
@@ -73,6 +75,7 @@ class AdminPromotionController extends Controller
         $active = filter_var($data['active'] ?? true, FILTER_VALIDATE_BOOLEAN);
         $starts = trim((string) ($data['starts_at'] ?? ''));
         $ends   = trim((string) ($data['ends_at'] ?? ''));
+        $usageLimit = trim((string) ($data['usage_limit'] ?? ''));
 
         if ($name === '' || !in_array($type, ['block', 'b1g1', 'bundle'], true)) {
             return response()->json(['status' => 'error', 'message' => 'Nama dan tipe promo wajib diisi.'], 422);
@@ -82,6 +85,7 @@ class AdminPromotionController extends Controller
             'name'         => $name,
             'type'         => $type,
             'active'       => $active,
+            'usage_limit'  => $usageLimit !== '' ? max(1, (int) $usageLimit) : null,
             'starts_at'    => $starts !== '' ? $starts : null,
             'ends_at'      => $ends !== '' ? $ends : null,
             'product_id'   => null,

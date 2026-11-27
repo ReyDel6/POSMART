@@ -1,9 +1,9 @@
 //File: src/components/Header.jsx
 import { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ChevronDown, LogIn, LogOut, Menu, Search, ShoppingCart, User, X, Clock, TrendingUp, ArrowRight, Check, Trash2, ShoppingBag } from "lucide-react";
+import { ChevronDown, LogIn, LogOut, Menu, Search, ShoppingCart, User, X, Clock, TrendingUp, ArrowRight, Check, Trash2, ShoppingBag, Store, ShieldCheck, Monitor } from "lucide-react";
 import { useCartContext } from "../context/CartContext";
-import api from "../utils/api";
+import api, { getAuthToken } from "../utils/api";
 
 const RECENT_KEY = 'recent_searches';
 
@@ -104,7 +104,7 @@ export default function Header() {
 
     // sinkronisasi dengan jwt
     const [isLoggedIn, setIsLoggedIn] = useState(() => {
-        return localStorage.getItem('token') !== null;
+        return getAuthToken() !== null;
     });
 
     const userProfile = (() => {
@@ -147,26 +147,20 @@ export default function Header() {
     return (
         <header className="bg-cream border-b-2 border-ink sticky top-0 z-50 px-4 py-3 shadow-sm" style={{ position: 'sticky' }}>
             <div className="max-w-7xl mx-auto flex justify-between items-center">
-                <h1 className="shrink-0" style={{ minWidth: 150 }}>
+                <h1 className="shrink-0">
                     <Link to="/" className="flex items-center gap-2.5" aria-label="POSMart beranda">
-                        <span className="w-10 h-10 rounded-xl border-2 border-ink bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-[3px_3px_0_#161616] transition-transform hover:-translate-y-0.5">
-                            <ShoppingBag className="w-5 h-5" />
-                        </span>
-                        <span className="flex flex-col leading-none">
-                            <span className="text-lg font-black tracking-tight text-ink leading-none display">
-                                POS<span className="text-coral">Mart</span>
-                            </span>
-                            <span className="text-[9px] font-bold text-slate-500 tracking-[0.18em] uppercase mt-1">
-                                Minimarket Digital
-                            </span>
-                        </span>
+                        <img
+                            src="/logo-posmart.png?v=2"
+                            alt="POSMart Minimarket Digital"
+                            className="h-10 sm:h-11 w-auto object-contain transition-transform hover:scale-[1.03]"
+                        />
                     </Link>
                 </h1>
 
                 {/* navpills */}
                 <nav className="hidden lg:flex items-center gap-2">
-                    <a href="/" className="text-[13px] font-bold px-4 py-2 rounded-full border-2 border-ink bg-lime">Beranda</a>
-                    <a href="/#katalog-produk" className="text-[13px] font-bold px-4 py-2 rounded-full border-2 border-ink hover:bg-white transition-colors">Kategori</a>
+                    <a href="/" className="text-[13px] font-bold px-4 py-2 rounded-full border-2 border-ink hover:bg-white transition-colors">Beranda</a>
+                    <a href="/catalog" className="text-[13px] font-bold px-4 py-2 rounded-full border-2 border-ink bg-lime">Katalog</a>
                 </nav>
 
                 {/* SEARCH BAR */}
@@ -242,6 +236,42 @@ export default function Header() {
                                             <ShoppingCart className="w-4 h-4 text-slate-500" />
                                             pesanan saya
                                         </button>
+                                        {(userProfile?.role === 'cashier' || userProfile?.role === 'admin' || userProfile?.role === 'owner') && (
+                                            <>
+                                                <button
+                                                    onClick={() => {
+                                                        setShowDropDown(false);
+                                                        window.location.href = '/pos';
+                                                    }}
+                                                    className="w-full text-left px-4 py-2.5 text-slate-800 hover:bg-lime/40 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                                >
+                                                    <Monitor className="w-4 h-4 text-amber-600" />
+                                                    mesin kasir (POS)
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setShowDropDown(false);
+                                                        window.location.href = '/cashier';
+                                                    }}
+                                                    className="w-full text-left px-4 py-2.5 text-slate-800 hover:bg-lime/40 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                                >
+                                                    <Store className="w-4 h-4 text-emerald-600" />
+                                                    pesanan online kasir
+                                                </button>
+                                            </>
+                                        )}
+                                        {(userProfile?.role === 'admin' || userProfile?.role === 'owner') && (
+                                            <button
+                                                onClick={() => {
+                                                    setShowDropDown(false);
+                                                    window.location.href = '/admin';
+                                                }}
+                                                className="w-full text-left px-4 py-2.5 text-slate-800 hover:bg-lime/40 flex items-center gap-2.5 transition-colors cursor-pointer"
+                                            >
+                                                <ShieldCheck className="w-4 h-4 text-purple-600" />
+                                                panel admin
+                                            </button>
+                                        )}
                                         <button
                                             onClick={handleLogout}
                                             className="w-full text-left px-4 py-2.5 text-slate-800 hover:bg-lime/40 flex items-center gap-2.5 transition-colors cursor-pointer"

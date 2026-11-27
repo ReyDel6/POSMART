@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, RefreshCcw, AppWindow, Gift, Layers, Percent, Save, X, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, RefreshCcw, AppWindow, Gift, Layers, Percent, Save, X, Loader2, Search, CalendarDays } from 'lucide-react';
 import api from '../../utils/api';
 import useDialog from '../../hooks/useDialog';
 
@@ -18,6 +18,8 @@ export default function AdminPromosPage() {
     const [saving, setSaving] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
     const [editPromo, setEditPromo] = useState(null);
+    const [search, setSearch] = useState('');
+    const [typeFilter, setTypeFilter] = useState('all');
 
     useDialog(modalOpen, () => { setModalOpen(false); setEditPromo(null); });
 
@@ -60,6 +62,18 @@ export default function AdminPromosPage() {
     };
 
     const typeInfo = (key) => TYPES.find(t => t.key === key);
+    const promoStatus = (promo) => {
+        const now = new Date();
+        if (promo.ends_at && new Date(promo.ends_at) < now) return 'expired';
+        if (promo.starts_at && new Date(promo.starts_at) > now) return 'scheduled';
+        if (promo.usage_limit !== null && Number(promo.used_count) >= Number(promo.usage_limit)) return 'quota';
+        return promo.active ? 'live' : 'paused';
+    };
+    const filteredPromos = promos.filter(p => {
+        const matchesSearch = !search.trim() || p.name.toLowerCase().includes(search.trim().toLowerCase());
+        return matchesSearch && (typeFilter === 'all' || p.type === typeFilter);
+    });
+    const formatDate = (value) => value ? new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
 
     return (
         <div className="space-y-5">
@@ -72,6 +86,14 @@ export default function AdminPromosPage() {
                     <p className="text-xs text-slate-500">Promo aktif otomatis diterapkan di keranjang & checkout (server-side).</p>
                 </div>
                 <div className="flex gap-2">
+                    <div className="relative hidden md:block">
+                        <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari promo..." className="w-44 pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-emerald-500" />
+                    </div>
+                    <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="hidden sm:block px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-600">
+                        <option value="all">Semua tipe</option>
+                        {TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
+                    </select>
                     <button onClick={fetchPromos} className="p-2.5 bg-white border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 cursor-pointer transition-colors" title="Muat ulang">
                         <RefreshCcw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                     </button>
@@ -91,9 +113,10 @@ export default function AdminPromosPage() {
                     </div>
                 ) : (
                     <div className="divide-y divide-slate-100">
-                        {promos.map(p => {
+                        {filteredPromos.map(p => {
                             const t = typeInfo(p.type);
                             const Icon = t?.icon || Percent;
+                            const status = promoStatus(p);
                             return (
                                 <div key={p.id} className="flex items-center gap-4 p-4 hover:bg-slate-50/70 transition-colors">
                                     <div className={`p-2.5 rounded-xl ${p.active ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>
@@ -103,7 +126,9 @@ export default function AdminPromosPage() {
                                         <div className="flex items-center gap-2">
                                             <h4 className="font-bold text-slate-900 text-sm truncate">{p.name}</h4>
                                             <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold">{t?.label || p.type}</span>
-                                            {!p.active && <span className="px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full text-[10px] font-bold">Nonaktif</span>}
+                                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${status === 'live' ? 'bg-emerald-50 text-emerald-700' : status === 'expired' || status === 'quota' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'}`}>
+                                                {status === 'live' ? 'Live' : status === 'expired' ? 'Expired' : status === 'quota' ? 'Kuota habis' : status === 'scheduled' ? 'Terjadwal' : 'Paused'}
+                                            </span>
                                         </div>
                                         {p.type === 'block' && (
                                             <p className="text-xs text-slate-500 mt-0.5 truncate">
@@ -116,6 +141,10 @@ export default function AdminPromosPage() {
                                         {p.type === 'bundle' && (
                                             <p className="text-xs text-slate-500 mt-0.5 truncate">Harga paket Rp {Number(p.bundle_price).toLocaleString('id-ID')}</p>
                                         )}
+                                        <div className="flex flex-wrap items-center gap-3 mt-2 text-[11px] text-slate-400">
+                                            <span className="inline-flex items-center gap-1"><CalendarDays className="w-3.5 h-3.5" /> Berlaku: {formatDate(p.starts_at) || 'Sekarang'} - {formatDate(p.ends_at) || 'Tanpa batas'}</span>
+                                            <span>{p.usage_limit === null ? 'Unlimited' : `${p.used_count}/${p.usage_limit} penggunaan`}</span>
+                                        </div>
                                     </div>
                                     <button onClick={() => toggleActive(p)} className="p-2 text-slate-500 hover:text-emerald-600 cursor-pointer" title={p.active ? 'Nonaktifkan' : 'Aktifkan'}>
                                         {p.active ? <ToggleRight className="w-6 h-6 text-emerald-600" /> : <ToggleLeft className="w-6 h-6" />}
@@ -129,6 +158,7 @@ export default function AdminPromosPage() {
                                 </div>
                             );
                         })}
+                        {filteredPromos.length === 0 && <div className="p-12 text-center text-slate-400 text-sm">Tidak ada promo yang cocok.</div>}
                     </div>
                 )}
             </div>
@@ -151,6 +181,7 @@ export default function AdminPromosPage() {
 function PromoFormModal({ editPromo, products, saving, onClose, onSaved, setSaving }) {
     const [form, setForm] = useState(() => editPromo ? { ...editPromo, tiers: editPromo.tiers || [], items: editPromo.items || [] } : {
         name: '', type: 'block', product_id: '', active: true,
+        starts_at: '', ends_at: '', usage_limit: '',
         buy_qty: 2, free_qty: 1,
         tiers: [{ min_qty: 2, percent: 10 }],
         items: [],
@@ -220,6 +251,22 @@ function PromoFormModal({ editPromo, products, saving, onClose, onSaved, setSavi
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Nama Promo</label>
                         <input value={form.name} onChange={e => set({ name: e.target.value })} placeholder="cth: Beli 3 Hemat 15%" className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
                     </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Mulai</label>
+                            <input type="datetime-local" value={form.starts_at || ''} onChange={e => set({ starts_at: e.target.value })} className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Berakhir</label>
+                            <input type="datetime-local" value={form.ends_at || ''} onChange={e => set({ ends_at: e.target.value })} className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Kuota</label>
+                            <input type="number" min="1" value={form.usage_limit ?? ''} onChange={e => set({ usage_limit: e.target.value })} placeholder="Unlimited" className="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm" />
+                        </div>
+                    </div>
+                    <p className="text-[11px] text-slate-400 -mt-3">Kosongkan tanggal untuk tanpa batas waktu dan kuota untuk penggunaan unlimited.</p>
 
                     <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Tipe Promo</label>

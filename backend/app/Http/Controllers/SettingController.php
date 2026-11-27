@@ -28,7 +28,9 @@ class SettingController extends Controller
                 return [
                     'id'   => (int) $z->id,
                     'name' => $z->name,
+                    'coverage' => $z->coverage,
                     'fee'  => (int) $z->fee,
+                    'free_shipping_minimum' => $z->free_shipping_minimum !== null ? (int) $z->free_shipping_minimum : null,
                 ];
             });
 

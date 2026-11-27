@@ -12,6 +12,7 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
             barcode: productToEdit.barcode || '',
             name: productToEdit.name || '',
             price: productToEdit.price || '',
+            purchase_price: productToEdit.purchase_price || '',
             category: productToEdit.category || '',
             stock: productToEdit.stock || '',
             is_promo: !!productToEdit.is_promo,
@@ -24,6 +25,7 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
             barcode: generateBarcode(),
             name: '',
             price: '',
+            purchase_price: '',
             category: '',
             stock: '',
             is_promo: false,
@@ -50,9 +52,11 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
     useEffect(() => {
         if (!isOpen) return;
 
-        api.get('/get.product.php?categories=1')
+        api.get('/admin/categories.php')
             .then((response) => {
-                const categories = response.data?.status === 'success' ? response.data.data : [];
+                const categories = response.data?.status === 'success'
+                    ? response.data.data.filter(category => category.is_active).map(category => category.name)
+                    : [];
                 const currentCategory = productToEdit?.category;
                 setCategoryOptions(currentCategory && !categories.includes(currentCategory)
                     ? [...categories, currentCategory]
@@ -245,7 +249,7 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
                         />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                         <div>
                             <label htmlFor="price" className="block text-sm font-semibold text-slate-700 mb-1">Harga (Rp)</label>
                             <input
@@ -259,6 +263,10 @@ export default function ProductFormModal({ isOpen, onClose, onSave, productToEdi
                                 required
                                 min="0"
                             />
+                        </div>
+                        <div>
+                            <label htmlFor="purchase_price" className="block text-sm font-semibold text-slate-700 mb-1">Harga Modal (Rp)</label>
+                            <input type="number" id="purchase_price" name="purchase_price" value={formData.purchase_price} onChange={handleInputChange} className="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm" placeholder="Opsional" min="0" />
                         </div>
                         <div>
                             <label htmlFor="stock" className="block text-sm font-semibold text-slate-700 mb-1">Stok</label>

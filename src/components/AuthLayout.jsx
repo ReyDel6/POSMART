@@ -22,9 +22,7 @@ export default function AuthLayout({ children, panelSide = 'left' }) {
 
                 {/* logo */}
                 <div className="relative flex items-center gap-3">
-                    <div className="p-2.5 bg-lime text-ink border-2 border-lime shadow-[3px_3px_0_#CBF169] rounded-2xl">
-                        <Store className="w-6 h-6" />
-                    </div>
+                    <img src="/logo-icon.png?v=2" alt="POSMart" className="w-12 h-12 object-contain rounded-2xl shadow-[3px_3px_0_#CBF169]" />
                     <div>
                         <p className="font-black text-cream text-lg tracking-tight leading-none">
                             POS<span className="text-lime">Mart</span>
@@ -71,12 +69,7 @@ export default function AuthLayout({ children, panelSide = 'left' }) {
                 </a>
 
                 <div className="absolute top-6 right-5 lg:hidden flex items-center gap-2">
-                    <div className="p-1.5 bg-ink border-2 border-ink shadow-[2px_2px_0_#CBF169] rounded-lg text-lime">
-                        <Store className="w-4 h-4" />
-                    </div>
-                    <span className="text-base font-black text-ink tracking-tight">
-                        POS<span className="text-coral">Mart</span>
-                    </span>
+                    <img src="/logo-posmart.png?v=2" alt="POSMart" className="h-7 w-auto object-contain" />
                 </div>
 
                 {children}
