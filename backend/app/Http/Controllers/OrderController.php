@@ -356,9 +356,11 @@ class OrderController extends Controller
         }
 
         $midtransOrderId = config('midtrans.order_prefix') . '-' . $order->id;
-        $notificationUrl = rtrim(config('app.url'), '/') . '/midtrans/webhook.php';
-
+        $appUrl      = rtrim((string) config('app.url'), '/');
         $frontendUrl = rtrim((string) env('FRONTEND_URL', $request->header('origin') ?: 'http://localhost:5173'), '/');
+        // Ketika backend & frontend satu domain (seperti Vercel Services), route API berada di bawah prefix /api
+        $webhookPath     = ($appUrl === $frontendUrl) ? '/api/midtrans/webhook.php' : '/midtrans/webhook.php';
+        $notificationUrl = env('MIDTRANS_NOTIFICATION_URL') ?: ($appUrl . $webhookPath);
 
         // Grup metode (qris/ewallet/transfer/snap) -> batasi metode yang tampil di Snap.
         $methodGroup = strtolower(trim((string) $request->input('group', 'snap')));
